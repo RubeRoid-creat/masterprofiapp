@@ -1,0 +1,24 @@
+# Конфигурация BestApp Backend
+# Скопируйте этот файл в .env и заполните значения
+
+PORT=3000
+NODE_ENV=production
+JWT_SECRET=your-very-secret-key-change-this-in-production
+DATABASE_PATH=./database.sqlite
+DATABASE_TYPE=sqlite
+
+# PostgreSQL (если используется)
+# POSTGRES_HOST=localhost
+# POSTGRES_PORT=5432
+# POSTGRES_DB=bestapp
+# POSTGRES_USER=bestapp_user
+# POSTGRES_PASSWORD=your_password
+
+# Firebase
+FIREBASE_SERVICE_ACCOUNT=./firebase-service-account.json
+
+# Бэкапы
+BACKUP_ENABLED=true
+BACKUP_INTERVAL=86400000
+MAX_BACKUPS=30
+

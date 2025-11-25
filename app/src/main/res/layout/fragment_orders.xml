@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.orders.OrdersFragment">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="@string/orders_title"
+            app:titleTextColor="?attr/colorOnSurface">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_filters"
+                style="@style/Widget.Material3.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="4dp"
+                android:text="Фильтры"
+                app:icon="@android:drawable/ic_menu_sort_by_size"
+                app:iconGravity="textStart"
+                app:iconTint="?attr/colorPrimary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_show_map"
+                style="@style/Widget.Material3.Button.TextButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp"
+                android:text="Карта"
+                app:icon="@drawable/ic_map"
+                app:iconGravity="textStart"
+                app:iconTint="?attr/colorPrimary" />
+
+        </com.google.android.material.appbar.MaterialToolbar>
+        
+        <!-- Вкладки: Новые заказы / История отклонений -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:tabMode="fixed"
+            app:tabGravity="fill">
+            
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Новые заказы" />
+            
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="История отклонений" />
+        </com.google.android.material.tabs.TabLayout>
+        
+        <!-- Кнопки для батчинга заказов -->
+        <LinearLayout
+            android:id="@+id/batch_actions_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:visibility="gone"
+            android:gravity="center_vertical">
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel_selection"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Отмена" />
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_optimize_route"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="📍 Маршрут"
+                android:layout_marginStart="8dp"
+                app:icon="@android:drawable/ic_menu_directions" />
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_accept_selected"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:text="Принять выбранные (0)"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <!-- Поиск -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            app:startIconDrawable="@android:drawable/ic_menu_search"
+            app:startIconTint="?attr/colorPrimary"
+            app:boxCornerRadiusTopStart="20dp"
+            app:boxCornerRadiusTopEnd="20dp"
+            app:boxCornerRadiusBottomStart="20dp"
+            app:boxCornerRadiusBottomEnd="20dp"
+            app:boxStrokeWidth="2dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/orders_search_hint"
+                android:singleLine="true"
+                android:inputType="text" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Быстрые фильтры - только сортировка (компактно) -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:paddingBottom="8dp"
+                    android:paddingTop="4dp">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chip_group_sort"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        app:singleSelection="true"
+                        app:selectionRequired="false">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_sort_distance"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Ближайшие" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_sort_price"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Дорогие" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_sort_urgency"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Срочные" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_sort_date"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Новые" />
+
+                    </com.google.android.material.chip.ChipGroup>
+
+                </HorizontalScrollView>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Контейнер для кнопки "На смену" и списка заказов -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Кнопка "На смену" -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="20dp"
+                app:cardElevation="6dp"
+                app:cardCornerRadius="24dp"
+                app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                style="@style/Widget.Material3.CardView.Elevated">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:gravity="center"
+                    android:background="?attr/colorPrimaryContainer">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⏰ Вы не на смене"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.01"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Нажмите кнопку ниже, чтобы начать принимать заказы"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:gravity="center"
+                        android:lineSpacingExtra="4dp"
+                        android:layout_marginBottom="20dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_start_shift"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="🚀 Начать смену"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:paddingHorizontal="32dp"
+                        android:paddingVertical="16dp"
+                        android:letterSpacing="0.02"
+                        android:fontFamily="sans-serif-medium"
+                        app:icon="@drawable/ic_map"
+                        app:iconGravity="start"
+                        app:iconTint="?attr/colorOnPrimary"
+                        app:cornerRadius="16dp"
+                        style="@style/Widget.Material3.Button" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Список заказов -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_orders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_order_preview" />
+            
+            <!-- Список отклоненных заказов -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_rejected_orders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_order_preview" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <TextView
+        android:id="@+id/text_empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/orders_empty"
+        android:textSize="16sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

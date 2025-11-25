@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="8dp"
+    app:cardElevation="6dp"
+    app:cardCornerRadius="20dp"
+    app:strokeWidth="2dp"
+    app:strokeColor="?attr/colorOutline"
+    app:cardBackgroundColor="?attr/colorSurface"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/colorSurface">
+
+        <!-- Верхняя панель с метриками (цена, расстояние, время) -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardElevation="0dp"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="?attr/colorPrimaryContainer"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <androidx.appcompat.widget.AppCompatCheckBox
+                    android:id="@+id/order_checkbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:layout_marginEnd="12dp" />
+
+                <!-- Цена -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Стоимость"
+                        android:textSize="11sp"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold" />
+                        
+                    <TextView
+                        android:id="@+id/order_cost"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:letterSpacing="0.02"
+                        android:fontFamily="sans-serif-medium"
+                        android:layout_marginTop="2dp"
+                        tools:text="5000 ₽" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/colorOutline"
+                    android:layout_marginHorizontal="8dp" />
+
+                <!-- Расстояние -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📍 Расстояние"
+                        android:textSize="11sp"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold" />
+                        
+                    <TextView
+                        android:id="@+id/order_distance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:layout_marginTop="2dp"
+                        android:visibility="gone"
+                        tools:text="2.5 км"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/colorOutline"
+                    android:layout_marginHorizontal="8dp"
+                    android:visibility="gone"
+                    android:id="@+id/distance_separator" />
+
+                <!-- Время в пути -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="gone"
+                    android:id="@+id/time_container">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⏱️ Время"
+                        android:textSize="11sp"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold" />
+                        
+                    <TextView
+                        android:id="@+id/order_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:layout_marginTop="2dp"
+                        tools:text="15 мин" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Основной контент -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Заголовок с номером и статусами -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:id="@+id/order_id"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:letterSpacing="0.02"
+                    android:fontFamily="sans-serif-medium"
+                    tools:text="Заявка №123" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/request_status_chip"
+                    style="@style/Widget.Material3.Chip.Assist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="Новый" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/order_type_chip"
+                    style="@style/Widget.Material3.Chip.Assist.Elevated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="Срочный" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/order_priority_badge"
+                    style="@style/Widget.Material3.Chip.Assist.Elevated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:text="🔥"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </LinearLayout>
+
+            <!-- Устройство -->
+            <TextView
+                android:id="@+id/order_device"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:lineSpacingExtra="4dp"
+                android:letterSpacing="0.01"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="12dp"
+                tools:text="Стиральная машина Samsung" />
+
+            <!-- Информация о клиенте -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="?attr/colorSurfaceVariant"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:id="@+id/order_client"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="👤 Иванов Иван" />
+
+                <TextView
+                    android:id="@+id/order_phone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="📞 +7 (999) 123-45-67" />
+
+                <TextView
+                    android:id="@+id/order_address"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    tools:text="📍 ул. Ленина, д. 10, кв. 5" />
+            </LinearLayout>
+
+            <!-- Проблема -->
+            <TextView
+                android:id="@+id/order_problem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:textColor="?attr/colorOnSurface"
+                android:lineSpacingExtra="4dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:layout_marginBottom="12dp"
+                tools:text="Не включается экран после падения" />
+
+            <!-- Временные метки и таймер -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/order_arrival_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#00897B"
+                    android:visibility="gone"
+                    tools:text="⏰ Приезд: 14:00 - 16:00"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/order_timer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#D32F2F"
+                    android:visibility="gone"
+                    tools:text="⏱️ Осталось: 5м 30с" />
+            </LinearLayout>
+
+            <!-- Нижняя панель с датой -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📅 "
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/order_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="18.11.2025 14:30" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
+
+

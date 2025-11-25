@@ -1,0 +1,219 @@
+import initSqlJs from 'sql.js';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { config } from '../config.js';
+
+// Импорт PostgreSQL (если используется)
+let postgresQuery = null;
+
+// Асинхронная инициализация PostgreSQL
+async function initPostgreSQLIfNeeded() {
+  if (config.databaseType === 'postgresql') {
+    try {
+      const postgresDb = await import('./postgres-db.js');
+      postgresDb.initPostgreSQL();
+      postgresQuery = postgresDb.query;
+      console.log('✅ PostgreSQL инициализирован');
+    } catch (error) {
+      console.warn('⚠️ PostgreSQL модуль не найден, используем SQLite:', error.message);
+    }
+  }
+}
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+let SQL;
+let db;
+
+// Инициализация sql.js
+async function initSQL() {
+  if (!SQL) {
+    SQL = await initSqlJs();
+  }
+  return SQL;
+}
+
+// Загрузка или создание базы данных
+async function loadDatabase() {
+  await initSQL();
+  
+  if (existsSync(config.databasePath)) {
+    const buffer = readFileSync(config.databasePath);
+    db = new SQL.Database(buffer);
+    console.log('✅ База данных загружена из файла');
+  } else {
+    db = new SQL.Database();
+    console.log('✅ Создана новая база данных');
+  }
+  
+  // Включаем поддержку внешних ключей
+  db.run('PRAGMA foreign_keys = ON');
+  
+  return db;
+}
+
+// Сохранение базы данных в файл
+export function saveDatabase() {
+  if (db) {
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    writeFileSync(config.databasePath, buffer);
+  }
+}
+
+// Перезагрузка базы данных
+export async function reloadDatabase() {
+  await loadDatabase();
+}
+
+// Функция для инициализации схемы БД
+export async function initDatabase() {
+  if (!db) {
+    await loadDatabase();
+  }
+  
+  const schemaPath = join(__dirname, 'schema.sql');
+  const schema = readFileSync(schemaPath, 'utf-8');
+  
+  // Разделяем SQL-запросы и выполняем их по очереди
+  const statements = schema.split(';').filter(stmt => stmt.trim());
+  
+  for (const statement of statements) {
+    if (statement.trim()) {
+      try {
+        db.run(statement);
+      } catch (error) {
+        // Игнорируем ошибки "table already exists" и "index already exists"
+        if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+          continue;
+        }
+        
+        // Обрабатываем ошибку "no such column" для существующих таблиц
+        if (error.message.includes('no such column')) {
+          const columnMatch = error.message.match(/no such column: (\w+)/);
+          if (columnMatch) {
+            const columnName = columnMatch[1];
+            // Определяем таблицу из запроса
+            let tableName = null;
+            if (statement.includes('loyalty_points')) {
+              tableName = 'loyalty_points';
+            } else if (statement.includes('clients')) {
+              tableName = 'clients';
+            }
+            
+            if (tableName) {
+              try {
+                // Проверяем, существует ли таблица
+                const tableInfo = db.exec(`PRAGMA table_info(${tableName})`);
+                if (tableInfo.length > 0) {
+                  // Проверяем, есть ли уже эта колонка
+                  const columns = tableInfo[0].values.map(row => row[1]);
+                  if (!columns.includes(columnName)) {
+                    // Таблица существует, но колонки нет - добавляем
+                    let alterStatement = '';
+                    if (columnName === 'used') {
+                      alterStatement = `ALTER TABLE ${tableName} ADD COLUMN ${columnName} INTEGER DEFAULT 0`;
+                    } else if (columnName === 'total_loyalty_points') {
+                      alterStatement = `ALTER TABLE ${tableName} ADD COLUMN ${columnName} INTEGER DEFAULT 0`;
+                    }
+                    
+                    if (alterStatement) {
+                      db.run(alterStatement);
+                      console.log(`✅ Добавлена колонка ${columnName} в таблицу ${tableName}`);
+                      // Повторно выполняем исходный запрос (создание индекса)
+                      try {
+                        db.run(statement);
+                        continue;
+                      } catch (retryError) {
+                        // Если это был индекс и он уже существует, игнорируем
+                        if (retryError.message.includes('already exists') || retryError.message.includes('duplicate')) {
+                          continue;
+                        }
+                        throw retryError;
+                      }
+                    }
+                  }
+                }
+              } catch (alterError) {
+                console.error(`Ошибка добавления колонки ${columnName}:`, alterError.message);
+              }
+            }
+          }
+        }
+        
+        // Если ошибка не обработана, выводим её
+        console.error('Ошибка выполнения SQL:', statement.substring(0, 100));
+        console.error('Детали ошибки:', error.message);
+        // Не бросаем ошибку для индексов, которые могут уже существовать
+        if (!statement.trim().toUpperCase().startsWith('CREATE INDEX')) {
+          throw error;
+        }
+      }
+    }
+  }
+  
+  saveDatabase();
+  console.log('✅ База данных инициализирована');
+}
+
+// Утилита для выполнения запросов
+// Если используется PostgreSQL, делегируем запросы туда
+export const query = config.databaseType === 'postgresql' && postgresQuery ? postgresQuery : {
+  get: (sql, params = []) => {
+    const stmt = db.prepare(sql);
+    stmt.bind(params);
+    const result = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+    return result;
+  },
+  
+  all: (sql, params = []) => {
+    const stmt = db.prepare(sql);
+    stmt.bind(params);
+    const results = [];
+    while (stmt.step()) {
+      results.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return results;
+  },
+  
+  run: (sql, params = []) => {
+    const stmt = db.prepare(sql);
+    stmt.bind(params);
+    stmt.step();
+    stmt.free();
+    
+    // Получаем lastInsertRowid ДО сохранения
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const lastInsertRowid = result[0]?.values[0]?.[0] || 0;
+    
+    // Сохраняем после каждого изменения
+    saveDatabase();
+    
+    return {
+      lastInsertRowid: lastInsertRowid,
+      changes: db.getRowsModified()
+    };
+  },
+  
+  transaction: (fn) => {
+    db.run('BEGIN TRANSACTION');
+    try {
+      const result = fn();
+      db.run('COMMIT');
+      saveDatabase();
+      return result;
+    } catch (error) {
+      db.run('ROLLBACK');
+      throw error;
+    }
+  }
+};
+
+// Инициализация при импорте
+await loadDatabase();
+
+export default db;
