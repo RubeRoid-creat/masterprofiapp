@@ -22,10 +22,14 @@ object RetrofitClient {
     
     private var prefsManager: PreferencesManager? = null
     
+    @Volatile
+    private var appContext: Context? = null
+    
     /**
      * Инициализация с контекстом для загрузки сохраненного токена
      */
     fun initialize(context: Context) {
+        appContext = context.applicationContext
         prefsManager = PreferencesManager.getInstance(context)
         authToken = prefsManager?.getAuthToken()
         if (authToken != null) {
@@ -95,15 +99,38 @@ object RetrofitClient {
         
         if (!isPublicEndpoint) {
             // Всегда проверяем актуальный токен (может измениться после логина)
-            val currentToken = authToken ?: prefsManager?.getAuthToken()
+            // Сначала проверяем в памяти, потом в prefsManager, потом пытаемся загрузить напрямую
+            var currentToken = authToken
             
-            if (currentToken != null) {
+            if (currentToken == null) {
+                // Пробуем получить из prefsManager
+                currentToken = prefsManager?.getAuthToken()
+                
+                // Если prefsManager null, пытаемся инициализировать через сохраненный контекст
+                if (currentToken == null && prefsManager == null && appContext != null) {
+                    try {
+                        val tempPrefsManager = PreferencesManager.getInstance(appContext!!)
+                        currentToken = tempPrefsManager.getAuthToken()
+                        if (currentToken != null) {
+                            // Обновляем prefsManager для будущих запросов
+                            prefsManager = tempPrefsManager
+                            authToken = currentToken
+                            Log.d(TAG, "✅ Loaded token from PreferencesManager directly")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Failed to load token from PreferencesManager: ${e.message}")
+                    }
+                }
+            }
+            
+            if (currentToken != null && currentToken.isNotBlank()) {
                 requestBuilder.addHeader("Authorization", "Bearer $currentToken")
                 Log.d(TAG, "✅ Adding Authorization header to ${originalRequest.method} ${originalRequest.url}")
                 Log.d(TAG, "   Token: Bearer ${currentToken.take(30)}...")
             } else {
                 Log.e(TAG, "❌ NO AUTH TOKEN! Request: ${originalRequest.method} ${originalRequest.url}")
                 Log.e(TAG, "   Token was not loaded from storage. User needs to login again.")
+                Log.e(TAG, "   authToken in memory: ${authToken != null}, prefsManager: ${prefsManager != null}")
             }
         } else {
             Log.d(TAG, "Public endpoint, skipping auth token: ${originalRequest.method} ${originalRequest.url}")
@@ -119,6 +146,9 @@ object RetrofitClient {
                 Log.e(TAG, "   This is a public endpoint - check credentials or server error")
             } else {
                 Log.e(TAG, "   This means token is missing or invalid")
+                // Очищаем токен при 401, чтобы пользователь перелогинился
+                authToken = null
+                prefsManager?.setAuthToken(null)
             }
         }
         
