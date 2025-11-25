@@ -2,38 +2,37 @@
 
 ## 📋 Подготовка локально
 
-### 1. Инициализация Git репозитория (если еще не сделано)
+### 1. Git репозиторий уже инициализирован
 
-```bash
-cd Z:\BestAPP
-git init
-```
+Первый коммит создан. Теперь нужно подключить удаленный репозиторий.
 
-### 2. Добавление файлов в Git
+### 2. Создание удаленного репозитория
 
-```bash
-# Добавить все файлы
-git add .
+**На GitHub:**
+1. Перейдите на https://github.com
+2. Создайте новый репозиторий (например, `bestapp-backend`)
+3. **НЕ** инициализируйте его с README
 
-# Создать первый коммит
-git commit -m "Initial commit: BestApp backend"
-```
+**На GitLab:**
+1. Перейдите на https://gitlab.com
+2. Создайте новый проект
+3. Выберите "Create blank project"
 
-### 3. Создание удаленного репозитория
+**На Bitbucket:**
+1. Перейдите на https://bitbucket.org
+2. Создайте новый репозиторий
 
-Создайте репозиторий на GitHub, GitLab, Bitbucket или другом сервисе.
-
-### 4. Подключение удаленного репозитория
+### 3. Подключение удаленного репозитория
 
 ```bash
 # Замените URL на ваш репозиторий
 git remote add origin https://github.com/your-username/bestapp-backend.git
 
-# Или через SSH
+# Или через SSH (рекомендуется)
 git remote add origin git@github.com:your-username/bestapp-backend.git
 ```
 
-### 5. Отправка кода на сервер
+### 4. Отправка кода
 
 ```bash
 git branch -M main
