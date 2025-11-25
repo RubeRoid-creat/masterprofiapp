@@ -12,12 +12,15 @@ import { query } from '../database/db.js';
 // Инициализация Firebase Admin SDK
 import admin from 'firebase-admin';
 import { config } from '../config.js';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Флаг для отслеживания инициализации Firebase
+let isFirebaseInitialized = false;
 
 // Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
@@ -27,17 +30,30 @@ if (!admin.apps.length) {
       ? join(__dirname, '..', config.firebaseServiceAccount.replace('./', ''))
       : config.firebaseServiceAccount;
     
-    const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
-    
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
-    
-    console.log('✅ Firebase Admin SDK инициализирован');
+    // Проверяем существование файла
+    if (!existsSync(serviceAccountPath)) {
+      console.log('⚠️ Firebase service account file not found:', serviceAccountPath);
+      console.log('⚠️ Push-уведомления будут работать в режиме заглушки');
+      console.log('💡 Для включения push-уведомлений загрузите firebase-service-account.json на сервер');
+      isFirebaseInitialized = false;
+    } else {
+      const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+      
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+      
+      isFirebaseInitialized = true;
+      console.log('✅ Firebase Admin SDK инициализирован');
+    }
   } catch (error) {
     console.error('❌ Ошибка инициализации Firebase Admin SDK:', error.message);
     console.log('⚠️ Push-уведомления будут работать в режиме заглушки');
+    console.log('💡 Для включения push-уведомлений проверьте наличие firebase-service-account.json');
+    isFirebaseInitialized = false;
   }
+} else {
+  isFirebaseInitialized = true;
 }
 
 /**
@@ -80,6 +96,11 @@ export async function sendPushNotification(userId, notification) {
     }
     
     // Отправка через Firebase Admin SDK
+    if (!isFirebaseInitialized) {
+      console.log(`⚠️ Firebase не инициализирован, push-уведомление не отправлено для пользователя #${userId}`);
+      return { success: false, reason: 'firebase_not_initialized' };
+    }
+    
     try {
       const message = {
         notification: {
