@@ -12,7 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.bestapp.R
 import com.example.bestapp.auth.AuthManager
-import com.example.bestapp.auth.SimpleUserRepository
+import com.example.bestapp.api.ApiRepository
+import android.util.Log
 import com.example.bestapp.data.VerificationStatus
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
@@ -111,29 +112,68 @@ class ProfileFragment : Fragment() {
         chip: Chip
     ) {
         lifecycleScope.launch {
-            val authManager = AuthManager(requireContext())
-            val userId = authManager.userId.first()
+            val prefsManager = com.example.bestapp.data.PreferencesManager.getInstance(requireContext())
+            val token = prefsManager.getAuthToken()
             
-            if (userId != null) {
-                val repo = SimpleUserRepository(requireContext())
-                val user = repo.getUserByEmail("master@test.ru") // Demo: загрузить по userId
+            if (token != null) {
+                // Загружаем данные через API
+                val apiRepository = ApiRepository()
                 
-                user?.let {
-                    name.text = it.fullName
-                    email.text = it.email
-                    phone.text = "+7 ${it.phone}"
-                    spec.text = it.specialization
+                // Получаем статистику мастера (теперь включает имя, email, телефон)
+                val statsResult = apiRepository.getMasterStats()
+                statsResult.onSuccess { response ->
+                    // response содержит master и stats
+                    val masterData = response["master"] as? Map<*, *>
+                    val statsData = response["stats"] as? Map<*, *>
+                    
+                    // Заполняем данные пользователя
+                    masterData?.let { master ->
+                        master["name"]?.let { name.text = it.toString() }
+                        master["email"]?.let { email.text = it.toString() }
+                        master["phone"]?.let { phone.text = it.toString() }
+                        master["specialization"]?.let { specList ->
+                            val specArray = specList as? List<*>
+                            spec.text = specArray?.joinToString(", ") ?: ""
+                        }
+                        master["rating"]?.let { 
+                            rating?.text = String.format("%.1f", (it as? Number)?.toDouble() ?: 0.0) 
+                        }
+                        master["completedOrders"]?.let { 
+                            completedOrders?.text = it.toString() 
+                        }
+                        master["isOnShift"]?.let { isOnShift ->
+                            val isShift = (isOnShift as? Boolean) ?: false
+                            status?.text = if (isShift) "На смене" else "Не на смене"
+                            statusIndicator?.setBackgroundResource(
+                                if (isShift) R.drawable.circle_green else R.drawable.circle_red
+                            )
+                        }
+                    }
+                    
+                    statsData?.let { stats ->
+                        stats["averageRating"]?.let { 
+                            rating?.text = String.format("%.1f", (it as? Number)?.toDouble() ?: 0.0) 
+                        }
+                        stats["reviewsCount"]?.let { 
+                            reviewsCount?.text = "($it отзывов)" 
+                        }
+                    }
+                }.onFailure {
+                    Log.e("ProfileFragment", "Failed to load master stats: ${it.message}")
+                    name.text = "Ошибка загрузки"
+                    email.text = ""
+                    phone.text = ""
+                    spec.text = ""
                 }
+            } else {
+                // Нет токена - пользователь не залогинен
+                name.text = "Не авторизован"
+                email.text = ""
+                phone.text = ""
+                spec.text = ""
             }
             
-            // Demo данные для новых полей
-            rating?.text = "4.8"
-            reviewsCount?.text = "(135 отзывов)"
-            status?.text = "На смене"
-            statusIndicator?.setBackgroundResource(R.drawable.circle_green)
-            completedOrders?.text = "247"
-            
-            // Demo: статус верификации
+            // Статус верификации (пока demo)
             val verificationStatus = VerificationStatus.NOT_VERIFIED
             chip.text = verificationStatus.displayName
         }

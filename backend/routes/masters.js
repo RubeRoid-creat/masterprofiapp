@@ -222,7 +222,16 @@ router.get('/wallet', authenticate, (req, res) => {
 // Получить статистику мастера
 router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
   try {
-    const master = query.get('SELECT * FROM masters WHERE user_id = ?', [req.user.id]);
+    // Получаем данные мастера с информацией о пользователе
+    const master = query.get(`
+      SELECT 
+        m.*,
+        u.name, u.phone, u.email
+      FROM masters m
+      JOIN users u ON m.user_id = u.id
+      WHERE m.user_id = ?
+    `, [req.user.id]);
+    
     if (!master) {
       return res.status(404).json({ error: 'Профиль мастера не найден' });
     }
@@ -249,13 +258,25 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
       [master.id]
     );
     
+    // Парсим специализацию
+    let specialization = [];
+    try {
+      specialization = JSON.parse(master.specialization || '[]');
+    } catch (e) {
+      specialization = [];
+    }
+    
     res.json({
       master: {
         id: master.id,
+        name: master.name,
+        email: master.email,
+        phone: master.phone,
         rating: master.rating,
         completedOrders: master.completed_orders,
         isOnShift: master.is_on_shift === 1,
-        status: master.status
+        status: master.status,
+        specialization: specialization
       },
       stats: {
         totalOrders: totalOrders.count,

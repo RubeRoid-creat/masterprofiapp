@@ -30,7 +30,9 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupAuth() {
-        // Быстрая авторизация для тестирования (мастер Смирнов)
+        // Автоматический логин отключен - пользователь должен входить вручную
+        // Для тестирования можно раскомментировать код ниже:
+        /*
         lifecycleScope.launch {
             authViewModel.isLoggedIn.collect { isLoggedIn ->
                 if (!isLoggedIn) {
@@ -39,6 +41,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        */
     }
 
     override fun onStart() {
