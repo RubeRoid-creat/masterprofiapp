@@ -254,11 +254,22 @@ pm2 status
 # 2. Логи сервера
 pm2 logs bestapp-backend
 
-# 3. API endpoint
-curl http://localhost:3000/api/orders
+# 3. Проверка доступности сервера (публичный эндпоинт)
+curl http://localhost:3000/api/promotions/types
 
-# 4. WebSocket (если настроен)
-curl http://localhost:3000/ws
+# 4. Проверка с токеном (после логина получите токен)
+# Сначала залогиньтесь и получите токен:
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"master@test.com","password":"password123"}'
+
+# Затем используйте токен для проверки:
+# TOKEN="ваш_токен_здесь"
+# curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/orders
+
+# 5. WebSocket (проверка подключения)
+# WebSocket требует специального клиента, но можно проверить через браузер:
+# ws://localhost:3000/ws
 ```
 
 ## 🆘 Решение проблем

@@ -38,7 +38,14 @@ pm2 startup  # Выполните команду, которую покажет 
 ```bash
 pm2 status
 pm2 logs bestapp-backend
-curl http://localhost:3000/api/orders
+
+# Проверка доступности (публичный эндпоинт)
+curl http://localhost:3000/api/promotions/types
+
+# Если нужно проверить с авторизацией, сначала залогиньтесь:
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"master@test.com","password":"password123"}'
 ```
 
 ## 🔄 Обновление кода
