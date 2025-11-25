@@ -258,6 +258,68 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
       [master.id]
     );
     
+    // Получаем статистику за сегодня
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.toISOString();
+    const todayEnd = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    
+    const todayOrders = query.get(
+      `SELECT COUNT(*) as count FROM orders 
+       WHERE assigned_master_id = ? 
+       AND (created_at >= ? OR updated_at >= ?)`,
+      [master.id, todayStart, todayStart]
+    );
+    
+    const todayRevenue = query.get(
+      `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
+       WHERE assigned_master_id = ? 
+       AND repair_status = 'completed' 
+       AND completed_at >= ?`,
+      [master.id, todayStart]
+    );
+    
+    // Получаем доходы за последние 7 дней
+    const weeklyRevenue = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dayStart = new Date(date.setHours(0, 0, 0, 0)).toISOString();
+      const dayEnd = new Date(date.setHours(23, 59, 59, 999)).toISOString();
+      
+      const dayRevenue = query.get(
+        `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
+         WHERE assigned_master_id = ? 
+         AND repair_status = 'completed' 
+         AND completed_at >= ? AND completed_at <= ?`,
+        [master.id, dayStart, dayEnd]
+      );
+      
+      weeklyRevenue.push(dayRevenue.total || 0);
+    }
+    
+    // Получаем новые заказы (не назначенные)
+    const newOrders = query.get(
+      'SELECT COUNT(*) as count FROM orders WHERE request_status = ?',
+      ['new']
+    );
+    
+    // Получаем количество уникальных клиентов
+    const uniqueClients = query.get(
+      'SELECT COUNT(DISTINCT client_id) as count FROM orders WHERE assigned_master_id = ?',
+      [master.id]
+    );
+    
+    // Получаем доход за текущий месяц
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+    const monthlyRevenue = query.get(
+      `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
+       WHERE assigned_master_id = ? 
+       AND repair_status = 'completed' 
+       AND completed_at >= ?`,
+      [master.id, monthStart]
+    );
+    
     // Парсим специализацию
     let specialization = [];
     try {
@@ -283,7 +345,13 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
         completedOrders: completedOrders.count,
         inProgressOrders: inProgressOrders.count,
         averageRating: avgRating.avg || 0,
-        reviewsCount: avgRating.count
+        reviewsCount: avgRating.count,
+        todayOrders: todayOrders.count || 0,
+        todayRevenue: todayRevenue.total || 0,
+        weeklyRevenue: weeklyRevenue,
+        newOrders: newOrders.count || 0,
+        clientsCount: uniqueClients.count || 0,
+        monthlyRevenue: monthlyRevenue.total || 0
       }
     });
   } catch (error) {

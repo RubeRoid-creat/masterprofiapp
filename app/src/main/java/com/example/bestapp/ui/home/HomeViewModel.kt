@@ -1,8 +1,11 @@
 package com.example.bestapp.ui.home
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bestapp.api.ApiRepository
+import com.example.bestapp.api.RetrofitClient
 import com.example.bestapp.data.DataRepository
 import com.example.bestapp.data.News
 import com.example.bestapp.data.Statistics
@@ -15,14 +18,19 @@ import kotlinx.coroutines.launch
 data class TodayStats(
     val todayRevenue: Double = 0.0,
     val todayOrders: Int = 0,
-    val rating: Double = 4.8,
-    val reviewsCount: Int = 135,
+    val rating: Double = 0.0,
+    val reviewsCount: Int = 0,
     val isShiftActive: Boolean = false
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = DataRepository
+    private val apiRepository = ApiRepository()
     private val prefsManager = PreferencesManager.getInstance(application)
+    
+    companion object {
+        private const val TAG = "HomeViewModel"
+    }
     
     private val _statistics = MutableStateFlow(Statistics(0, 0, 0, 0.0))
     val statistics: StateFlow<Statistics> = _statistics.asStateFlow()
@@ -37,19 +45,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val news: StateFlow<List<News>> = _news.asStateFlow()
     
     init {
+        // Инициализируем RetrofitClient
+        RetrofitClient.initialize(application)
         loadData()
     }
     
     private fun loadData() {
         viewModelScope.launch {
-            // Загружаем статистику
-            _statistics.value = repository.getStatistics()
-            
-            // Загружаем данные "Сегодня"
-            loadTodayStats()
-            
-            // Загружаем доходы за неделю
-            _weeklyRevenue.value = repository.getWeeklyRevenue()
+            // Загружаем статистику мастера через API
+            loadMasterStats()
             
             // Загружаем новости
             repository.news.collect { newsList ->
@@ -58,36 +62,67 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
-    private fun loadTodayStats() {
-        viewModelScope.launch {
-            // Получаем статус смены
-            val isShiftActive = prefsManager.isShiftActive()
-            
-            // TODO: Загрузить реальные данные из API
-            // Пока используем демо-данные
-            val todayRevenue = calculateTodayRevenue()
-            val todayOrders = calculateTodayOrders()
-            
-            _todayStats.value = TodayStats(
-                todayRevenue = todayRevenue,
-                todayOrders = todayOrders,
-                rating = 4.8,
-                reviewsCount = 135,
-                isShiftActive = isShiftActive
-            )
+    private suspend fun loadMasterStats() {
+        try {
+            val result = apiRepository.getMasterStats()
+            result.onSuccess { response ->
+                val masterData = response["master"] as? Map<*, *>
+                val statsData = response["stats"] as? Map<*, *>
+                
+                // Обновляем статистику
+                statsData?.let { stats ->
+                    val activeOrders = (stats["inProgressOrders"] as? Number)?.toInt() ?: 0
+                    val newOrders = (stats["newOrders"] as? Number)?.toInt() ?: 0
+                    val clientsCount = (stats["clientsCount"] as? Number)?.toInt() ?: 0
+                    val monthlyRevenue = (stats["monthlyRevenue"] as? Number)?.toDouble() ?: 0.0
+                    
+                    _statistics.value = Statistics(
+                        activeOrdersCount = activeOrders,
+                        newOrdersCount = newOrders,
+                        clientsCount = clientsCount,
+                        monthlyRevenue = monthlyRevenue
+                    )
+                    
+                    // Обновляем данные "Сегодня"
+                    val todayRevenue = (stats["todayRevenue"] as? Number)?.toDouble() ?: 0.0
+                    val todayOrders = (stats["todayOrders"] as? Number)?.toInt() ?: 0
+                    val rating = (stats["averageRating"] as? Number)?.toDouble() ?: 0.0
+                    val reviewsCount = (stats["reviewsCount"] as? Number)?.toInt() ?: 0
+                    val isShiftActive = (masterData?.get("isOnShift") as? Boolean) ?: false
+                    
+                    _todayStats.value = TodayStats(
+                        todayRevenue = todayRevenue,
+                        todayOrders = todayOrders,
+                        rating = rating,
+                        reviewsCount = reviewsCount,
+                        isShiftActive = isShiftActive
+                    )
+                    
+                    // Обновляем доходы за неделю
+                    val weeklyRevenueData = stats["weeklyRevenue"] as? List<*>
+                    if (weeklyRevenueData != null) {
+                        _weeklyRevenue.value = weeklyRevenueData.mapNotNull { 
+                            (it as? Number)?.toDouble() ?: 0.0 
+                        }
+                    }
+                    
+                    Log.d(TAG, "✅ Master stats loaded: todayRevenue=$todayRevenue, todayOrders=$todayOrders, rating=$rating")
+                }
+            }.onFailure { error ->
+                Log.e(TAG, "❌ Failed to load master stats: ${error.message}")
+                // В случае ошибки используем демо-данные
+                val isShiftActive = prefsManager.isShiftActive()
+                _todayStats.value = TodayStats(
+                    todayRevenue = 0.0,
+                    todayOrders = 0,
+                    rating = 0.0,
+                    reviewsCount = 0,
+                    isShiftActive = isShiftActive
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading master stats", e)
         }
-    }
-    
-    private suspend fun calculateTodayRevenue(): Double {
-        // TODO: Реальная логика расчета дохода за сегодня
-        // Пока возвращаем демо-значение
-        return 5200.0
-    }
-    
-    private suspend fun calculateTodayOrders(): Int {
-        // TODO: Реальная логика подсчета заказов за сегодня
-        // Пока возвращаем демо-значение
-        return 8
     }
     
     fun toggleShift() {
