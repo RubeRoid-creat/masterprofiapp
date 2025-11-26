@@ -29,8 +29,8 @@ api.interceptors.response.use(
     console.error('API Error:', error);
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_token');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (window.location.pathname !== '/admin/login') {
+        window.location.href = '/admin/login';
       }
     } else if (!error.response) {
       // Нет ответа от сервера (сервер не запущен или CORS проблема)
