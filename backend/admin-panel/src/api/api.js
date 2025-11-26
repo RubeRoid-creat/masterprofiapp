@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // Получаем URL из переменных окружения или используем дефолтный
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// По умолчанию указываем боевой backend на сервере
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://212.74.227.208:3000/api';
 
 console.log('API Base URL:', API_BASE_URL);
 

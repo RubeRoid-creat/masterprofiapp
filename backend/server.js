@@ -47,6 +47,12 @@ app.use('/uploads', express.static(join(__dirname, 'uploads')));
 // Статичный сайт обновлений приложений
 app.use('/updates', express.static(join(__dirname, 'public', 'updates')));
 
+// Админ-панель (SPA на React/Vite), собирается в backend/admin-panel/dist
+app.use('/admin', express.static(join(__dirname, 'admin-panel', 'dist')));
+app.get('/admin/*', (req, res) => {
+  res.sendFile(join(__dirname, 'admin-panel', 'dist', 'index.html'));
+});
+
 // Логирование запросов
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
