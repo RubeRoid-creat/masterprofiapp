@@ -1226,7 +1226,7 @@ router.get('/wallet/transactions', authenticate, authorize('master'), (req, res)
 });
 
 // Запросить выплату
-router.post('/wallet/payout', authenticate, authorize('master'), (req, res) => {
+router.post('/wallet/payout', authenticate, authorize('master'), async (req, res) => {
   try {
     const { amount, payoutMethod, payoutDetails } = req.body;
     
@@ -1245,7 +1245,7 @@ router.post('/wallet/payout', authenticate, authorize('master'), (req, res) => {
     const pendingPayouts = query.get(`
       SELECT COALESCE(SUM(amount), 0) as total 
       FROM master_transactions 
-      WHERE master_id = ? AND transaction_type = 'payout' AND status = 'pending'
+      WHERE master_id = ? AND transaction_type = 'payout' AND status IN ('pending', 'processing')
     `, [master.id]);
     
     const availableForPayout = availableBalance - (pendingPayouts.total || 0);
@@ -1256,14 +1256,105 @@ router.post('/wallet/payout', authenticate, authorize('master'), (req, res) => {
       });
     }
     
-    // Создаем транзакцию на выплату
+    const effectivePayoutMethod = payoutMethod || 'bank';
+    const details = payoutDetails || {};
+    
+    // Если выплата через ЮMoney
+    if (effectivePayoutMethod === 'yoomoney' && details.yoomoneyWallet) {
+      try {
+        // Импортируем сервис динамически, чтобы избежать ошибок если он не настроен
+        const { yooMoneyService } = await import('../services/yoomoney-service.js');
+        
+        // Создаем транзакцию со статусом processing
+        const transactionResult = query.run(`
+          INSERT INTO master_transactions 
+          (master_id, transaction_type, amount, status, payout_method, payout_details)
+          VALUES (?, 'payout', ?, 'processing', ?, ?)
+        `, [master.id, amount, 'yoomoney', JSON.stringify(details)]);
+        
+        const transactionId = transactionResult.lastInsertRowid;
+        
+        // Выполняем выплату через ЮMoney
+        const payoutResult = await yooMoneyService.payoutToWallet({
+          to: details.yoomoneyWallet,
+          amount: amount,
+          label: `Выплата мастеру #${master.id}`,
+          masterId: master.id.toString()
+        });
+        
+        // Обновляем транзакцию с данными от ЮMoney
+        query.run(`
+          UPDATE master_transactions 
+          SET status = 'completed', 
+              payout_details = ?,
+              completed_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `, [
+          JSON.stringify({
+            ...details,
+            yoomoney_request_id: payoutResult.requestId,
+            yoomoney_status: payoutResult.status
+          }),
+          transactionId
+        ]);
+        
+        // Списываем средства с баланса мастера
+        query.run(`
+          UPDATE masters 
+          SET balance = COALESCE(balance, 0) - ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = ?
+        `, [amount, master.id]);
+        
+        const transaction = query.get('SELECT * FROM master_transactions WHERE id = ?', [transactionId]);
+        
+        console.log(`✅ Выплата через ЮMoney выполнена: master_id=${master.id}, amount=${amount}, request_id=${payoutResult.requestId}`);
+        
+        res.status(201).json({
+          message: 'Выплата успешно выполнена через ЮMoney',
+          transaction,
+          yooMoney: {
+            requestId: payoutResult.requestId,
+            status: payoutResult.status
+          }
+        });
+        return;
+      } catch (yooMoneyError) {
+        console.error('Ошибка выплаты через ЮMoney:', yooMoneyError);
+        
+        // Если ошибка, создаем транзакцию со статусом failed
+        const failedTransactionResult = query.run(`
+          INSERT INTO master_transactions 
+          (master_id, transaction_type, amount, status, payout_method, payout_details)
+          VALUES (?, 'payout', ?, 'failed', ?, ?)
+        `, [master.id, amount, 'yoomoney', JSON.stringify({
+          ...details,
+          error: yooMoneyError.message
+        })]);
+        
+        if (yooMoneyError.message.includes('не настроен')) {
+          return res.status(503).json({
+            error: 'Выплаты через ЮMoney временно недоступны',
+            details: 'ЮMoney не настроен. Обратитесь к администратору.'
+          });
+        }
+        
+        return res.status(500).json({
+          error: 'Ошибка выплаты через ЮMoney',
+          details: yooMoneyError.message
+        });
+      }
+    }
+    
+    // Для других методов выплат (bank, sbp) - создаем запрос на выплату
     const result = query.run(`
       INSERT INTO master_transactions 
       (master_id, transaction_type, amount, status, payout_method, payout_details)
       VALUES (?, 'payout', ?, 'pending', ?, ?)
-    `, [master.id, amount, payoutMethod || 'bank', payoutDetails ? JSON.stringify(payoutDetails) : null]);
+    `, [master.id, amount, effectivePayoutMethod, details ? JSON.stringify(details) : null]);
     
     const transaction = query.get('SELECT * FROM master_transactions WHERE id = ?', [result.lastInsertRowid]);
+    
+    console.log(`📝 Создан запрос на выплату: master_id=${master.id}, amount=${amount}, method=${effectivePayoutMethod}`);
     
     res.status(201).json({
       message: 'Запрос на выплату создан',
@@ -1271,7 +1362,7 @@ router.post('/wallet/payout', authenticate, authorize('master'), (req, res) => {
     });
   } catch (error) {
     console.error('Ошибка создания запроса на выплату:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
   }
 });
 

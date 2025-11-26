@@ -8,6 +8,7 @@ import {
   getClientPayments,
   calculatePlatformCommission
 } from '../services/payment-service.js';
+import yooKassaService from '../services/yookassa-service.js';
 
 const router = express.Router();
 
@@ -48,7 +49,7 @@ router.post('/', authenticate, (req, res) => {
       clientId: order.client_id,
       amount,
       paymentMethod,
-      paymentProvider: paymentMethod === 'cash' ? 'manual' : 'yookassa' // TODO: настроить провайдер
+      paymentProvider: paymentMethod === 'cash' ? 'manual' : 'yookassa'
     });
     
     // Если оплата наличными, сразу помечаем как завершенную
@@ -69,6 +70,112 @@ router.post('/', authenticate, (req, res) => {
     });
   } catch (error) {
     console.error('Ошибка создания платежа:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Создать платеж через ЮKassa (клиент)
+router.post('/create-yookassa', authenticate, async (req, res) => {
+  try {
+    const { orderId, amount, returnUrl } = req.body;
+    
+    if (!orderId || !amount) {
+      return res.status(400).json({ error: 'Необходимо указать orderId и amount' });
+    }
+    
+    // Проверяем, что заказ принадлежит клиенту
+    const order = query.get(`
+      SELECT o.*, c.id as client_id, u.name as client_name, u.email as client_email
+      FROM orders o
+      JOIN clients c ON o.client_id = c.id
+      JOIN users u ON c.user_id = u.id
+      WHERE o.id = ? AND c.user_id = ?
+    `, [orderId, req.user.id]);
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Заказ не найден или не принадлежит вам' });
+    }
+    
+    // Проверяем, не оплачен ли уже заказ
+    const existingPayment = query.get(
+      'SELECT * FROM payments WHERE order_id = ? AND payment_status = ?',
+      [orderId, 'completed']
+    );
+    
+    if (existingPayment) {
+      return res.status(400).json({ error: 'Заказ уже оплачен' });
+    }
+    
+    // Проверяем, есть ли уже pending платеж через ЮKassa
+    let payment = query.get(
+      'SELECT * FROM payments WHERE order_id = ? AND payment_provider = ? AND payment_status IN (?, ?)',
+      [orderId, 'yookassa', 'pending', 'processing']
+    );
+    
+    // Если нет pending платежа, создаем новый
+    if (!payment) {
+      payment = createPayment({
+        orderId,
+        clientId: order.client_id,
+        amount,
+        paymentMethod: 'online',
+        paymentProvider: 'yookassa'
+      });
+    }
+    
+    // Создаем платеж в ЮKassa
+    try {
+      const yooKassaPayment = await yooKassaService.createPayment({
+        amount: parseFloat(amount),
+        description: `Оплата заказа #${order.order_number || orderId}`,
+        orderId: orderId,
+        returnUrl: returnUrl || `${process.env.APP_URL || 'http://localhost:3000'}/payment/success?orderId=${orderId}`,
+        metadata: {
+          payment_id: payment.id,
+          order_number: order.order_number || orderId.toString()
+        }
+      });
+      
+      // Обновляем платеж с ID от ЮKassa
+      updatePaymentStatus(payment.id, 'processing', {
+        provider_payment_id: yooKassaPayment.id
+      });
+      
+      res.status(201).json({
+        message: 'Платеж создан',
+        payment: {
+          id: payment.id,
+          orderId: payment.order_id,
+          amount: payment.amount,
+          status: 'processing'
+        },
+        yooKassa: {
+          paymentId: yooKassaPayment.id,
+          confirmationUrl: yooKassaPayment.confirmationUrl,
+          status: yooKassaPayment.status
+        }
+      });
+    } catch (yooKassaError) {
+      console.error('Ошибка создания платежа в ЮKassa:', yooKassaError);
+      
+      // Если ЮKassa не настроен, возвращаем ошибку
+      if (yooKassaError.message.includes('не настроен')) {
+        return res.status(503).json({ 
+          error: 'Платежная система временно недоступна',
+          details: 'ЮKassa не настроен. Обратитесь к администратору.'
+        });
+      }
+      
+      // Обновляем статус платежа на failed
+      updatePaymentStatus(payment.id, 'failed');
+      
+      return res.status(500).json({ 
+        error: 'Ошибка создания платежа',
+        details: yooKassaError.message 
+      });
+    }
+  } catch (error) {
+    console.error('Ошибка создания платежа через ЮKassa:', error);
     res.status(500).json({ error: 'Ошибка сервера', details: error.message });
   }
 });
@@ -159,15 +266,139 @@ router.get('/:id', authenticate, (req, res) => {
   }
 });
 
-// Webhook от платежной системы (для будущей интеграции)
+// Проверить статус платежа в ЮKassa
+router.get('/:id/yookassa-status', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Получаем платеж
+    const payment = query.get('SELECT * FROM payments WHERE id = ?', [id]);
+    if (!payment) {
+      return res.status(404).json({ error: 'Платеж не найден' });
+    }
+    
+    // Проверяем доступ
+    const client = query.get('SELECT id FROM clients WHERE user_id = ?', [req.user.id]);
+    if (req.user.role === 'client' && (!client || payment.client_id !== client.id)) {
+      return res.status(403).json({ error: 'Нет доступа к этому платежу' });
+    }
+    
+    // Если платеж не через ЮKassa, возвращаем текущий статус
+    if (payment.payment_provider !== 'yookassa' || !payment.provider_payment_id) {
+      return res.json({
+        paymentId: payment.id,
+        status: payment.payment_status,
+        provider: payment.payment_provider
+      });
+    }
+    
+    // Получаем актуальный статус из ЮKassa
+    try {
+      const yooKassaPayment = await yooKassaService.getPayment(payment.provider_payment_id);
+      
+      // Обновляем статус в БД, если изменился
+      const yooKassaStatus = yooKassaPayment.status;
+      let dbStatus = payment.payment_status;
+      
+      if (yooKassaStatus === 'succeeded' && dbStatus !== 'completed') {
+        updatePaymentStatus(payment.id, 'completed', {
+          provider_response: yooKassaPayment
+        });
+        processPaymentSuccess(payment.id);
+        dbStatus = 'completed';
+      } else if (yooKassaStatus === 'canceled' && dbStatus !== 'cancelled') {
+        updatePaymentStatus(payment.id, 'cancelled', {
+          provider_response: yooKassaPayment
+        });
+        dbStatus = 'cancelled';
+      }
+      
+      res.json({
+        paymentId: payment.id,
+        yooKassaPaymentId: payment.provider_payment_id,
+        status: dbStatus,
+        yooKassaStatus: yooKassaStatus,
+        amount: yooKassaPayment.amount?.value,
+        currency: yooKassaPayment.amount?.currency
+      });
+    } catch (yooKassaError) {
+      console.error('Ошибка проверки статуса в ЮKassa:', yooKassaError);
+      // Возвращаем статус из БД в случае ошибки
+      res.json({
+        paymentId: payment.id,
+        status: payment.payment_status,
+        error: 'Не удалось проверить статус в ЮKassa'
+      });
+    }
+  } catch (error) {
+    console.error('Ошибка проверки статуса платежа:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Webhook от ЮKassa
+router.post('/webhook/yookassa', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const webhookData = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    
+    console.log('📥 Webhook от ЮKassa:', JSON.stringify(webhookData, null, 2));
+    
+    // Обрабатываем webhook через сервис
+    const result = await yooKassaService.handleWebhook(webhookData);
+    
+    if (result.event === 'payment.succeeded') {
+      // Ищем платеж по ID от ЮKassa
+      const payment = query.get(
+        'SELECT * FROM payments WHERE provider_payment_id = ?',
+        [result.paymentId]
+      );
+      
+      if (payment && payment.payment_status !== 'completed') {
+        console.log(`✅ Платеж успешен: payment_id=${payment.id}, order_id=${payment.order_id}`);
+        
+        // Обновляем статус платежа
+        updatePaymentStatus(payment.id, 'completed', {
+          provider_response: webhookData
+        });
+        
+        // Обрабатываем успешную оплату (начисление мастеру, комиссии и т.д.)
+        processPaymentSuccess(payment.id);
+        
+        // TODO: Отправить уведомление клиенту и мастеру о успешной оплате
+      } else if (!payment) {
+        console.warn(`⚠️ Платеж не найден для ЮKassa payment_id: ${result.paymentId}`);
+      }
+    } else if (result.event === 'payment.canceled') {
+      // Ищем и отменяем платеж
+      const payment = query.get(
+        'SELECT * FROM payments WHERE provider_payment_id = ?',
+        [result.paymentId]
+      );
+      
+      if (payment && payment.payment_status !== 'cancelled') {
+        updatePaymentStatus(payment.id, 'cancelled', {
+          provider_response: webhookData
+        });
+        console.log(`❌ Платеж отменен: payment_id=${payment.id}`);
+      }
+    }
+    
+    // ЮKassa ожидает ответ 200 OK
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('❌ Ошибка обработки webhook от ЮKassa:', error);
+    // Все равно возвращаем 200, чтобы ЮKassa не повторял запрос
+    res.status(200).json({ received: true, error: error.message });
+  }
+});
+
+// Webhook от других платежных систем (общий endpoint)
 router.post('/webhook/:provider', (req, res) => {
   try {
     const { provider } = req.params;
-    // TODO: Реализовать обработку webhook от платежной системы
     console.log(`Webhook от ${provider}:`, req.body);
     
-    // Здесь будет логика обработки webhook
-    // Пока просто возвращаем успех
+    // Здесь будет логика обработки webhook от других систем
     res.json({ message: 'Webhook получен' });
   } catch (error) {
     console.error('Ошибка обработки webhook:', error);

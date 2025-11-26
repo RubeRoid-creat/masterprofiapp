@@ -44,7 +44,8 @@ class YooKassaService {
     try {
       const { amount, description, orderId, returnUrl, metadata = {} } = paymentData;
       
-      const payment = await this.checkout.createPayment({
+      // Формируем объект платежа
+      const paymentData = {
         amount: {
           value: amount.toFixed(2),
           currency: 'RUB'
@@ -55,28 +56,19 @@ class YooKassaService {
         },
         description: description || `Оплата заказа #${orderId}`,
         metadata: {
-          order_id: orderId,
+          order_id: orderId.toString(),
           ...metadata
-        },
-        receipt: {
-          // Данные для онлайн-кассы (ФЗ-54)
-          // TODO: Заполнить данные компании (ИНН, система налогообложения)
-          customer: {
-            // Данные клиента для чека
-          },
-          items: [
-            {
-              description: description || `Оплата заказа #${orderId}`,
-              quantity: '1.00',
-              amount: {
-                value: amount.toFixed(2),
-                currency: 'RUB'
-              },
-              vat_code: 1 // НДС не облагается (для услуг)
-            }
-          ]
         }
-      }, 'payment_' + orderId + '_' + Date.now()); // idempotence_key
+      };
+      
+      // Добавляем чек только если настроены данные компании (ИНН и т.д.)
+      // TODO: После настройки онлайн-кассы добавить receipt
+      // if (process.env.OFD_INN && process.env.OFD_PAYMENT_ADDRESS) {
+      //   paymentData.receipt = { ... };
+      // }
+      
+      const idempotenceKey = 'payment_' + orderId + '_' + Date.now();
+      const payment = await this.checkout.createPayment(paymentData, idempotenceKey);
       
       console.log(`✅ Создан платеж ЮKassa: ${payment.id} для заказа #${orderId}`);
       
