@@ -73,6 +73,7 @@
                         android:text="0 ₽"
                         android:textSize="32sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginTop="8dp" />
 
                     <View
@@ -149,6 +150,7 @@
                         android:text="0 ₽"
                         android:textSize="20sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginTop="4dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -168,6 +170,7 @@
                 android:text="История транзакций"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="8dp" />
 
             <androidx.recyclerview.widget.RecyclerView

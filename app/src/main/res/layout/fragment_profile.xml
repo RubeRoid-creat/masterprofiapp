@@ -415,6 +415,7 @@
                         android:text="@string/profile_verification_status"
                         android:textSize="18sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.chip.Chip
@@ -457,6 +458,7 @@
                         android:text="Кошелек"
                         android:textSize="18sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -492,6 +494,7 @@
                         android:text="Статистика"
                         android:textSize="18sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -525,6 +528,7 @@
                         android:text="Подписки"
                         android:textSize="18sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -558,6 +562,7 @@
                         android:text="Продвижения"
                         android:textSize="18sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.button.MaterialButton
