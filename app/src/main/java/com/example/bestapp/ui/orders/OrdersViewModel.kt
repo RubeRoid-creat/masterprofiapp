@@ -334,33 +334,40 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     
     fun startShift(latitude: Double = 56.859611, longitude: Double = 35.911896) {
         viewModelScope.launch {
-            Log.d(TAG, "Starting shift...")
+            Log.d(TAG, "Starting shift... current status=${_isShiftActive.value}")
             val result = apiRepository.startShift(latitude, longitude)
             result.onSuccess {
-                Log.d(TAG, "Shift started successfully")
+                Log.d(TAG, "Shift started successfully on server")
                 // Статус уже обновлен оптимистично, не перезаписываем
+                Log.d(TAG, "Current _isShiftActive=${_isShiftActive.value}, prefsManager=${prefsManager.isShiftActive()}")
                 Log.d(TAG, "Refreshing orders after shift start...")
                 refreshOrders() // Обновляем заказы после начала смены
             }.onFailure { error ->
-                Log.e(TAG, "Failed to start shift", error)
+                Log.e(TAG, "Failed to start shift: ${error.message}", error)
                 // Откатываем изменения при ошибке
+                Log.d(TAG, "Rolling back shift status to false")
                 _isShiftActive.value = false
                 prefsManager.setShiftActive(false)
+                Log.d(TAG, "After rollback: _isShiftActive=${_isShiftActive.value}, prefsManager=${prefsManager.isShiftActive()}")
             }
         }
     }
     
     fun endShift() {
         viewModelScope.launch {
+            Log.d(TAG, "Ending shift... current status=${_isShiftActive.value}")
             val result = apiRepository.endShift()
             result.onSuccess {
-                Log.d(TAG, "Shift ended successfully")
+                Log.d(TAG, "Shift ended successfully on server")
                 // Статус уже обновлен оптимистично, не перезаписываем
+                Log.d(TAG, "Current _isShiftActive=${_isShiftActive.value}, prefsManager=${prefsManager.isShiftActive()}")
             }.onFailure { error ->
-                Log.e(TAG, "Failed to end shift", error)
+                Log.e(TAG, "Failed to end shift: ${error.message}", error)
                 // Откатываем изменения при ошибке
+                Log.d(TAG, "Rolling back shift status to true")
                 _isShiftActive.value = true
                 prefsManager.setShiftActive(true)
+                Log.d(TAG, "After rollback: _isShiftActive=${_isShiftActive.value}, prefsManager=${prefsManager.isShiftActive()}")
             }
         }
     }

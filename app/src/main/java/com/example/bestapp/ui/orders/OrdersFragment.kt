@@ -299,20 +299,18 @@ class OrdersFragment : Fragment() {
     
     private fun setupShiftCard() {
         shiftCard?.setOnClickListener {
+            android.util.Log.d("OrdersFragment", "Shift card clicked!")
             val currentStatus = viewModel.isShiftActive.value
-            val newStatus = !currentStatus
+            android.util.Log.d("OrdersFragment", "Current shift status: $currentStatus")
             
-            // Оптимистичное обновление UI сразу
-            if (newStatus) {
-                shiftStatusText?.text = "✅ Вы на смене"
-                shiftStatusHint?.text = "Нажмите на карточку, чтобы завершить смену"
-            } else {
-                shiftStatusText?.text = "⏰ Вы не на смене"
-                shiftStatusHint?.text = "Нажмите на карточку, чтобы начать принимать заказы"
-            }
-            
+            // Вызываем toggleShift - он сам обновит UI через StateFlow
             viewModel.toggleShift()
         }
+        
+        // Убеждаемся, что карточка кликабельна
+        shiftCard?.isClickable = true
+        shiftCard?.isFocusable = true
+        android.util.Log.d("OrdersFragment", "Shift card setup complete, clickable=${shiftCard?.isClickable}")
     }
     
     private fun setupRecyclerView() {
@@ -606,7 +604,7 @@ class OrdersFragment : Fragment() {
         
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isShiftActive.collectLatest { isActive ->
-                android.util.Log.d("OrdersFragment", "Shift status changed: $isActive")
+                android.util.Log.d("OrdersFragment", "Shift status changed in StateFlow: $isActive")
                 updateShiftCard(isActive)
                 updateOrdersVisibility()
                 // Если смена стала активной, обновляем заявки

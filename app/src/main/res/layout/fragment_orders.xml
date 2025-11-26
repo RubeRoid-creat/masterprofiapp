@@ -198,6 +198,9 @@
                 app:cardElevation="6dp"
                 app:cardCornerRadius="24dp"
                 app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 style="@style/Widget.Material3.CardView.Elevated">
 
                 <LinearLayout
@@ -206,10 +209,7 @@
                     android:orientation="vertical"
                     android:padding="24dp"
                     android:gravity="center"
-                    android:background="?attr/colorPrimaryContainer"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground">
+                    android:background="?attr/colorPrimaryContainer">
 
                     <TextView
                         android:id="@+id/shift_status_text"
