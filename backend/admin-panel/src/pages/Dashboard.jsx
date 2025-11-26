@@ -24,15 +24,28 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadStats();
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      loadStats();
+    } else {
+      setError('Требуется авторизация');
+      setLoading(false);
+    }
   }, []);
 
   const loadStats = async () => {
     try {
+      setLoading(true);
+      setError('');
       const response = await statsAPI.getStats();
       setStats(response.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка загрузки статистики');
+      if (err.response?.status === 401) {
+        setError('Сессия истекла. Пожалуйста, войдите снова.');
+        // Редирект произойдет через interceptor
+      } else {
+        setError(err.response?.data?.error || 'Ошибка загрузки статистики');
+      }
     } finally {
       setLoading(false);
     }

@@ -26,15 +26,24 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error);
+    // Не логируем ошибки 401, если пользователь не залогинен - это нормально
+    if (error.response?.status !== 401) {
+      console.error('API Error:', error);
+    }
+    
     if (error.response?.status === 401) {
-      localStorage.removeItem('admin_token');
-      if (window.location.pathname !== '/admin/login') {
+      const token = localStorage.getItem('admin_token');
+      if (token) {
+        // Токен был, но стал невалидным - удаляем его
+        localStorage.removeItem('admin_token');
+      }
+      // Редиректим на логин только если мы не на странице логина
+      if (!window.location.pathname.includes('/login')) {
         window.location.href = '/admin/login';
       }
     } else if (!error.response) {
       // Нет ответа от сервера (сервер не запущен или CORS проблема)
-      console.error('Сервер недоступен. Убедитесь, что backend запущен на http://localhost:3000');
+      console.error('Сервер недоступен. Убедитесь, что backend запущен.');
     }
     return Promise.reject(error);
   }

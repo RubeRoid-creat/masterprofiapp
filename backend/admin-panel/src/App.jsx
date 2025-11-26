@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -24,8 +24,15 @@ const theme = createTheme({
 });
 
 function PrivateRoute({ children }) {
+  const location = useLocation();
   const token = localStorage.getItem('admin_token');
-  return token ? children : <Navigate to="/login" />;
+  
+  if (!token) {
+    // Сохраняем текущий путь для редиректа после логина
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  return children;
 }
 
 function AppContent() {
