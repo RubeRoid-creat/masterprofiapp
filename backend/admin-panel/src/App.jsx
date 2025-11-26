@@ -32,7 +32,7 @@ function AppContent() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
+      <Router basename="/admin">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route
