@@ -84,9 +84,17 @@ export const usersAPI = {
 
 // Верификация
 export const verificationAPI = {
-  getDocuments: (status) => api.get('/verification/admin/documents', { params: { status } }),
-  approve: (id) => api.post(`/verification/admin/documents/${id}/approve`),
-  reject: (id, reason) => api.post(`/verification/admin/documents/${id}/reject`, { reason }),
+  getDocuments: (status, groupByMaster) => api.get('/verification/admin/documents', { 
+    params: { status, groupByMaster: groupByMaster ? 'true' : undefined } 
+  }),
+  getMasters: (status) => api.get('/verification/admin/masters', { params: { status } }),
+  getMasterDocuments: (masterId, status) => api.get(`/verification/admin/masters/${masterId}/documents`, { 
+    params: { status } 
+  }),
+  approveDocument: (id) => api.post(`/verification/admin/documents/${id}/approve`),
+  rejectDocument: (id, reason) => api.post(`/verification/admin/documents/${id}/reject`, { reason }),
+  verifyMaster: (masterId) => api.post(`/verification/admin/masters/${masterId}/verify`),
+  rejectMaster: (masterId, reason) => api.post(`/verification/admin/masters/${masterId}/reject`, { reason }),
 };
 
 // Жалобы

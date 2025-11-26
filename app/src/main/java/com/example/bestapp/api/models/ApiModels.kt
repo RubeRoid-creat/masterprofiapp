@@ -527,4 +527,27 @@ data class PurchasePromotionRequest(
     @SerializedName("promotion_type") val promotionType: String
 )
 
+// ============= Verification Models =============
+
+data class ApiVerificationDocument(
+    val id: Long,
+    @SerializedName("master_id") val masterId: Long,
+    @SerializedName("document_type") val documentType: String,
+    @SerializedName("document_name") val documentName: String,
+    @SerializedName("file_url") val fileUrl: String,
+    @SerializedName("file_name") val fileName: String?,
+    @SerializedName("file_size") val fileSize: Long?,
+    @SerializedName("mime_type") val mimeType: String?,
+    val status: String, // 'pending', 'approved', 'rejected'
+    @SerializedName("rejection_reason") val rejectionReason: String?,
+    @SerializedName("reviewed_by") val reviewedBy: Long?,
+    @SerializedName("reviewed_at") val reviewedAt: String?,
+    @SerializedName("created_at") val createdAt: String
+)
+
+data class UploadDocumentResponse(
+    val message: String,
+    val document: ApiVerificationDocument
+)
+
 

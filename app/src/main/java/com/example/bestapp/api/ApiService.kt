@@ -235,6 +235,23 @@ interface ApiService {
     suspend fun checkVersion(
         @Body request: com.example.bestapp.api.models.VersionCheckRequest
     ): Response<com.example.bestapp.api.models.VersionCheckResponse>
+    
+    // ============= Верификация =============
+    
+    @GET("api/verification/documents")
+    suspend fun getVerificationDocuments(): Response<List<com.example.bestapp.api.models.ApiVerificationDocument>>
+    
+    @Multipart
+    @POST("api/verification/documents")
+    suspend fun uploadVerificationDocument(
+        @Part document: okhttp3.MultipartBody.Part,
+        @Part("documentType") documentType: okhttp3.RequestBody,
+        @Part("documentName") documentName: okhttp3.RequestBody,
+        @Part("inn") inn: okhttp3.RequestBody?
+    ): Response<com.example.bestapp.api.models.UploadDocumentResponse>
+    
+    @DELETE("api/verification/documents/{id}")
+    suspend fun deleteVerificationDocument(@Path("id") id: Long): Response<com.example.bestapp.api.models.MessageResponse>
 }
 
 

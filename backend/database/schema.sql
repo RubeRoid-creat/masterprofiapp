@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS masters (
     is_on_shift INTEGER DEFAULT 0, -- 0 = false, 1 = true
     balance REAL DEFAULT 0.0, -- Баланс кошелька мастера
     verification_status TEXT DEFAULT 'not_verified' CHECK(verification_status IN ('not_verified', 'pending', 'verified', 'rejected')),
+    inn TEXT, -- ИНН мастера для верификации
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

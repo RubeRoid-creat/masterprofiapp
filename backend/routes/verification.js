@@ -42,7 +42,7 @@ router.post('/documents', authenticate, authorize('master'), upload.single('docu
       return res.status(400).json({ error: 'Необходимо загрузить файл' });
     }
     
-    const { documentType, documentName } = req.body;
+    const { documentType, documentName, inn } = req.body;
     
     if (!documentType || !documentName) {
       // Удаляем загруженный файл, если нет обязательных полей
@@ -54,6 +54,31 @@ router.post('/documents', authenticate, authorize('master'), upload.single('docu
         }
       }
       return res.status(400).json({ error: 'Необходимо указать documentType и documentName' });
+    }
+    
+    // ИНН обязателен для верификации
+    if (!inn) {
+      if (req.file.path) {
+        try {
+          unlinkSync(req.file.path);
+        } catch (e) {
+          console.error('Ошибка удаления файла:', e);
+        }
+      }
+      return res.status(400).json({ error: 'ИНН обязателен для верификации. Пожалуйста, укажите ваш ИНН.' });
+    }
+    
+    // Валидация ИНН
+    const innRegex = /^\d{10}$|^\d{12}$/;
+    if (!innRegex.test(inn)) {
+      if (req.file.path) {
+        try {
+          unlinkSync(req.file.path);
+        } catch (e) {
+          console.error('Ошибка удаления файла:', e);
+        }
+      }
+      return res.status(400).json({ error: 'ИНН должен содержать 10 или 12 цифр' });
     }
     
     const master = query.get('SELECT id FROM masters WHERE user_id = ?', [req.user.id]);
@@ -86,6 +111,12 @@ router.post('/documents', authenticate, authorize('master'), upload.single('docu
       req.file.size,
       req.file.mimetype
     ]);
+    
+    // Сохраняем ИНН (обязательное поле)
+    query.run(
+      'UPDATE masters SET inn = ? WHERE id = ?',
+      [inn, master.id]
+    );
     
     // Обновляем статус верификации мастера на "pending", если был "not_verified"
     const currentStatus = query.get(
@@ -166,15 +197,17 @@ router.delete('/documents/:id', authenticate, authorize('master'), (req, res) =>
   }
 });
 
-// Админ: получить все документы на модерацию
+// Админ: получить все документы на модерацию (сгруппированные по мастерам)
 router.get('/admin/documents', authenticate, authorize('admin'), (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, groupByMaster } = req.query;
     
     let sql = `
       SELECT 
         d.*,
         m.id as master_id,
+        m.inn as master_inn,
+        m.verification_status as master_verification_status,
         u.name as master_name,
         u.email as master_email,
         u.phone as master_phone
@@ -194,7 +227,27 @@ router.get('/admin/documents', authenticate, authorize('admin'), (req, res) => {
     
     const documents = query.all(sql, params);
     
-    res.json(documents);
+    // Если запрошена группировка по мастерам
+    if (groupByMaster === 'true') {
+      const grouped = {};
+      documents.forEach(doc => {
+        if (!grouped[doc.master_id]) {
+          grouped[doc.master_id] = {
+            master_id: doc.master_id,
+            master_name: doc.master_name,
+            master_email: doc.master_email,
+            master_phone: doc.master_phone,
+            master_inn: doc.master_inn,
+            master_verification_status: doc.master_verification_status,
+            documents: []
+          };
+        }
+        grouped[doc.master_id].documents.push(doc);
+      });
+      res.json(Object.values(grouped));
+    } else {
+      res.json(documents);
+    }
   } catch (error) {
     console.error('Ошибка получения документов:', error);
     res.status(500).json({ error: 'Ошибка сервера', details: error.message });
@@ -279,6 +332,172 @@ router.post('/admin/documents/:id/reject', authenticate, authorize('admin'), (re
     res.json({ message: 'Документ отклонен' });
   } catch (error) {
     console.error('Ошибка отклонения документа:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Админ: получить список мастеров на верификацию
+router.get('/admin/masters', authenticate, authorize('admin'), (req, res) => {
+  try {
+    const { status } = req.query;
+    
+    let sql = `
+      SELECT 
+        m.*,
+        u.name,
+        u.email,
+        u.phone,
+        COUNT(d.id) as documents_count,
+        SUM(CASE WHEN d.status = 'pending' THEN 1 ELSE 0 END) as pending_documents_count,
+        SUM(CASE WHEN d.status = 'approved' THEN 1 ELSE 0 END) as approved_documents_count,
+        SUM(CASE WHEN d.status = 'rejected' THEN 1 ELSE 0 END) as rejected_documents_count
+      FROM masters m
+      JOIN users u ON m.user_id = u.id
+      LEFT JOIN master_verification_documents d ON m.id = d.master_id
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (status) {
+      sql += ' AND m.verification_status = ?';
+      params.push(status);
+    }
+    
+    sql += ' GROUP BY m.id ORDER BY m.created_at DESC';
+    
+    const masters = query.all(sql, params);
+    
+    res.json(masters);
+  } catch (error) {
+    console.error('Ошибка получения мастеров:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Админ: получить все документы конкретного мастера
+router.get('/admin/masters/:masterId/documents', authenticate, authorize('admin'), (req, res) => {
+  try {
+    const { masterId } = req.params;
+    const { status } = req.query;
+    
+    let sql = `
+      SELECT 
+        d.*,
+        m.inn as master_inn,
+        m.verification_status as master_verification_status,
+        u.name as master_name,
+        u.email as master_email,
+        u.phone as master_phone
+      FROM master_verification_documents d
+      JOIN masters m ON d.master_id = m.id
+      JOIN users u ON m.user_id = u.id
+      WHERE d.master_id = ?
+    `;
+    const params = [masterId];
+    
+    if (status) {
+      sql += ' AND d.status = ?';
+      params.push(status);
+    }
+    
+    sql += ' ORDER BY d.created_at DESC';
+    
+    const documents = query.all(sql, params);
+    
+    res.json(documents);
+  } catch (error) {
+    console.error('Ошибка получения документов мастера:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Админ: верифицировать мастера целиком
+router.post('/admin/masters/:masterId/verify', authenticate, authorize('admin'), (req, res) => {
+  try {
+    const { masterId } = req.params;
+    
+    // Проверяем мастера
+    const master = query.get('SELECT * FROM masters WHERE id = ?', [masterId]);
+    if (!master) {
+      return res.status(404).json({ error: 'Мастер не найден' });
+    }
+    
+    // Проверяем, что у мастера есть ИНН
+    if (!master.inn) {
+      return res.status(400).json({ error: 'У мастера не указан ИНН' });
+    }
+    
+    // Проверяем, что все документы одобрены
+    const pendingDocuments = query.get(`
+      SELECT COUNT(*) as count 
+      FROM master_verification_documents 
+      WHERE master_id = ? AND status = 'pending'
+    `, [masterId]);
+    
+    if (pendingDocuments.count > 0) {
+      return res.status(400).json({ 
+        error: 'Не все документы одобрены. Сначала одобрите все документы мастера.' 
+      });
+    }
+    
+    // Проверяем, что есть хотя бы один одобренный документ
+    const approvedDocuments = query.get(`
+      SELECT COUNT(*) as count 
+      FROM master_verification_documents 
+      WHERE master_id = ? AND status = 'approved'
+    `, [masterId]);
+    
+    if (approvedDocuments.count === 0) {
+      return res.status(400).json({ 
+        error: 'Нет одобренных документов. Необходимо одобрить хотя бы один документ.' 
+      });
+    }
+    
+    // Верифицируем мастера
+    query.run(
+      'UPDATE masters SET verification_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ['verified', masterId]
+    );
+    
+    res.json({ message: 'Мастер успешно верифицирован' });
+  } catch (error) {
+    console.error('Ошибка верификации мастера:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Админ: отклонить верификацию мастера
+router.post('/admin/masters/:masterId/reject', authenticate, authorize('admin'), (req, res) => {
+  try {
+    const { masterId } = req.params;
+    const { reason } = req.body;
+    
+    if (!reason) {
+      return res.status(400).json({ error: 'Необходимо указать причину отклонения' });
+    }
+    
+    // Проверяем мастера
+    const master = query.get('SELECT * FROM masters WHERE id = ?', [masterId]);
+    if (!master) {
+      return res.status(404).json({ error: 'Мастер не найден' });
+    }
+    
+    // Отклоняем верификацию мастера
+    query.run(
+      'UPDATE masters SET verification_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ['rejected', masterId]
+    );
+    
+    // Отклоняем все pending документы мастера
+    query.run(`
+      UPDATE master_verification_documents 
+      SET status = ?, rejection_reason = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP
+      WHERE master_id = ? AND status = 'pending'
+    `, ['rejected', reason, req.user.id, masterId]);
+    
+    res.json({ message: 'Верификация мастера отклонена' });
+  } catch (error) {
+    console.error('Ошибка отклонения верификации мастера:', error);
     res.status(500).json({ error: 'Ошибка сервера', details: error.message });
   }
 });

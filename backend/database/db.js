@@ -97,6 +97,20 @@ export async function initDatabase() {
             const columnName = columnMatch[1];
             // Определяем таблицу из запроса
             let tableName = null;
+            
+            // Автоматическое добавление поля inn в таблицу masters
+            if (columnName === 'inn' && statement.includes('masters')) {
+              try {
+                db.run('ALTER TABLE masters ADD COLUMN inn TEXT');
+                console.log('✅ Добавлено поле inn в таблицу masters');
+                continue;
+              } catch (alterError) {
+                if (!alterError.message.includes('duplicate column')) {
+                  console.error('Ошибка добавления поля inn:', alterError);
+                }
+              }
+            }
+            
             if (statement.includes('loyalty_points')) {
               tableName = 'loyalty_points';
             } else if (statement.includes('clients')) {

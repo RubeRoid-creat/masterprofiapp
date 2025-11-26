@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.bestapp.api.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 
 class ApiRepository {
     private val api = RetrofitClient.apiService
@@ -736,6 +737,92 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error sending chat image", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    // ============= Верификация =============
+    
+    suspend fun getVerificationDocuments(): Result<List<ApiVerificationDocument>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getVerificationDocuments()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: emptyList())
+                } else {
+                    Result.failure(Exception("Ошибка загрузки документов: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting verification documents", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun uploadVerificationDocument(
+        fileUri: android.net.Uri,
+        documentType: String,
+        documentName: String,
+        inn: String?,
+        context: android.content.Context
+    ): Result<com.example.bestapp.api.models.UploadDocumentResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Читаем файл из URI
+                val inputStream = context.contentResolver.openInputStream(fileUri)
+                val bytes = inputStream?.readBytes() ?: throw Exception("Не удалось прочитать файл")
+                inputStream.close()
+                
+                // Создаем MultipartBody.Part для файла
+                val imageMediaType = "image/jpeg".toMediaType()
+                val requestFile = okhttp3.RequestBody.create(imageMediaType, bytes)
+                val filePart = okhttp3.MultipartBody.Part.createFormData(
+                    "document",
+                    "document_${System.currentTimeMillis()}.jpg",
+                    requestFile
+                )
+                
+                // Создаем RequestBody для текстовых полей
+                val textMediaType = "text/plain".toMediaType()
+                val documentTypeBody = okhttp3.RequestBody.create(textMediaType, documentType)
+                val documentNameBody = okhttp3.RequestBody.create(textMediaType, documentName)
+                val innBody = inn?.let {
+                    okhttp3.RequestBody.create(textMediaType, it)
+                }
+                
+                val response = api.uploadVerificationDocument(
+                    filePart,
+                    documentTypeBody,
+                    documentNameBody,
+                    innBody
+                )
+                
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "Upload document failed: ${response.code()}, body=$errorBody")
+                    Result.failure(Exception("Ошибка загрузки документа: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error uploading verification document", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun deleteVerificationDocument(id: Long): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.deleteVerificationDocument(id)
+                if (response.isSuccessful) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Ошибка удаления документа: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting verification document", e)
                 Result.failure(e)
             }
         }
