@@ -130,29 +130,42 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val currentStatus = prefsManager.isShiftActive()
             val newStatus = !currentStatus
             
+            // Оптимистичное обновление UI сразу
+            _todayStats.value = _todayStats.value.copy(isShiftActive = newStatus)
+            prefsManager.setShiftActive(newStatus)
+            
             try {
                 if (newStatus) {
                     // Начинаем смену (используем дефолтные координаты, можно улучшить позже)
                     val result = apiRepository.startShift(0.0, 0.0)
                     result.onSuccess {
-                        prefsManager.setShiftActive(true)
-                        _todayStats.value = _todayStats.value.copy(isShiftActive = true)
+                        // Перезагружаем данные после успешного начала смены
+                        loadMasterStats()
                         Log.d(TAG, "✅ Shift started")
                     }.onFailure { error ->
+                        // Откатываем изменения при ошибке
+                        _todayStats.value = _todayStats.value.copy(isShiftActive = currentStatus)
+                        prefsManager.setShiftActive(currentStatus)
                         Log.e(TAG, "❌ Failed to start shift: ${error.message}")
                     }
                 } else {
                     // Заканчиваем смену
                     val result = apiRepository.endShift()
                     result.onSuccess {
-                        prefsManager.setShiftActive(false)
-                        _todayStats.value = _todayStats.value.copy(isShiftActive = false)
+                        // Перезагружаем данные после успешного окончания смены
+                        loadMasterStats()
                         Log.d(TAG, "✅ Shift ended")
                     }.onFailure { error ->
+                        // Откатываем изменения при ошибке
+                        _todayStats.value = _todayStats.value.copy(isShiftActive = currentStatus)
+                        prefsManager.setShiftActive(currentStatus)
                         Log.e(TAG, "❌ Failed to end shift: ${error.message}")
                     }
                 }
             } catch (e: Exception) {
+                // Откатываем изменения при ошибке
+                _todayStats.value = _todayStats.value.copy(isShiftActive = currentStatus)
+                prefsManager.setShiftActive(currentStatus)
                 Log.e(TAG, "Error toggling shift", e)
             }
         }

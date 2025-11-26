@@ -230,6 +230,8 @@ class HomeFragment : Fragment() {
             
             // Обработка нажатия на карточку смены
             shiftCard?.setOnClickListener {
+                // Оптимистичное обновление UI сразу
+                shiftStatusText?.text = "✅ Примите заявку"
                 viewModel.toggleShift()
             }
             
