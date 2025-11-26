@@ -128,8 +128,33 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleShift() {
         viewModelScope.launch {
             val currentStatus = prefsManager.isShiftActive()
-            prefsManager.setShiftActive(!currentStatus)
-            _todayStats.value = _todayStats.value.copy(isShiftActive = !currentStatus)
+            val newStatus = !currentStatus
+            
+            try {
+                if (newStatus) {
+                    // Начинаем смену (используем дефолтные координаты, можно улучшить позже)
+                    val result = apiRepository.startShift(0.0, 0.0)
+                    result.onSuccess {
+                        prefsManager.setShiftActive(true)
+                        _todayStats.value = _todayStats.value.copy(isShiftActive = true)
+                        Log.d(TAG, "✅ Shift started")
+                    }.onFailure { error ->
+                        Log.e(TAG, "❌ Failed to start shift: ${error.message}")
+                    }
+                } else {
+                    // Заканчиваем смену
+                    val result = apiRepository.endShift()
+                    result.onSuccess {
+                        prefsManager.setShiftActive(false)
+                        _todayStats.value = _todayStats.value.copy(isShiftActive = false)
+                        Log.d(TAG, "✅ Shift ended")
+                    }.onFailure { error ->
+                        Log.e(TAG, "❌ Failed to end shift: ${error.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling shift", e)
+            }
         }
     }
     

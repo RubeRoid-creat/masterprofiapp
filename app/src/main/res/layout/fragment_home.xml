@@ -67,7 +67,7 @@
                 android:id="@+id/today_card"
                 layout="@layout/item_today_card" />
 
-            <!-- Кнопка "Начать смену" (если смена не активна) -->
+            <!-- Карточка статуса смены (если смена не активна) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/shift_card"
                 android:layout_width="match_parent"
@@ -76,7 +76,10 @@
                 android:visibility="gone"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="?attr/colorSecondaryContainer">
+                app:cardBackgroundColor="?attr/colorSecondaryContainer"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -86,26 +89,13 @@
                     android:gravity="center">
 
                     <TextView
+                        android:id="@+id/shift_status_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="⏰ Вы не на смене"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="?attr/colorOnSecondaryContainer"
-                        android:layout_marginBottom="12dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_start_shift_home"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="🚀 Начать смену"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:paddingVertical="16dp"
-                        android:letterSpacing="0.02"
-                        android:fontFamily="sans-serif-medium"
-                        app:cornerRadius="16dp"
-                        style="@style/Widget.Material3.Button" />
+                        android:textColor="?attr/colorOnSecondaryContainer" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
