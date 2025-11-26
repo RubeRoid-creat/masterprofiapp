@@ -114,6 +114,9 @@
         <action
             android:id="@+id/action_orders_to_optimized_route"
             app:destination="@id/optimizedRouteFragment" />
+        <action
+            android:id="@+id/action_orders_to_profile"
+            app:destination="@id/nav_profile" />
     </fragment>
 
     <fragment
