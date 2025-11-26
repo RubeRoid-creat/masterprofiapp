@@ -187,8 +187,9 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Кнопка "На смену" -->
+            <!-- Карточка статуса смены -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/shift_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
@@ -205,9 +206,13 @@
                     android:orientation="vertical"
                     android:padding="24dp"
                     android:gravity="center"
-                    android:background="?attr/colorPrimaryContainer">
+                    android:background="?attr/colorPrimaryContainer"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
 
                     <TextView
+                        android:id="@+id/shift_status_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="⏰ Вы не на смене"
@@ -219,31 +224,14 @@
                         android:layout_marginBottom="12dp" />
 
                     <TextView
+                        android:id="@+id/shift_status_hint"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Нажмите кнопку ниже, чтобы начать принимать заказы"
+                        android:text="Нажмите на карточку, чтобы начать принимать заказы"
                         android:textSize="15sp"
                         android:textColor="?attr/colorOnPrimaryContainer"
                         android:gravity="center"
-                        android:lineSpacingExtra="4dp"
-                        android:layout_marginBottom="20dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_start_shift"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="🚀 Начать смену"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:paddingHorizontal="32dp"
-                        android:paddingVertical="16dp"
-                        android:letterSpacing="0.02"
-                        android:fontFamily="sans-serif-medium"
-                        app:icon="@drawable/ic_map"
-                        app:iconGravity="start"
-                        app:iconTint="?attr/colorOnPrimary"
-                        app:cornerRadius="16dp"
-                        style="@style/Widget.Material3.Button" />
+                        android:lineSpacingExtra="4dp" />
 
                 </LinearLayout>
 

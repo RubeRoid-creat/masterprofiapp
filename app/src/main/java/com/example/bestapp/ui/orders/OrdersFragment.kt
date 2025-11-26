@@ -40,7 +40,9 @@ class OrdersFragment : Fragment() {
     private var filterMaxDistance: TextInputEditText? = null
     private var btnShowMap: MaterialButton? = null
     private var btnFilters: MaterialButton? = null
-    private var btnStartShift: MaterialButton? = null
+    private var shiftCard: View? = null
+    private var shiftStatusText: TextView? = null
+    private var shiftStatusHint: TextView? = null
     private var btnAcceptSelected: MaterialButton? = null
     private var btnOptimizeRoute: MaterialButton? = null
     private var btnCancelSelection: MaterialButton? = null
@@ -72,7 +74,9 @@ class OrdersFragment : Fragment() {
         filterMaxDistance = null // Теперь в BottomSheet
         btnShowMap = view.findViewById(R.id.btn_show_map)
         btnFilters = view.findViewById(R.id.btn_filters)
-        btnStartShift = view.findViewById(R.id.btn_start_shift)
+        shiftCard = view.findViewById(R.id.shift_card)
+        shiftStatusText = view.findViewById(R.id.shift_status_text)
+        shiftStatusHint = view.findViewById(R.id.shift_status_hint)
         tabLayout = view.findViewById(R.id.tab_layout)
         recyclerCompletedOrders = view.findViewById(R.id.recycler_completed_orders)
         
@@ -81,7 +85,7 @@ class OrdersFragment : Fragment() {
         setupFilters()
         setupMapButton()
         setupFiltersButton()
-        setupStartShiftButton()
+        setupShiftCard()
         setupBatchActions()
         setupTabs()
         observeOrders()
@@ -290,8 +294,11 @@ class OrdersFragment : Fragment() {
         bottomSheet.show()
     }
     
-    private fun setupStartShiftButton() {
-        btnStartShift?.setOnClickListener {
+    private fun setupShiftCard() {
+        shiftCard?.setOnClickListener {
+            // Оптимистичное обновление UI сразу
+            shiftStatusText?.text = "✅ Примите заявку"
+            shiftStatusHint?.text = "Вы на смене и готовы принимать заказы"
             viewModel.toggleShift()
         }
     }
@@ -588,7 +595,7 @@ class OrdersFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isShiftActive.collectLatest { isActive ->
                 android.util.Log.d("OrdersFragment", "Shift status changed: $isActive")
-                updateShiftButton(isActive)
+                updateShiftCard(isActive)
                 updateOrdersVisibility()
                 // Если смена стала активной, обновляем заявки
                 if (isActive) {
@@ -599,17 +606,15 @@ class OrdersFragment : Fragment() {
         }
     }
     
-    private fun updateShiftButton(isActive: Boolean) {
-        btnStartShift?.apply {
-            if (isActive) {
-                text = "Завершить смену"
-                backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    resources.getColor(android.R.color.holo_red_dark, null)
-                )
-            } else {
-                text = "На смену"
-                backgroundTintList = null
-            }
+    private fun updateShiftCard(isActive: Boolean) {
+        if (isActive) {
+            shiftStatusText?.text = "✅ Примите заявку"
+            shiftStatusHint?.text = "Вы на смене и готовы принимать заказы"
+            shiftCard?.visibility = View.GONE
+        } else {
+            shiftStatusText?.text = "⏰ Вы не на смене"
+            shiftStatusHint?.text = "Нажмите на карточку, чтобы начать принимать заказы"
+            shiftCard?.visibility = View.VISIBLE
         }
     }
     
@@ -645,7 +650,9 @@ class OrdersFragment : Fragment() {
         filterMaxPrice = null
         filterMaxDistance = null
         btnShowMap = null
-        btnStartShift = null
+        shiftCard = null
+        shiftStatusText = null
+        shiftStatusHint = null
         tabLayout = null
         recyclerCompletedOrders = null
     }
