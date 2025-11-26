@@ -84,8 +84,8 @@ class ChatAdapter(
                         val fullUrl = if (imageUrl.startsWith("http")) {
                             imageUrl
                         } else {
-                            // Базовый URL нужно получить из конфигурации
-                            "http://192.168.0.100:3000$imageUrl" // Для реального устройства
+                            // Используем продакшн‑backend
+                            "http://212.74.227.208:3000$imageUrl"
                         }
                         loadImageFromUrl(messageImage, fullUrl)
                     }

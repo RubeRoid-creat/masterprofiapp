@@ -20,8 +20,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://10.0.2.2:3000/" // Для эмулятора
-    // private const val BASE_URL = "http://192.168.1.100:3000/" // Для реального устройства
+    // Продакшн‑backend на сервере
+    private const val BASE_URL = "http://212.74.227.208:3000/"
 
     @Provides
     @Singleton

@@ -20,6 +20,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -35,6 +36,8 @@ class ScheduleFragment : Fragment() {
     private var cardSelectedDate: MaterialCardView? = null
     private var textSelectedDate: TextView? = null
     private var switchAvailable: SwitchMaterial? = null
+    private var layoutStartTime: TextInputLayout? = null
+    private var layoutEndTime: TextInputLayout? = null
     private var inputStartTime: TextInputEditText? = null
     private var inputEndTime: TextInputEditText? = null
     private var inputNote: TextInputEditText? = null
@@ -72,6 +75,8 @@ class ScheduleFragment : Fragment() {
         cardSelectedDate = view.findViewById(R.id.card_selected_date)
         textSelectedDate = view.findViewById(R.id.text_selected_date)
         switchAvailable = view.findViewById(R.id.switch_available)
+        layoutStartTime = view.findViewById(R.id.layout_start_time)
+        layoutEndTime = view.findViewById(R.id.layout_end_time)
         inputStartTime = view.findViewById(R.id.input_start_time)
         inputEndTime = view.findViewById(R.id.input_end_time)
         inputNote = view.findViewById(R.id.input_note)
@@ -92,12 +97,24 @@ class ScheduleFragment : Fragment() {
             showDatePicker()
         }
         
+        layoutStartTime?.setOnClickListener {
+            showTimePicker(true)
+        }
         inputStartTime?.setOnClickListener {
             showTimePicker(true)
         }
+        inputStartTime?.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showTimePicker(true)
+        }
         
+        layoutEndTime?.setOnClickListener {
+            showTimePicker(false)
+        }
         inputEndTime?.setOnClickListener {
             showTimePicker(false)
+        }
+        inputEndTime?.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showTimePicker(false)
         }
         
         btnSaveSchedule?.setOnClickListener {

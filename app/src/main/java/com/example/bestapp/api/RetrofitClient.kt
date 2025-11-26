@@ -13,9 +13,8 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
     private const val TAG = "RetrofitClient"
     
-    // Для реального устройства используем IP компьютера в локальной сети
-    // Для эмулятора замените на 10.0.2.2
-    private const val BASE_URL = "http://192.168.0.100:3000/"
+    // Продакшн‑backend на сервере
+    private const val BASE_URL = "http://212.74.227.208:3000/"
     
     @Volatile
     private var authToken: String? = null
@@ -93,9 +92,11 @@ object RetrofitClient {
         val originalRequest = chain.request()
         val requestBuilder = originalRequest.newBuilder()
         
-        // Не добавляем токен для публичных эндпоинтов (логин, регистрация)
-        val isPublicEndpoint = originalRequest.url.encodedPath.contains("/api/auth/login") || 
-                              originalRequest.url.encodedPath.contains("/api/auth/register")
+        // Не добавляем токен для публичных эндпоинтов (логин, регистрация, проверка версии)
+        val path = originalRequest.url.encodedPath
+        val isPublicEndpoint = path.contains("/api/auth/login") ||
+                              path.contains("/api/auth/register") ||
+                              path.contains("/api/version/check")
         
         if (!isPublicEndpoint) {
             // Всегда проверяем актуальный токен (может измениться после логина)

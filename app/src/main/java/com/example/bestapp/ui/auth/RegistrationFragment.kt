@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.bestapp.R
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
@@ -33,6 +34,9 @@ class RegistrationFragment : Fragment() {
         val registerBtn = view.findViewById<MaterialButton>(R.id.register_button)
         val goToLogin = view.findViewById<View>(R.id.go_to_login)
         val progressBar = view.findViewById<View>(R.id.progress_bar)
+        
+        // Настройка выбора специализаций (мультивыбор)
+        setupSpecializationPicker(specET)
         
         registerBtn.setOnClickListener {
             viewModel.register(
@@ -72,6 +76,62 @@ class RegistrationFragment : Fragment() {
                     }
                 }
             }
+        }
+    }
+    
+    /**
+     * Диалог с множественным выбором специализаций мастера
+     * (основные типы техники из базы знаний).
+     */
+    private fun setupSpecializationPicker(specET: TextInputEditText) {
+        val allSpecs = listOf(
+            "Стиральная машина",
+            "Посудомоечная машина",
+            "Холодильник",
+            "Морозильник",
+            "Духовой шкаф",
+            "Плита",
+            "Варочная панель",
+            "Микроволновка",
+            "Кондиционер",
+            "Водонагреватель",
+            "Ноутбук",
+            "Десктоп",
+            "Кофемашина"
+        )
+        
+        fun openDialog() {
+            val current = specET.text?.toString()
+                ?.split(",")
+                ?.map { it.trim() }
+                ?.filter { it.isNotEmpty() }
+                ?.toSet() ?: emptySet()
+            
+            val selected = current.toMutableSet()
+            val checked = BooleanArray(allSpecs.size) { index ->
+                selected.contains(allSpecs[index])
+            }
+            
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.auth_specialization)
+                .setMultiChoiceItems(allSpecs.toTypedArray(), checked) { _, which, isChecked ->
+                    val value = allSpecs[which]
+                    if (isChecked) {
+                        selected.add(value)
+                    } else {
+                        selected.remove(value)
+                    }
+                }
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    specET.setText(selected.joinToString(", "))
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+        
+        specET.setOnClickListener { openDialog() }
+        specET.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) openDialog()
         }
     }
 }

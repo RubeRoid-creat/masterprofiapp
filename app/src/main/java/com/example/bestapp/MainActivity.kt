@@ -12,6 +12,8 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.bestapp.ui.auth.AuthViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.yandex.mapkit.MapKitFactory
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.example.bestapp.api.ApiRepository
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -27,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setupNavigation()
         setupAuth()
+        checkAppVersion()
     }
     
     private fun setupAuth() {
@@ -63,13 +66,89 @@ class MainActivity : AppCompatActivity() {
         
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.splashFragment, R.id.loginFragment, R.id.registrationFragment -> {
+                R.id.splashFragment,
+                R.id.loginFragment,
+                R.id.registrationFragment,
+                R.id.onboardingFragment,
+                R.id.citySelectionFragment -> {
                     bottomNav.visibility = View.GONE
                 }
                 else -> {
                     bottomNav.visibility = View.VISIBLE
                 }
             }
+        }
+    }
+    
+    private fun checkAppVersion() {
+        lifecycleScope.launch {
+            try {
+                val repo = ApiRepository()
+                val packageInfo = packageManager.getPackageInfo(packageName, 0)
+                val appVersion = packageInfo.versionName ?: "1.0.0"
+                @Suppress("DEPRECATION")
+                val buildVersion = packageInfo.versionCode
+                val osVersion = android.os.Build.VERSION.RELEASE ?: "unknown"
+                val platform = "android_master"
+                
+                val result = repo.checkAppVersion(
+                    platform = platform,
+                    appVersion = appVersion,
+                    buildVersion = buildVersion,
+                    osVersion = osVersion
+                )
+                
+                result.onSuccess { data ->
+                    if (data.updateRequired) {
+                        showUpdateDialog(
+                            force = data.forceUpdate,
+                            currentVersion = data.currentVersion,
+                            releaseNotes = data.releaseNotes ?: "",
+                            downloadUrl = data.downloadUrl
+                        )
+                    }
+                }.onFailure { e ->
+                    Log.e("MainActivity", "Version check failed: ${e.message}")
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Version check error", e)
+            }
+        }
+    }
+    
+    private fun showUpdateDialog(
+        force: Boolean,
+        currentVersion: String,
+        releaseNotes: String,
+        downloadUrl: String?
+    ) {
+        val builder = MaterialAlertDialogBuilder(this)
+            .setTitle("Доступно обновление")
+            .setMessage("Новая версия $currentVersion\n\n$releaseNotes")
+        
+        if (force) {
+            builder.setCancelable(false)
+                .setPositiveButton("Обновить") { _, _ ->
+                    openStore(downloadUrl)
+                }
+        } else {
+            builder.setPositiveButton("Обновить") { _, _ ->
+                openStore(downloadUrl)
+            }.setNegativeButton("Позже", null)
+        }
+        
+        builder.show()
+    }
+    
+    private fun openStore(url: String?) {
+        try {
+            val intent = android.content.Intent(
+                android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse(url ?: "market://details?id=${packageName}")
+            )
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to open store", e)
         }
     }
 }

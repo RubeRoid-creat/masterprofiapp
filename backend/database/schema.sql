@@ -252,6 +252,20 @@ CREATE TABLE IF NOT EXISTS reviews (
     FOREIGN KEY (client_id) REFERENCES clients(id)
 );
 
+-- Таблица версий приложений (для мастера и клиента)
+CREATE TABLE IF NOT EXISTS app_versions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    platform TEXT NOT NULL, -- 'android_master', 'android_client'
+    current_version TEXT NOT NULL, -- например '1.0.0'
+    min_required_version TEXT NOT NULL, -- минимальная поддерживаемая версия
+    force_update INTEGER DEFAULT 0, -- 0 = нет, 1 = да
+    release_notes TEXT,
+    download_url TEXT,
+    supported_os_versions TEXT, -- JSON массив версий ОС
+    released_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Таблица категорий услуг
 CREATE TABLE IF NOT EXISTS service_categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

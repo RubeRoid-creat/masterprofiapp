@@ -228,6 +228,13 @@ interface ApiService {
     
     @POST("api/promotions/{id}/cancel")
     suspend fun cancelPromotion(@Path("id") id: Long): Response<com.example.bestapp.api.models.MessageResponse>
+
+    // ============= Версионирование приложения =============
+
+    @POST("api/version/check")
+    suspend fun checkVersion(
+        @Body request: com.example.bestapp.api.models.VersionCheckRequest
+    ): Response<com.example.bestapp.api.models.VersionCheckResponse>
 }
 
 

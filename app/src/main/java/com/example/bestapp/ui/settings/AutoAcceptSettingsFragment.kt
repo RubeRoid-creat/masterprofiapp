@@ -31,8 +31,6 @@ class AutoAcceptSettingsFragment : Fragment() {
     private var switchEnabled: SwitchMaterial? = null
     private var inputMinPrice: TextInputEditText? = null
     private var inputMaxDistance: TextInputEditText? = null
-    private var inputWorkHoursStart: TextInputEditText? = null
-    private var inputWorkHoursEnd: TextInputEditText? = null
     private var switchUrgentOnly: SwitchMaterial? = null
     private var chipGroupDeviceTypes: ChipGroup? = null
     private var btnSave: MaterialButton? = null
@@ -74,8 +72,6 @@ class AutoAcceptSettingsFragment : Fragment() {
         switchEnabled = view.findViewById(R.id.switch_auto_accept_enabled)
         inputMinPrice = view.findViewById(R.id.input_min_price)
         inputMaxDistance = view.findViewById(R.id.input_max_distance)
-        inputWorkHoursStart = view.findViewById(R.id.input_work_hours_start)
-        inputWorkHoursEnd = view.findViewById(R.id.input_work_hours_end)
         switchUrgentOnly = view.findViewById(R.id.switch_urgent_only)
         chipGroupDeviceTypes = view.findViewById(R.id.chip_group_device_types)
         btnSave = view.findViewById(R.id.btn_save_settings)
@@ -115,8 +111,6 @@ class AutoAcceptSettingsFragment : Fragment() {
         switchEnabled?.isChecked = settings.isEnabled
         inputMinPrice?.setText(settings.minPrice?.toInt()?.toString() ?: "")
         inputMaxDistance?.setText(settings.maxDistance?.div(1000)?.toInt()?.toString() ?: "")
-        inputWorkHoursStart?.setText(settings.workHoursStart?.toString() ?: "")
-        inputWorkHoursEnd?.setText(settings.workHoursEnd?.toString() ?: "")
         switchUrgentOnly?.isChecked = settings.acceptUrgentOnly
         
         // Восстанавливаем выбранные типы техники
@@ -140,15 +134,11 @@ class AutoAcceptSettingsFragment : Fragment() {
         val alpha = if (enabled) 1.0f else 0.5f
         inputMinPrice?.alpha = alpha
         inputMaxDistance?.alpha = alpha
-        inputWorkHoursStart?.alpha = alpha
-        inputWorkHoursEnd?.alpha = alpha
         switchUrgentOnly?.alpha = alpha
         chipGroupDeviceTypes?.alpha = alpha
         
         inputMinPrice?.isEnabled = enabled
         inputMaxDistance?.isEnabled = enabled
-        inputWorkHoursStart?.isEnabled = enabled
-        inputWorkHoursEnd?.isEnabled = enabled
         switchUrgentOnly?.isEnabled = enabled
         chipGroupDeviceTypes?.isEnabled = enabled
     }
@@ -164,8 +154,6 @@ class AutoAcceptSettingsFragment : Fragment() {
         val minPrice = inputMinPrice?.text?.toString()?.toDoubleOrNull()
         val maxDistanceKm = inputMaxDistance?.text?.toString()?.toDoubleOrNull()
         val maxDistance = maxDistanceKm?.times(1000) // Конвертируем км в метры
-        val workHoursStart = inputWorkHoursStart?.text?.toString()?.toIntOrNull()
-        val workHoursEnd = inputWorkHoursEnd?.text?.toString()?.toIntOrNull()
         val acceptUrgentOnly = switchUrgentOnly?.isChecked ?: false
         
         // Собираем выбранные типы техники
@@ -180,21 +168,11 @@ class AutoAcceptSettingsFragment : Fragment() {
             }
         }
         
-        // Валидация
-        if (workHoursStart != null && workHoursEnd != null) {
-            if (workHoursStart < 0 || workHoursStart > 23 || workHoursEnd < 0 || workHoursEnd > 23) {
-                Toast.makeText(context, "Часы должны быть от 0 до 23", Toast.LENGTH_SHORT).show()
-                return
-            }
-        }
-        
         val settings = AutoAcceptSettings(
             isEnabled = isEnabled,
             minPrice = minPrice,
             maxDistance = maxDistance,
             deviceTypes = selectedDeviceTypes,
-            workHoursStart = workHoursStart,
-            workHoursEnd = workHoursEnd,
             acceptUrgentOnly = acceptUrgentOnly
         )
         
@@ -211,8 +189,6 @@ class AutoAcceptSettingsFragment : Fragment() {
         switchEnabled = null
         inputMinPrice = null
         inputMaxDistance = null
-        inputWorkHoursStart = null
-        inputWorkHoursEnd = null
         switchUrgentOnly = null
         chipGroupDeviceTypes = null
         btnSave = null

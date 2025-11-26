@@ -108,6 +108,23 @@
     <string name="auth_success_registration">Регистрация успешна!</string>
     <string name="auth_loading">Загрузка...</string>
     
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Сервис «МастерПрофи» для ремонта техники</string>
+    <string name="onboarding_desc_1">Кухня, стирка, климат, развлечения и компьютеры — получайте заявки на ремонт бытовой техники рядом с вами.</string>
+    <string name="onboarding_title_2">Умные заказы и сценарии ремонта</string>
+    <string name="onboarding_desc_2">Лента заказов, умные уведомления, карта заказов и статусы помогают вести заявки от создания до завершения.</string>
+    <string name="onboarding_title_3">Доход, уровни и команда мастеров</string>
+    <string name="onboarding_desc_3">Следите за доходом, завершёнными заказами, рейтингом и развивайте свою MLM‑структуру и команду мастеров.</string>
+    <string name="onboarding_skip">Пропустить</string>
+    <string name="onboarding_next">Далее</string>
+    <string name="onboarding_finish">Продолжить</string>
+    
+    <!-- City selection -->
+    <string name="city_select_title">Выберите город</string>
+    <string name="city_select_subtitle">Это поможет показывать вам только актуальные заявки в вашем регионе.</string>
+    <string name="city_select_continue">Продолжить</string>
+    <string name="city_select_error">Выберите город</string>
+    
     <!-- Orders Map screen -->
     <string name="orders_map_pickup">Откуда</string>
     <string name="orders_map_destination">Куда</string>

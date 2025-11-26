@@ -15,6 +15,7 @@ import reviewsRoutes from './routes/reviews.js';
 import fcmRoutes from './routes/fcm.js';
 import chatRoutes from './routes/chat.js';
 import reportsRoutes from './routes/reports.js';
+import versionRoutes from './routes/version.js';
 import verificationRoutes from './routes/verification.js';
 import complaintsRoutes from './routes/complaints.js';
 import adminRoutes from './routes/admin.js';
@@ -122,6 +123,7 @@ app.get('/', (req, res) => {
       subscriptions: '/api/subscriptions',
       promotions: '/api/promotions',
       loyalty: '/api/loyalty',
+      version: '/api/version',
       websocket: '/ws'
     }
   });
@@ -145,6 +147,7 @@ app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/promotions', promotionsRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/orders', routeOptimizationRoutes);
+app.use('/api/version', versionRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

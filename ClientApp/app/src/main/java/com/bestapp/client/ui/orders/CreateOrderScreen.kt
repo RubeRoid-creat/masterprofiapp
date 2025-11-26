@@ -692,7 +692,7 @@ fun CreateOrderScreen(
                                             }
                                         }
                                         if (master != nearbyMasters.take(3).last()) {
-                                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                            Divider(modifier = Modifier.padding(vertical = 4.dp))
                                         }
                                     }
                                 }

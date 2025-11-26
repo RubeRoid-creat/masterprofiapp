@@ -23,8 +23,9 @@ import java.util.concurrent.TimeUnit
 object AppContainer {
     
     private lateinit var _appContext: Context
-    const val BASE_URL = "http://192.168.0.100:3000/" // Для реального устройства
-    const val WS_BASE_URL = "ws://192.168.0.100:3000/ws" // Для реального устройства
+    // Продакшн‑backend на сервере
+    const val BASE_URL = "http://212.74.227.208:3000/"
+    const val WS_BASE_URL = "ws://212.74.227.208:3000/ws"
     
     val appContext: Context
         get() = if (::_appContext.isInitialized) _appContext else throw IllegalStateException("AppContainer not initialized")

@@ -41,23 +41,13 @@ class ProfileFragment : Fragment() {
         val masterCompletedOrders = view.findViewById<TextView>(R.id.master_completed_orders)
         val verificationChip = view.findViewById<Chip>(R.id.verification_status_chip)
         val btnEditMasterInfo = view.findViewById<MaterialButton>(R.id.btn_edit_master_info)
-        val btnEditProfile = view.findViewById<MaterialButton>(R.id.btn_edit_profile)
         val btnVerification = view.findViewById<MaterialButton>(R.id.btn_verification)
         val btnWallet = view.findViewById<MaterialButton>(R.id.btn_wallet)
         val btnStatistics = view.findViewById<MaterialButton>(R.id.btn_statistics)
-        val btnSchedule = view.findViewById<MaterialButton>(R.id.btn_schedule)
         val btnReports = view.findViewById<MaterialButton>(R.id.btn_reports)
         val btnLogout = view.findViewById<MaterialButton>(R.id.btn_logout)
         
         loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
-        
-        btnEditMasterInfo?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_settings)
-        }
-        
-        btnEditProfile.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_settings)
-        }
         
         btnVerification.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_verification)
@@ -69,10 +59,6 @@ class ProfileFragment : Fragment() {
         
         btnStatistics?.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_statistics)
-        }
-        
-        btnSchedule?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_schedule)
         }
         
         btnReports?.setOnClickListener {

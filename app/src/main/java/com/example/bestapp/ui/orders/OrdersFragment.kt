@@ -87,20 +87,16 @@ class OrdersFragment : Fragment() {
         observeOrders()
         observeCompletedOrders()
         
-        // Загружаем заявки при открытии экрана, если смена активна
-        if (viewModel.isShiftActive.value) {
-            android.util.Log.d("OrdersFragment", "Shift is active, refreshing orders...")
-            viewModel.refreshOrders()
-        }
+        // Всегда загружаем заявки при открытии экрана
+        android.util.Log.d("OrdersFragment", "onViewCreated: refreshing orders...")
+        viewModel.refreshOrders()
     }
     
     override fun onResume() {
         super.onResume()
         // Обновляем список заказов при возврате на экран (например, после принятия заказа)
-        if (viewModel.isShiftActive.value) {
-            android.util.Log.d("OrdersFragment", "Resuming, refreshing orders...")
-            viewModel.refreshOrders()
-        }
+        android.util.Log.d("OrdersFragment", "onResume: refreshing orders...")
+        viewModel.refreshOrders()
     }
     
     private fun setupMapButton() {

@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.bestapp.R
 import com.example.bestapp.auth.AuthManager
+import com.example.bestapp.data.PreferencesManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -28,8 +29,12 @@ class SplashFragment : Fragment() {
             delay(1000)
             val authManager = AuthManager(requireContext())
             val userId = authManager.userId.first()
+            val prefs = PreferencesManager.getInstance(requireContext())
+            val onboardingShown = prefs.isOnboardingShown()
             
-            if (userId != null) {
+            if (!onboardingShown && userId == null) {
+                findNavController().navigate(R.id.action_splash_to_onboarding)
+            } else if (userId != null) {
                 findNavController().navigate(R.id.action_splash_to_home)
             } else {
                 findNavController().navigate(R.id.action_splash_to_login)

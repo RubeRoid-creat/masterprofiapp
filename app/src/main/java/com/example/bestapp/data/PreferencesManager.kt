@@ -19,6 +19,8 @@ class PreferencesManager private constructor(context: Context) {
         private const val KEY_MASTER_ID = "master_id"
         private const val KEY_SHIFT_START_TIME = "shift_start_time"
         private const val KEY_AUTH_TOKEN = "auth_token"
+        private const val KEY_ONBOARDING_SHOWN = "onboarding_shown"
+        private const val KEY_SELECTED_CITY = "selected_city"
         
         // Настройки автоприема
         private const val KEY_AUTO_ACCEPT_ENABLED = "auto_accept_enabled"
@@ -119,6 +121,28 @@ class PreferencesManager private constructor(context: Context) {
     }
     
     /**
+     * Онбординг показан
+     */
+    fun isOnboardingShown(): Boolean {
+        return prefs.getBoolean(KEY_ONBOARDING_SHOWN, false)
+    }
+    
+    fun setOnboardingShown(shown: Boolean) {
+        prefs.edit().putBoolean(KEY_ONBOARDING_SHOWN, shown).apply()
+    }
+    
+    /**
+     * Выбранный город
+     */
+    fun setSelectedCity(city: String) {
+        prefs.edit().putString(KEY_SELECTED_CITY, city).apply()
+    }
+    
+    fun getSelectedCity(): String? {
+        return prefs.getString(KEY_SELECTED_CITY, null)
+    }
+    
+    /**
      * Сохраняет настройки автоприема
      */
     fun setAutoAcceptSettings(settings: AutoAcceptSettings) {
@@ -139,16 +163,6 @@ class PreferencesManager private constructor(context: Context) {
             } else {
                 remove(KEY_AUTO_ACCEPT_DEVICE_TYPES)
             }
-            if (settings.workHoursStart != null) {
-                putInt(KEY_AUTO_ACCEPT_WORK_HOURS_START, settings.workHoursStart)
-            } else {
-                remove(KEY_AUTO_ACCEPT_WORK_HOURS_START)
-            }
-            if (settings.workHoursEnd != null) {
-                putInt(KEY_AUTO_ACCEPT_WORK_HOURS_END, settings.workHoursEnd)
-            } else {
-                remove(KEY_AUTO_ACCEPT_WORK_HOURS_END)
-            }
             putBoolean(KEY_AUTO_ACCEPT_URGENT_ONLY, settings.acceptUrgentOnly)
         }.apply()
     }
@@ -166,12 +180,6 @@ class PreferencesManager private constructor(context: Context) {
                 prefs.getFloat(KEY_AUTO_ACCEPT_MAX_DISTANCE, 0f).toDouble()
             } else null,
             deviceTypes = prefs.getStringSet(KEY_AUTO_ACCEPT_DEVICE_TYPES, emptySet()) ?: emptySet(),
-            workHoursStart = if (prefs.contains(KEY_AUTO_ACCEPT_WORK_HOURS_START)) {
-                prefs.getInt(KEY_AUTO_ACCEPT_WORK_HOURS_START, 0)
-            } else null,
-            workHoursEnd = if (prefs.contains(KEY_AUTO_ACCEPT_WORK_HOURS_END)) {
-                prefs.getInt(KEY_AUTO_ACCEPT_WORK_HOURS_END, 23)
-            } else null,
             acceptUrgentOnly = prefs.getBoolean(KEY_AUTO_ACCEPT_URGENT_ONLY, false)
         )
     }

@@ -82,6 +82,39 @@ class ApiRepository {
             }
         }
     }
+
+    // ============= Версионирование приложения =============
+
+    suspend fun checkAppVersion(
+        platform: String,
+        appVersion: String,
+        buildVersion: Int,
+        osVersion: String
+    ): Result<VersionCheckResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Checking app version: platform=$platform, app=$appVersion($buildVersion), os=$osVersion")
+                val request = VersionCheckRequest(
+                    platform = platform,
+                    appVersion = appVersion,
+                    buildVersion = buildVersion,
+                    osVersion = osVersion
+                )
+                val response = api.checkVersion(request)
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    val code = response.code()
+                    val body = response.errorBody()?.string()
+                    Log.e(TAG, "Version check failed: code=$code, body=$body")
+                    Result.failure(Exception("Ошибка проверки версии: $code"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Version check error", e)
+                Result.failure(e)
+            }
+        }
+    }
     
     // ============= Заказы =============
     

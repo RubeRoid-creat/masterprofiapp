@@ -164,6 +164,24 @@ data class UpdateMasterProfileRequest(
     val longitude: Double? = null
 )
 
+// ============= Версионирование приложения =============
+
+data class VersionCheckRequest(
+    val platform: String,
+    @SerializedName("app_version") val appVersion: String,
+    @SerializedName("build_version") val buildVersion: Int,
+    @SerializedName("os_version") val osVersion: String
+)
+
+data class VersionCheckResponse(
+    @SerializedName("update_required") val updateRequired: Boolean,
+    @SerializedName("force_update") val forceUpdate: Boolean,
+    @SerializedName("current_version") val currentVersion: String,
+    @SerializedName("release_notes") val releaseNotes: String?,
+    @SerializedName("download_url") val downloadUrl: String?,
+    val supported: Boolean
+)
+
 // ============= Assignment Models =============
 
 data class ApiAssignment(

@@ -1,5 +1,6 @@
 package com.example.bestapp.ui.client
 
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +17,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Locale
 
 class CreateOrderFragment : Fragment() {
     
@@ -131,6 +134,13 @@ class CreateOrderFragment : Fragment() {
         urgentSwitch?.setOnCheckedChangeListener { _, isChecked ->
             viewModel.setIsUrgent(isChecked)
         }
+
+        arrivalTimeInput?.setOnClickListener {
+            showArrivalTimePicker()
+        }
+        arrivalTimeInput?.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) showArrivalTimePicker()
+        }
     }
     
     private fun collectFormData() {
@@ -150,6 +160,27 @@ class CreateOrderFragment : Fragment() {
         addressInput?.text?.clear()
         arrivalTimeInput?.text?.clear()
         urgentSwitch?.isChecked = false
+    }
+
+    /**
+     * Диалог выбора желаемого интервала времени прибытия: "HH:MM - HH:MM".
+     */
+    private fun showArrivalTimePicker() {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        // Сначала выбираем время "с"
+        TimePickerDialog(requireContext(), { _, startHour, startMinute ->
+            val startStr = String.format(Locale.getDefault(), "%02d:%02d", startHour, startMinute)
+
+            // Затем сразу предлагаем выбрать время "до"
+            TimePickerDialog(requireContext(), { _, endHour, endMinute ->
+                val endStr = String.format(Locale.getDefault(), "%02d:%02d", endHour, endMinute)
+                arrivalTimeInput?.setText("$startStr - $endStr")
+            }, hour, minute, true).show()
+
+        }, hour, minute, true).show()
     }
 }
 

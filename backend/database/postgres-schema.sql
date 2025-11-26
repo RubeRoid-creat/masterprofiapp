@@ -222,6 +222,20 @@ CREATE TABLE IF NOT EXISTS reviews (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Таблица версий приложений (для Android мастера и клиента)
+CREATE TABLE IF NOT EXISTS app_versions (
+    id SERIAL PRIMARY KEY,
+    platform VARCHAR(50) NOT NULL, -- 'android_master', 'android_client'
+    current_version VARCHAR(20) NOT NULL,
+    min_required_version VARCHAR(20) NOT NULL,
+    force_update BOOLEAN DEFAULT FALSE,
+    release_notes TEXT,
+    download_url TEXT,
+    supported_os_versions TEXT,
+    released_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Таблица категорий услуг
 CREATE TABLE IF NOT EXISTS service_categories (
     id SERIAL PRIMARY KEY,
