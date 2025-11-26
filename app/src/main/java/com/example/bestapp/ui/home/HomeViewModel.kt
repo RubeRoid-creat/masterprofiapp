@@ -35,7 +35,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _statistics = MutableStateFlow(Statistics(0, 0, 0, 0.0))
     val statistics: StateFlow<Statistics> = _statistics.asStateFlow()
     
-    private val _todayStats = MutableStateFlow(TodayStats())
+    private val _todayStats = MutableStateFlow(
+        TodayStats(isShiftActive = prefsManager.isShiftActive())
+    )
     val todayStats: StateFlow<TodayStats> = _todayStats.asStateFlow()
     
     private val _weeklyRevenue = MutableStateFlow<List<Double>>(emptyList())
@@ -47,6 +49,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     init {
         // Инициализируем RetrofitClient
         RetrofitClient.initialize(application)
+        Log.d(TAG, "HomeViewModel init: isShiftActive=${prefsManager.isShiftActive()}")
         loadData()
     }
     
@@ -91,8 +94,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     // Используем локальный статус смены из prefsManager, а не с сервера
                     // чтобы не перезаписывать статус, который был изменен локально
                     val isShiftActive = prefsManager.isShiftActive()
+                    Log.d(TAG, "loadMasterStats: Updating stats, isShiftActive=$isShiftActive (from prefsManager)")
                     
-                    _todayStats.value = TodayStats(
+                    // Обновляем только если статус действительно изменился, чтобы не перезаписывать оптимистичное обновление
+                    _todayStats.value = _todayStats.value.copy(
                         todayRevenue = todayRevenue,
                         todayOrders = todayOrders,
                         rating = rating,
@@ -132,43 +137,49 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val currentStatus = prefsManager.isShiftActive()
             val newStatus = !currentStatus
             
+            Log.d(TAG, "toggleShift: currentStatus=$currentStatus, newStatus=$newStatus")
+            
             // Оптимистичное обновление UI сразу
             _todayStats.value = _todayStats.value.copy(isShiftActive = newStatus)
             prefsManager.setShiftActive(newStatus)
             
+            Log.d(TAG, "toggleShift: Updated _todayStats.isShiftActive=${_todayStats.value.isShiftActive}, prefsManager.isShiftActive=${prefsManager.isShiftActive()}")
+            
             try {
                 if (newStatus) {
                     // Начинаем смену (используем дефолтные координаты, можно улучшить позже)
+                    Log.d(TAG, "toggleShift: Calling startShift API...")
                     val result = apiRepository.startShift(0.0, 0.0)
                     result.onSuccess {
+                        Log.d(TAG, "✅ Shift started successfully, status=${prefsManager.isShiftActive()}")
                         // Не перезагружаем данные сразу, чтобы не перезаписать статус
                         // Статус уже обновлен оптимистично и сохранен в prefsManager
-                        Log.d(TAG, "✅ Shift started")
                     }.onFailure { error ->
                         // Откатываем изменения при ошибке
+                        Log.e(TAG, "❌ Failed to start shift: ${error.message}, rolling back...")
                         _todayStats.value = _todayStats.value.copy(isShiftActive = currentStatus)
                         prefsManager.setShiftActive(currentStatus)
-                        Log.e(TAG, "❌ Failed to start shift: ${error.message}")
                     }
                 } else {
                     // Заканчиваем смену
+                    Log.d(TAG, "toggleShift: Calling endShift API...")
                     val result = apiRepository.endShift()
                     result.onSuccess {
+                        Log.d(TAG, "✅ Shift ended successfully, status=${prefsManager.isShiftActive()}")
                         // Не перезагружаем данные сразу, чтобы не перезаписать статус
                         // Статус уже обновлен оптимистично и сохранен в prefsManager
-                        Log.d(TAG, "✅ Shift ended")
                     }.onFailure { error ->
                         // Откатываем изменения при ошибке
+                        Log.e(TAG, "❌ Failed to end shift: ${error.message}, rolling back...")
                         _todayStats.value = _todayStats.value.copy(isShiftActive = currentStatus)
                         prefsManager.setShiftActive(currentStatus)
-                        Log.e(TAG, "❌ Failed to end shift: ${error.message}")
                     }
                 }
             } catch (e: Exception) {
                 // Откатываем изменения при ошибке
+                Log.e(TAG, "Error toggling shift", e)
                 _todayStats.value = _todayStats.value.copy(isShiftActive = currentStatus)
                 prefsManager.setShiftActive(currentStatus)
-                Log.e(TAG, "Error toggling shift", e)
             }
         }
     }

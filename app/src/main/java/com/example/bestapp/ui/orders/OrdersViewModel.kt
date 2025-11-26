@@ -369,9 +369,13 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
         val currentStatus = _isShiftActive.value
         val newStatus = !currentStatus
         
+        Log.d(TAG, "toggleShift: currentStatus=$currentStatus, newStatus=$newStatus")
+        
         // Оптимистичное обновление UI сразу
         _isShiftActive.value = newStatus
         prefsManager.setShiftActive(newStatus)
+        
+        Log.d(TAG, "toggleShift: Updated _isShiftActive=${_isShiftActive.value}, prefsManager.isShiftActive=${prefsManager.isShiftActive()}")
         
         if (newStatus) {
             startShift()
