@@ -190,26 +190,59 @@ export async function initDatabase() {
 // Функция для автоматического добавления поля inn при ошибке
 function addInnColumnIfNeeded(sql) {
   try {
-    // Проверяем, существует ли уже поле inn
-    const tableInfo = db.prepare("PRAGMA table_info(masters)").all();
-    if (tableInfo && Array.isArray(tableInfo) && tableInfo.some(col => col.name === 'inn')) {
-      return false; // Поле уже существует
+    // Проверяем, относится ли запрос к таблице masters
+    const sqlUpper = sql.toUpperCase().replace(/\s+/g, ' ');
+    const isMastersTable = sqlUpper.includes(' MASTERS') || 
+                           sqlUpper.includes('FROM MASTERS') || 
+                           sqlUpper.includes('UPDATE MASTERS') || 
+                           sqlUpper.includes('INTO MASTERS') || 
+                           sqlUpper.includes('JOIN MASTERS');
+    
+    if (!isMastersTable) {
+      return false; // Не относится к таблице masters
     }
     
-    // Проверяем, относится ли запрос к таблице masters
-    const sqlUpper = sql.toUpperCase();
-    if (sqlUpper.includes('MASTERS') || sqlUpper.includes('FROM masters') || sqlUpper.includes('UPDATE masters') || sqlUpper.includes('INTO masters') || sqlUpper.includes('JOIN masters')) {
+    // Проверяем, существует ли уже поле inn
+    try {
+      const stmt = db.prepare("PRAGMA table_info(masters)");
+      const tableInfo = [];
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        if (row && row.name === 'inn') {
+          stmt.free();
+          return false; // Поле уже существует
+        }
+        tableInfo.push(row);
+      }
+      stmt.free();
+    } catch (checkError) {
+      console.error('Ошибка проверки структуры таблицы masters:', checkError.message);
+      // Продолжаем, если проверка не удалась - попробуем добавить поле
+    }
+    
+    // Пытаемся добавить поле inn (безопасно, если уже существует - просто проигнорируем ошибку)
+    try {
       db.run('ALTER TABLE masters ADD COLUMN inn TEXT');
       console.log('✅ Автоматически добавлено поле inn в таблицу masters');
       saveDatabase();
       return true; // Поле добавлено
+    } catch (alterError) {
+      const errorMsg = alterError.message || '';
+      if (errorMsg.includes('duplicate column') || 
+          errorMsg.includes('already exists') ||
+          errorMsg.includes('UNIQUE constraint')) {
+        // Поле уже существует, это нормально
+        console.log('ℹ️ Поле inn уже существует в таблице masters');
+        return false;
+      }
+      // Если другая ошибка - выводим её, но не прерываем выполнение
+      console.error('Ошибка добавления поля inn:', errorMsg);
+      return false;
     }
   } catch (e) {
-    if (!e.message.includes('duplicate column') && !e.message.includes('already exists')) {
-      console.error('Ошибка добавления поля inn:', e.message);
-    }
+    console.error('Ошибка в addInnColumnIfNeeded:', e.message);
+    return false;
   }
-  return false;
 }
 
 // Утилита для выполнения запросов
