@@ -113,10 +113,37 @@ router.post('/documents', authenticate, authorize('master'), upload.single('docu
     ]);
     
     // Сохраняем ИНН (обязательное поле)
-    query.run(
-      'UPDATE masters SET inn = ? WHERE id = ?',
-      [inn, master.id]
-    );
+    // Убеждаемся, что поле inn существует в таблице masters
+    try {
+      query.run(
+        'UPDATE masters SET inn = ? WHERE id = ?',
+        [inn, master.id]
+      );
+    } catch (innError) {
+      // Если ошибка "no such column: inn", добавляем поле и повторяем запрос
+      if (innError.message && innError.message.includes('no such column: inn')) {
+        try {
+          query.run('ALTER TABLE masters ADD COLUMN inn TEXT');
+          console.log('✅ Поле inn добавлено при сохранении документа');
+          // Повторяем запрос
+          query.run(
+            'UPDATE masters SET inn = ? WHERE id = ?',
+            [inn, master.id]
+          );
+        } catch (alterError) {
+          if (!alterError.message.includes('duplicate column') && !alterError.message.includes('already exists')) {
+            throw alterError;
+          }
+          // Если поле уже существует, повторяем UPDATE
+          query.run(
+            'UPDATE masters SET inn = ? WHERE id = ?',
+            [inn, master.id]
+          );
+        }
+      } else {
+        throw innError;
+      }
+    }
     
     // Обновляем статус верификации мастера на "pending", если был "not_verified"
     const currentStatus = query.get(
