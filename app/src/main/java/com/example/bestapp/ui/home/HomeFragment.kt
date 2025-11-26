@@ -211,28 +211,16 @@ class HomeFragment : Fragment() {
             // Количество отзывов
             findViewById<TextView>(R.id.today_reviews)?.text = "(${todayStats.reviewsCount})"
             
-            // Статус смены
+            // Статус смены (только отображение, без возможности переключения)
             val statusText = findViewById<TextView>(R.id.today_status)
             val statusIndicator = findViewById<View>(R.id.status_indicator)
-            val shiftCard = findViewById<View>(R.id.shift_card)
-            val shiftStatusText = findViewById<TextView>(R.id.shift_status_text)
             
             if (todayStats.isShiftActive) {
                 statusText?.text = "Примите заявку"
                 statusIndicator?.setBackgroundResource(R.drawable.circle_green)
-                shiftCard?.visibility = android.view.View.GONE
             } else {
                 statusText?.text = "Не на смене"
                 statusIndicator?.setBackgroundResource(R.drawable.circle_red)
-                shiftCard?.visibility = android.view.View.VISIBLE
-                shiftStatusText?.text = "⏰ Вы не на смене"
-            }
-            
-            // Обработка нажатия на карточку смены
-            shiftCard?.setOnClickListener {
-                // Оптимистичное обновление UI сразу
-                shiftStatusText?.text = "✅ Примите заявку"
-                viewModel.toggleShift()
             }
             
             // Настройка автоприема
