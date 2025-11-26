@@ -44,6 +44,8 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
+// Статичный сайт обновлений приложений
+app.use('/updates', express.static(join(__dirname, 'public', 'updates')));
 
 // Логирование запросов
 app.use((req, res, next) => {
