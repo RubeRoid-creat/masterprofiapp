@@ -88,7 +88,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     val todayOrders = (stats["todayOrders"] as? Number)?.toInt() ?: 0
                     val rating = (stats["averageRating"] as? Number)?.toDouble() ?: 0.0
                     val reviewsCount = (stats["reviewsCount"] as? Number)?.toInt() ?: 0
-                    val isShiftActive = (masterData?.get("isOnShift") as? Boolean) ?: false
+                    // Используем локальный статус смены из prefsManager, а не с сервера
+                    // чтобы не перезаписывать статус, который был изменен локально
+                    val isShiftActive = prefsManager.isShiftActive()
                     
                     _todayStats.value = TodayStats(
                         todayRevenue = todayRevenue,
@@ -139,8 +141,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     // Начинаем смену (используем дефолтные координаты, можно улучшить позже)
                     val result = apiRepository.startShift(0.0, 0.0)
                     result.onSuccess {
-                        // Перезагружаем данные после успешного начала смены
-                        loadMasterStats()
+                        // Не перезагружаем данные сразу, чтобы не перезаписать статус
+                        // Статус уже обновлен оптимистично и сохранен в prefsManager
                         Log.d(TAG, "✅ Shift started")
                     }.onFailure { error ->
                         // Откатываем изменения при ошибке
@@ -152,8 +154,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     // Заканчиваем смену
                     val result = apiRepository.endShift()
                     result.onSuccess {
-                        // Перезагружаем данные после успешного окончания смены
-                        loadMasterStats()
+                        // Не перезагружаем данные сразу, чтобы не перезаписать статус
+                        // Статус уже обновлен оптимистично и сохранен в prefsManager
                         Log.d(TAG, "✅ Shift ended")
                     }.onFailure { error ->
                         // Откатываем изменения при ошибке

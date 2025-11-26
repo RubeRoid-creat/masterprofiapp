@@ -338,17 +338,14 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             val result = apiRepository.startShift(latitude, longitude)
             result.onSuccess {
                 Log.d(TAG, "Shift started successfully")
-                _isShiftActive.value = true
-                prefsManager.setShiftActive(true) // Сохраняем в SharedPreferences
+                // Статус уже обновлен оптимистично, не перезаписываем
                 Log.d(TAG, "Refreshing orders after shift start...")
                 refreshOrders() // Обновляем заказы после начала смены
             }.onFailure { error ->
                 Log.e(TAG, "Failed to start shift", error)
-                // Все равно обновляем UI для тестирования
-                _isShiftActive.value = true
-                prefsManager.setShiftActive(true) // Сохраняем в SharedPreferences
-                Log.d(TAG, "Refreshing orders despite shift start failure...")
-                refreshOrders() // Пробуем загрузить заявки даже при ошибке
+                // Откатываем изменения при ошибке
+                _isShiftActive.value = false
+                prefsManager.setShiftActive(false)
             }
         }
     }
@@ -358,22 +355,28 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             val result = apiRepository.endShift()
             result.onSuccess {
                 Log.d(TAG, "Shift ended successfully")
-                _isShiftActive.value = false
-                prefsManager.setShiftActive(false) // Сохраняем в SharedPreferences
+                // Статус уже обновлен оптимистично, не перезаписываем
             }.onFailure { error ->
                 Log.e(TAG, "Failed to end shift", error)
-                // Все равно обновляем UI
-                _isShiftActive.value = false
-                prefsManager.setShiftActive(false) // Сохраняем в SharedPreferences
+                // Откатываем изменения при ошибке
+                _isShiftActive.value = true
+                prefsManager.setShiftActive(true)
             }
         }
     }
     
     fun toggleShift() {
-        if (_isShiftActive.value) {
-            endShift()
-        } else {
+        val currentStatus = _isShiftActive.value
+        val newStatus = !currentStatus
+        
+        // Оптимистичное обновление UI сразу
+        _isShiftActive.value = newStatus
+        prefsManager.setShiftActive(newStatus)
+        
+        if (newStatus) {
             startShift()
+        } else {
+            endShift()
         }
     }
     
