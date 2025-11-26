@@ -108,6 +108,7 @@
                                 android:text="0 ₽"
                                 android:textSize="18sp"
                                 android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface"
                                 android:layout_marginTop="4dp" />
                         </LinearLayout>
 
@@ -131,6 +132,7 @@
                                 android:text="0 ₽"
                                 android:textSize="18sp"
                                 android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface"
                                 android:layout_marginTop="4dp" />
                         </LinearLayout>
                     </LinearLayout>
@@ -154,10 +156,18 @@
                         android:layout_marginTop="4dp" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_request_payout"
+                        android:id="@+id/btn_topup"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
+                        android:text="Пополнить кошелек"
+                        style="@style/Widget.Material3.Button" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_request_payout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
                         android:text="Запросить выплату"
                         style="@style/Widget.Material3.Button.OutlinedButton" />
                 </LinearLayout>

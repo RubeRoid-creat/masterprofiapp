@@ -16,7 +16,8 @@ data class WalletUiState(
     val wallet: ApiWallet? = null,
     val transactions: List<ApiTransaction> = emptyList(),
     val errorMessage: String? = null,
-    val isRequestingPayout: Boolean = false
+    val isRequestingPayout: Boolean = false,
+    val isTopupInProgress: Boolean = false
 )
 
 class WalletViewModel : ViewModel() {
@@ -109,6 +110,36 @@ class WalletViewModel : ViewModel() {
                     isRequestingPayout = false
                 )
                 Log.e(TAG, "Error requesting payout", e)
+            }
+        }
+    }
+    
+    fun topupWallet(amount: Double, paymentMethod: String = "card", description: String? = null) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isTopupInProgress = true, errorMessage = null)
+            try {
+                val result = apiRepository.topupWallet(amount, paymentMethod, description)
+                result.onSuccess { response ->
+                    _uiState.value = _uiState.value.copy(
+                        isTopupInProgress = false
+                    )
+                    // Обновляем кошелек и транзакции
+                    loadWallet()
+                    loadTransactions()
+                    Log.d(TAG, "Wallet topped up: ${response.transaction.id}, new balance: ${response.newBalance}")
+                }.onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = error.message ?: "Ошибка пополнения кошелька",
+                        isTopupInProgress = false
+                    )
+                    Log.e(TAG, "Error topup wallet", error)
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = e.message ?: "Ошибка пополнения кошелька",
+                    isTopupInProgress = false
+                )
+                Log.e(TAG, "Error topup wallet", e)
             }
         }
     }

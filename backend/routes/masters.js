@@ -1275,6 +1275,59 @@ router.post('/wallet/payout', authenticate, authorize('master'), (req, res) => {
   }
 });
 
+// Пополнить кошелек
+router.post('/wallet/topup', authenticate, authorize('master'), (req, res) => {
+  try {
+    const { amount, paymentMethod, description } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Укажите сумму для пополнения' });
+    }
+    
+    if (amount > 100000) {
+      return res.status(400).json({ error: 'Максимальная сумма пополнения: 100 000 ₽' });
+    }
+    
+    const master = query.get('SELECT id, balance FROM masters WHERE user_id = ?', [req.user.id]);
+    if (!master) {
+      return res.status(404).json({ error: 'Профиль мастера не найден' });
+    }
+    
+    // Создаем транзакцию пополнения
+    // В реальной системе здесь должна быть интеграция с платежной системой
+    // Для MVP сразу зачисляем средства со статусом 'completed'
+    const transactionResult = query.run(`
+      INSERT INTO master_transactions 
+      (master_id, transaction_type, amount, status, description, payout_method)
+      VALUES (?, 'income', ?, 'completed', ?, ?)
+    `, [
+      master.id, 
+      amount, 
+      description || `Пополнение кошелька через ${paymentMethod || 'карта'}`,
+      paymentMethod || 'card'
+    ]);
+    
+    // Обновляем баланс мастера
+    query.run(`
+      UPDATE masters 
+      SET balance = COALESCE(balance, 0) + ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `, [amount, master.id]);
+    
+    const transaction = query.get('SELECT * FROM master_transactions WHERE id = ?', [transactionResult.lastInsertRowid]);
+    const updatedMaster = query.get('SELECT balance FROM masters WHERE id = ?', [master.id]);
+    
+    res.status(201).json({
+      message: 'Кошелек успешно пополнен',
+      transaction,
+      newBalance: updatedMaster.balance || 0
+    });
+  } catch (error) {
+    console.error('Ошибка пополнения кошелька:', error);
+    res.status(500).json({ error: 'Ошибка сервера при пополнении кошелька' });
+  }
+});
+
 export default router;
 
 

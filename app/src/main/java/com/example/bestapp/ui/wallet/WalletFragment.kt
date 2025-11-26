@@ -35,6 +35,7 @@ class WalletFragment : Fragment() {
     private var availableForPayoutText: TextView? = null
     private var recyclerTransactions: RecyclerView? = null
     private var btnRequestPayout: MaterialButton? = null
+    private var btnTopup: MaterialButton? = null
     private var errorText: TextView? = null
     
     private val currencyFormat = NumberFormat.getCurrencyInstance(Locale("ru", "RU"))
@@ -66,6 +67,7 @@ class WalletFragment : Fragment() {
         availableForPayoutText = view.findViewById(R.id.text_available_for_payout)
         recyclerTransactions = view.findViewById(R.id.recycler_transactions)
         btnRequestPayout = view.findViewById(R.id.btn_request_payout)
+        btnTopup = view.findViewById(R.id.btn_topup)
         errorText = view.findViewById(R.id.text_error)
     }
     
@@ -87,6 +89,9 @@ class WalletFragment : Fragment() {
         btnRequestPayout?.setOnClickListener {
             showPayoutDialog()
         }
+        btnTopup?.setOnClickListener {
+            showTopupDialog()
+        }
     }
     
     private fun observeUiState() {
@@ -100,7 +105,8 @@ class WalletFragment : Fragment() {
                     totalEarnedText?.text = currencyFormat.format(wallet.totalEarned)
                     availableForPayoutText?.text = currencyFormat.format(wallet.availableForPayout)
                     
-                    btnRequestPayout?.isEnabled = wallet.availableForPayout > 0 && !state.isRequestingPayout
+                    btnRequestPayout?.isEnabled = wallet.availableForPayout > 0 && !state.isRequestingPayout && !state.isTopupInProgress
+                    btnTopup?.isEnabled = !state.isRequestingPayout && !state.isTopupInProgress
                 }
                 
                 adapter.submitList(state.transactions)
@@ -133,6 +139,29 @@ class WalletFragment : Fragment() {
                     viewModel.requestPayout(amount)
                 } else {
                     Toast.makeText(context, "Укажите корректную сумму", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
+    }
+    
+    private fun showTopupDialog() {
+        val viewModel = this.viewModel
+        
+        val dialogView = layoutInflater.inflate(R.layout.dialog_topup, null)
+        val amountInput = dialogView.findViewById<TextInputEditText>(R.id.input_amount)
+        val paymentMethodInput = dialogView.findViewById<TextInputEditText>(R.id.input_payment_method)
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Пополнить кошелек")
+            .setView(dialogView)
+            .setPositiveButton("Пополнить") { _, _ ->
+                val amount = amountInput?.text?.toString()?.toDoubleOrNull()
+                if (amount != null && amount >= 100 && amount <= 100000) {
+                    val paymentMethod = paymentMethodInput?.text?.toString() ?: "card"
+                    viewModel.topupWallet(amount, paymentMethod, "Пополнение кошелька")
+                } else {
+                    Toast.makeText(context, "Сумма должна быть от 100 до 100 000 ₽", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Отмена", null)

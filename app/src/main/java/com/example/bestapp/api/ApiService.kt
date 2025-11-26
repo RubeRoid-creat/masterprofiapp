@@ -99,6 +99,9 @@ interface ApiService {
     @POST("api/masters/wallet/payout")
     suspend fun requestPayout(@Body request: com.example.bestapp.api.models.PayoutRequest): Response<com.example.bestapp.api.models.ApiTransaction>
     
+    @POST("api/masters/wallet/topup")
+    suspend fun topupWallet(@Body request: com.example.bestapp.api.models.TopupRequest): Response<com.example.bestapp.api.models.TopupResponse>
+    
     // ============= Расписание =============
     
     @GET("api/masters/schedule")

@@ -353,6 +353,18 @@ data class PayoutRequest(
     @SerializedName("payout_details") val payoutDetails: Map<String, String>? = null
 )
 
+data class TopupRequest(
+    val amount: Double,
+    @SerializedName("payment_method") val paymentMethod: String? = "card",
+    val description: String? = null
+)
+
+data class TopupResponse(
+    val message: String,
+    val transaction: ApiTransaction,
+    @SerializedName("new_balance") val newBalance: Double
+)
+
 // ============= Schedule Models =============
 
 data class ApiScheduleItem(

@@ -964,6 +964,33 @@ class ApiRepository {
         }
     }
     
+    suspend fun topupWallet(amount: Double, paymentMethod: String = "card", description: String? = null): Result<com.example.bestapp.api.models.TopupResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = com.example.bestapp.api.models.TopupRequest(amount, paymentMethod, description)
+                val response = api.topupWallet(request)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = try {
+                        val errorJson = errorBody?.let { 
+                            com.google.gson.Gson().fromJson(it, Map::class.java) 
+                        } as? Map<*, *>
+                        errorJson?.get("error")?.toString() ?: "Ошибка пополнения: ${response.code()}"
+                    } catch (e: Exception) {
+                        "Ошибка пополнения: ${response.code()}"
+                    }
+                    Log.e(TAG, "Topup wallet failed: ${response.code()}, body=$errorBody")
+                    Result.failure(Exception(errorMessage))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error topup wallet", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
     // ============= Subscriptions =============
     
     suspend fun getMySubscription(): Result<com.example.bestapp.api.models.ApiSubscriptionInfo> {
