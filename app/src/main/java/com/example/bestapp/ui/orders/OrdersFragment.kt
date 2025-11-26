@@ -91,6 +91,9 @@ class OrdersFragment : Fragment() {
         observeOrders()
         observeCompletedOrders()
         
+        // Инициализируем карточку смены с текущим статусом
+        updateShiftCard(viewModel.isShiftActive.value)
+        
         // Всегда загружаем заявки при открытии экрана
         android.util.Log.d("OrdersFragment", "onViewCreated: refreshing orders...")
         viewModel.refreshOrders()
@@ -296,9 +299,18 @@ class OrdersFragment : Fragment() {
     
     private fun setupShiftCard() {
         shiftCard?.setOnClickListener {
+            val currentStatus = viewModel.isShiftActive.value
+            val newStatus = !currentStatus
+            
             // Оптимистичное обновление UI сразу
-            shiftStatusText?.text = "✅ Примите заявку"
-            shiftStatusHint?.text = "Вы на смене и готовы принимать заказы"
+            if (newStatus) {
+                shiftStatusText?.text = "✅ Вы на смене"
+                shiftStatusHint?.text = "Нажмите на карточку, чтобы завершить смену"
+            } else {
+                shiftStatusText?.text = "⏰ Вы не на смене"
+                shiftStatusHint?.text = "Нажмите на карточку, чтобы начать принимать заказы"
+            }
+            
             viewModel.toggleShift()
         }
     }
@@ -608,9 +620,9 @@ class OrdersFragment : Fragment() {
     
     private fun updateShiftCard(isActive: Boolean) {
         if (isActive) {
-            shiftStatusText?.text = "✅ Примите заявку"
-            shiftStatusHint?.text = "Вы на смене и готовы принимать заказы"
-            shiftCard?.visibility = View.GONE
+            shiftStatusText?.text = "✅ Вы на смене"
+            shiftStatusHint?.text = "Нажмите на карточку, чтобы завершить смену"
+            shiftCard?.visibility = View.VISIBLE
         } else {
             shiftStatusText?.text = "⏰ Вы не на смене"
             shiftStatusHint?.text = "Нажмите на карточку, чтобы начать принимать заказы"
