@@ -117,3 +117,4 @@ export function formatArrivalTime(minutes) {
   return `${hours} ч ${mins} мин`;
 }
 
+

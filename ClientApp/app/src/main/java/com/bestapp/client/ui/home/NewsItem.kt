@@ -9,3 +9,4 @@ data class NewsItem(
     val category: String? = null
 )
 
+

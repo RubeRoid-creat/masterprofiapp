@@ -45,8 +45,8 @@ class OrdersFragment : Fragment() {
     private var btnOptimizeRoute: MaterialButton? = null
     private var btnCancelSelection: MaterialButton? = null
     private var tabLayout: TabLayout? = null
-    private var recyclerRejectedOrders: RecyclerView? = null
-    private lateinit var rejectedOrdersAdapter: OrdersAdapter
+    private var recyclerCompletedOrders: RecyclerView? = null
+    private lateinit var completedOrdersAdapter: OrdersAdapter
     private var filtersBottomSheet: com.google.android.material.bottomsheet.BottomSheetDialog? = null
     
     override fun onCreateView(
@@ -74,10 +74,10 @@ class OrdersFragment : Fragment() {
         btnFilters = view.findViewById(R.id.btn_filters)
         btnStartShift = view.findViewById(R.id.btn_start_shift)
         tabLayout = view.findViewById(R.id.tab_layout)
-        recyclerRejectedOrders = view.findViewById(R.id.recycler_rejected_orders)
+        recyclerCompletedOrders = view.findViewById(R.id.recycler_completed_orders)
         
         setupRecyclerView()
-        setupRejectedOrdersRecyclerView()
+        setupCompletedOrdersRecyclerView()
         setupFilters()
         setupMapButton()
         setupFiltersButton()
@@ -85,7 +85,7 @@ class OrdersFragment : Fragment() {
         setupBatchActions()
         setupTabs()
         observeOrders()
-        observeRejectedOrders()
+        observeCompletedOrders()
         
         // Загружаем заявки при открытии экрана, если смена активна
         if (viewModel.isShiftActive.value) {
@@ -116,10 +116,16 @@ class OrdersFragment : Fragment() {
     }
     
     private fun showFiltersBottomSheet() {
+        android.util.Log.d("OrdersFragment", "Открываем BottomSheet фильтров")
         val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_filters, null)
         val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
         bottomSheet.setContentView(bottomSheetView)
         filtersBottomSheet = bottomSheet
+        
+        // Устанавливаем поведение для полного раскрытия
+        val behavior = bottomSheet.behavior
+        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        behavior.isDraggable = true
         
         // Находим элементы в BottomSheet
         val chipGroupDeviceType = bottomSheetView.findViewById<ChipGroup>(R.id.chip_group_device_type)
@@ -130,8 +136,52 @@ class OrdersFragment : Fragment() {
         val btnClearFilters = bottomSheetView.findViewById<MaterialButton>(R.id.btn_clear_filters)
         val btnApplyFilters = bottomSheetView.findViewById<MaterialButton>(R.id.btn_apply_filters)
         
-        // Восстанавливаем текущие значения фильтров (если есть в ViewModel)
-        // TODO: Восстановить значения из ViewModel при необходимости
+        // Восстанавливаем текущие значения фильтров из ViewModel
+        val currentFilters = viewModel.getCurrentFilters()
+        
+        // Восстанавливаем типы устройств
+        currentFilters.deviceTypes.forEach { deviceType ->
+            val chipId = when (deviceType) {
+                "Стиральная машина" -> R.id.chip_washing_machines
+                "Посудомоечная машина" -> R.id.chip_dishwashers
+                "Духовой шкаф" -> R.id.chip_ovens
+                "Холодильник" -> R.id.chip_refrigerators
+                "Микроволновая печь" -> R.id.chip_microwaves
+                "Морозильный ларь" -> R.id.chip_freezers
+                "Варочная панель" -> R.id.chip_cooktops
+                "Ноутбук" -> R.id.chip_laptops
+                "Десктоп" -> R.id.chip_desktops
+                "Кофемашина" -> R.id.chip_coffee_machines
+                "Кондиционер" -> R.id.chip_air_conditioners
+                "Водонагреватель" -> R.id.chip_water_heaters
+                else -> null
+            }
+            chipId?.let { chipGroupDeviceType?.check(it) }
+        }
+        
+        // Восстанавливаем цену
+        currentFilters.minPrice?.let { 
+            filterMinPriceSheet?.setText(it.toInt().toString())
+        }
+        currentFilters.maxPrice?.let { 
+            filterMaxPriceSheet?.setText(it.toInt().toString())
+        }
+        
+        // Восстанавливаем расстояние (конвертируем из метров в км)
+        currentFilters.maxDistance?.let { 
+            filterMaxDistanceSheet?.setText((it / 1000).toString())
+        }
+        
+        // Восстанавливаем срочность
+        currentFilters.urgency?.let { urgency ->
+            val chipId = when (urgency) {
+                "emergency" -> R.id.chip_urgency_emergency
+                "urgent" -> R.id.chip_urgency_urgent
+                "planned" -> R.id.chip_urgency_planned
+                else -> null
+            }
+            chipId?.let { chipGroupUrgency?.check(it) }
+        }
         
         // Настройка фильтров по типу техники
         chipGroupDeviceType?.setOnCheckedStateChangeListener { group, checkedIds ->
@@ -167,14 +217,27 @@ class OrdersFragment : Fragment() {
             filterMinPriceSheet?.text?.clear()
             filterMaxPriceSheet?.text?.clear()
             filterMaxDistanceSheet?.text?.clear()
+            
+            // Очищаем фильтры в ViewModel и сохраняем
+            viewModel.setDeviceTypeFilter(emptySet())
+            viewModel.setPriceFilter(null, null)
+            viewModel.setMaxDistanceFilter(null)
+            viewModel.setUrgencyFilter(null)
+            
+            // Применяем изменения сразу
+            bottomSheet.dismiss()
         }
         
         // Кнопка применения фильтров
         btnApplyFilters?.setOnClickListener {
+            android.util.Log.d("OrdersFragment", "Кнопка 'Применить' нажата")
+            
             // Применяем фильтры
             val minPrice = filterMinPriceSheet?.text?.toString()?.toIntOrNull()
             val maxPrice = filterMaxPriceSheet?.text?.toString()?.toIntOrNull()
             val maxDistance = filterMaxDistanceSheet?.text?.toString()?.toDoubleOrNull()
+            
+            android.util.Log.d("OrdersFragment", "Фильтры: minPrice=$minPrice, maxPrice=$maxPrice, maxDistance=$maxDistance")
             
             // Применяем фильтры по цене и расстоянию
             viewModel.setPriceFilter(minPrice?.toDouble(), maxPrice?.toDouble())
@@ -201,6 +264,8 @@ class OrdersFragment : Fragment() {
                     else -> null
                 }
             }?.toSet() ?: emptySet()
+            
+            android.util.Log.d("OrdersFragment", "Выбранные типы устройств: $selectedTypes")
             viewModel.setDeviceTypeFilter(selectedTypes)
             
             // Получаем выбранную срочность
@@ -211,10 +276,19 @@ class OrdersFragment : Fragment() {
                     R.id.chip_urgency_planned -> "planned"
                     else -> null
                 }
+                android.util.Log.d("OrdersFragment", "Выбранная срочность: $urgency")
                 urgency?.let { viewModel.setUrgencyFilter(it) }
             } ?: viewModel.setUrgencyFilter(null)
             
+            android.util.Log.d("OrdersFragment", "Фильтры применены, закрываем BottomSheet")
             bottomSheet.dismiss()
+        }
+        
+        // Проверяем, что кнопка найдена
+        if (btnApplyFilters == null) {
+            android.util.Log.e("OrdersFragment", "Кнопка btn_apply_filters не найдена!")
+        } else {
+            android.util.Log.d("OrdersFragment", "Кнопка btn_apply_filters найдена и настроена")
         }
         
         bottomSheet.show()
@@ -562,81 +636,6 @@ class OrdersFragment : Fragment() {
         }
     }
     
-    private fun setupRejectedOrdersRecyclerView() {
-        rejectedOrdersAdapter = OrdersAdapter(
-            onOrderClick = { order ->
-                // Открываем детали заказа
-                val bundle = Bundle().apply {
-                    putLong("orderId", order.id)
-                }
-                findNavController().navigate(R.id.action_orders_to_order_details, bundle)
-            },
-            onOrderSelected = null // Для истории отклонений не нужен режим выбора
-        )
-        
-        recyclerRejectedOrders?.apply {
-            adapter = rejectedOrdersAdapter
-            layoutManager = LinearLayoutManager(context)
-        }
-    }
-    
-    private fun setupTabs() {
-        tabLayout?.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                when (tab?.position) {
-                    0 -> {
-                        // Новые заказы
-                        recyclerView?.visibility = View.VISIBLE
-                        recyclerRejectedOrders?.visibility = View.GONE
-                    }
-                    1 -> {
-                        // История отклонений
-                        recyclerView?.visibility = View.GONE
-                        recyclerRejectedOrders?.visibility = View.VISIBLE
-                        viewModel.loadRejectedOrders()
-                    }
-                }
-            }
-            
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
-    }
-    
-    private fun observeRejectedOrders() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.rejectedOrders.collectLatest { rejectedAssignments ->
-                // Конвертируем ApiRejectedAssignment в Order для отображения
-                val orders = rejectedAssignments.map { assignment ->
-                    val apiOrder = assignment.order
-                    Order(
-                        id = apiOrder.id,
-                        clientId = 0, // Не используется для отклоненных
-                        clientName = apiOrder.client.name,
-                        clientPhone = apiOrder.client.phone,
-                        clientAddress = apiOrder.clientAddress,
-                        deviceType = apiOrder.deviceType,
-                        deviceBrand = apiOrder.deviceBrand ?: "",
-                        deviceModel = apiOrder.deviceModel ?: "",
-                        problemDescription = apiOrder.problemDescription,
-                        latitude = apiOrder.latitude,
-                        longitude = apiOrder.longitude,
-                        status = when (apiOrder.repairStatus) {
-                            "new" -> RepairStatus.NEW
-                            "in_progress" -> RepairStatus.IN_PROGRESS
-                            "completed" -> RepairStatus.COMPLETED
-                            else -> RepairStatus.NEW
-                        },
-                        estimatedCost = apiOrder.estimatedCost,
-                        urgency = apiOrder.urgency,
-                        createdAt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault()).parse(apiOrder.createdAt) ?: java.util.Date(),
-                        updatedAt = java.util.Date()
-                    )
-                }
-                rejectedOrdersAdapter.submitList(orders)
-            }
-        }
-    }
     
     override fun onDestroyView() {
         super.onDestroyView()
@@ -652,6 +651,56 @@ class OrdersFragment : Fragment() {
         btnShowMap = null
         btnStartShift = null
         tabLayout = null
-        recyclerRejectedOrders = null
+        recyclerCompletedOrders = null
+    }
+    
+    private fun setupCompletedOrdersRecyclerView() {
+        completedOrdersAdapter = OrdersAdapter(
+            onOrderClick = { order ->
+                // Открываем детали заказа
+                val bundle = Bundle().apply {
+                    putLong("orderId", order.id)
+                }
+                findNavController().navigate(R.id.action_orders_to_order_details, bundle)
+            },
+            onOrderSelected = null // Для завершенных заказов не нужен режим выбора
+        )
+        
+        recyclerCompletedOrders?.apply {
+            adapter = completedOrdersAdapter
+            layoutManager = LinearLayoutManager(context)
+        }
+    }
+    
+    private fun setupTabs() {
+        tabLayout?.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.position) {
+                    0 -> {
+                        // Новые заказы
+                        recyclerView?.visibility = View.VISIBLE
+                        recyclerCompletedOrders?.visibility = View.GONE
+                    }
+                    1 -> {
+                        // Завершенные заказы
+                        recyclerView?.visibility = View.GONE
+                        recyclerCompletedOrders?.visibility = View.VISIBLE
+                        viewModel.loadCompletedOrders()
+                    }
+                }
+            }
+            
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+    }
+    
+    private fun observeCompletedOrders() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.completedOrders.collectLatest { orders ->
+                android.util.Log.d("OrdersFragment", "Completed orders updated: ${orders.size} orders")
+                completedOrdersAdapter.submitList(orders)
+            }
+        }
     }
 }

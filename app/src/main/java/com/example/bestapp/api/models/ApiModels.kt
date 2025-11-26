@@ -156,9 +156,12 @@ data class LocationRequest(
 )
 
 data class UpdateMasterProfileRequest(
-    val specialization: List<String>?,
-    val latitude: Double?,
-    val longitude: Double?
+    val name: String? = null,
+    val phone: String? = null,
+    val email: String? = null,
+    val specialization: List<String>? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 // ============= Assignment Models =============

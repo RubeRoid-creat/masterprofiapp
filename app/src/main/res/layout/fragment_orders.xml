@@ -43,7 +43,7 @@
 
         </com.google.android.material.appbar.MaterialToolbar>
         
-        <!-- Вкладки: Новые заказы / История отклонений -->
+        <!-- Вкладки: Новые заказы / Завершенные заказы -->
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tab_layout"
             android:layout_width="match_parent"
@@ -59,7 +59,7 @@
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="История отклонений" />
+                android:text="Завершенные заказы" />
         </com.google.android.material.tabs.TabLayout>
         
         <!-- Кнопки для батчинга заказов -->
@@ -249,7 +249,7 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Список заказов -->
+            <!-- Список новых заказов -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_orders"
                 android:layout_width="match_parent"
@@ -260,9 +260,9 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_order_preview" />
             
-            <!-- Список отклоненных заказов -->
+            <!-- Список завершенных заказов -->
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_rejected_orders"
+                android:id="@+id/recycler_completed_orders"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clipToPadding="false"

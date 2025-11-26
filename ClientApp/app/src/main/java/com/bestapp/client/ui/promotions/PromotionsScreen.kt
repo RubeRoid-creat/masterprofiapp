@@ -169,3 +169,4 @@ data class PromotionItem(
     val validUntil: Long? = null
 )
 
+

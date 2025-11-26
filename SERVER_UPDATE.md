@@ -63,3 +63,4 @@ curl http://localhost:3000/api/promotions/types
 
 **Готово!** Сервер обновлен и работает.
 
+

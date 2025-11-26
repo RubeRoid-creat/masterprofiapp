@@ -379,3 +379,4 @@ CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
 CREATE TRIGGER update_fcm_tokens_updated_at BEFORE UPDATE ON fcm_tokens
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+

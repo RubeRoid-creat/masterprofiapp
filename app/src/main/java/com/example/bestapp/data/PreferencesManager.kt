@@ -32,6 +32,14 @@ class PreferencesManager private constructor(context: Context) {
         // Зоны работы
         private const val KEY_WORK_ZONES = "work_zones"
         
+        // Фильтры заказов
+        private const val KEY_FILTER_DEVICE_TYPES = "filter_device_types"
+        private const val KEY_FILTER_MIN_PRICE = "filter_min_price"
+        private const val KEY_FILTER_MAX_PRICE = "filter_max_price"
+        private const val KEY_FILTER_MAX_DISTANCE = "filter_max_distance"
+        private const val KEY_FILTER_URGENCY = "filter_urgency"
+        private const val KEY_FILTER_SORT_BY = "filter_sort_by"
+        
         @Volatile
         private var instance: PreferencesManager? = null
         
@@ -232,12 +240,108 @@ class PreferencesManager private constructor(context: Context) {
     }
     
     /**
+     * Сохраняет фильтры заказов
+     */
+    fun saveOrderFilters(
+        deviceTypes: Set<String>,
+        minPrice: Double?,
+        maxPrice: Double?,
+        maxDistance: Double?,
+        urgency: String?,
+        sortBy: String?
+    ) {
+        prefs.edit().apply {
+            if (deviceTypes.isNotEmpty()) {
+                putStringSet(KEY_FILTER_DEVICE_TYPES, deviceTypes)
+            } else {
+                remove(KEY_FILTER_DEVICE_TYPES)
+            }
+            
+            if (minPrice != null) {
+                putFloat(KEY_FILTER_MIN_PRICE, minPrice.toFloat())
+            } else {
+                remove(KEY_FILTER_MIN_PRICE)
+            }
+            
+            if (maxPrice != null) {
+                putFloat(KEY_FILTER_MAX_PRICE, maxPrice.toFloat())
+            } else {
+                remove(KEY_FILTER_MAX_PRICE)
+            }
+            
+            if (maxDistance != null) {
+                putFloat(KEY_FILTER_MAX_DISTANCE, maxDistance.toFloat())
+            } else {
+                remove(KEY_FILTER_MAX_DISTANCE)
+            }
+            
+            if (urgency != null) {
+                putString(KEY_FILTER_URGENCY, urgency)
+            } else {
+                remove(KEY_FILTER_URGENCY)
+            }
+            
+            if (sortBy != null) {
+                putString(KEY_FILTER_SORT_BY, sortBy)
+            } else {
+                remove(KEY_FILTER_SORT_BY)
+            }
+        }.apply()
+    }
+    
+    /**
+     * Получает сохраненные фильтры заказов
+     */
+    fun getOrderFilters(): OrderFilters {
+        return OrderFilters(
+            deviceTypes = prefs.getStringSet(KEY_FILTER_DEVICE_TYPES, emptySet()) ?: emptySet(),
+            minPrice = if (prefs.contains(KEY_FILTER_MIN_PRICE)) {
+                prefs.getFloat(KEY_FILTER_MIN_PRICE, 0f).toDouble()
+            } else null,
+            maxPrice = if (prefs.contains(KEY_FILTER_MAX_PRICE)) {
+                prefs.getFloat(KEY_FILTER_MAX_PRICE, 0f).toDouble()
+            } else null,
+            maxDistance = if (prefs.contains(KEY_FILTER_MAX_DISTANCE)) {
+                prefs.getFloat(KEY_FILTER_MAX_DISTANCE, 0f).toDouble()
+            } else null,
+            urgency = prefs.getString(KEY_FILTER_URGENCY, null),
+            sortBy = prefs.getString(KEY_FILTER_SORT_BY, null)
+        )
+    }
+    
+    /**
+     * Сохраняет boolean значение
+     */
+    fun setBoolean(key: String, value: Boolean) {
+        prefs.edit().putBoolean(key, value).apply()
+    }
+    
+    /**
+     * Получает boolean значение
+     */
+    fun getBoolean(key: String, defaultValue: Boolean = false): Boolean {
+        return prefs.getBoolean(key, defaultValue)
+    }
+    
+    /**
      * Очищает все настройки
      */
     fun clear() {
         prefs.edit().clear().apply()
     }
 }
+
+/**
+ * Класс для хранения фильтров заказов
+ */
+data class OrderFilters(
+    val deviceTypes: Set<String> = emptySet(),
+    val minPrice: Double? = null,
+    val maxPrice: Double? = null,
+    val maxDistance: Double? = null,
+    val urgency: String? = null,
+    val sortBy: String? = null
+)
 
 
 

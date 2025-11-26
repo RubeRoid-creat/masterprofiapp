@@ -281,6 +281,36 @@ class ApiRepository {
         }
     }
     
+    suspend fun updateMasterProfile(
+        name: String? = null,
+        phone: String? = null,
+        email: String? = null,
+        specialization: List<String>? = null
+    ): Result<MessageResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = com.example.bestapp.api.models.UpdateMasterProfileRequest(
+                    name = name,
+                    phone = phone,
+                    email = email,
+                    specialization = specialization
+                )
+                val response = api.updateMasterProfile(request)
+                if (response.isSuccessful && response.body() != null) {
+                    Log.d(TAG, "Master profile updated")
+                    Result.success(response.body()!!)
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "Update master profile failed: code=${response.code()}, body=$errorBody")
+                    Result.failure(Exception("Ошибка обновления профиля: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Update master profile error", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
     // ============= Назначения =============
     
     suspend fun getMyAssignments(status: String? = null): Result<List<ApiAssignment>> {

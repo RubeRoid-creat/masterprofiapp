@@ -31,6 +31,9 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     private val _filteredOrders = MutableStateFlow<List<Order>>(emptyList())
     val filteredOrders: StateFlow<List<Order>> = _filteredOrders.asStateFlow()
     
+    private val _completedOrders = MutableStateFlow<List<Order>>(emptyList())
+    val completedOrders: StateFlow<List<Order>> = _completedOrders.asStateFlow()
+    
     private val _rejectedOrders = MutableStateFlow<List<com.example.bestapp.api.models.ApiRejectedAssignment>>(emptyList())
     val rejectedOrders: StateFlow<List<com.example.bestapp.api.models.ApiRejectedAssignment>> = _rejectedOrders.asStateFlow()
     
@@ -54,6 +57,17 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     init {
         // Инициализируем RetrofitClient для загрузки сохраненного токена
         RetrofitClient.initialize(application)
+        
+        // Загружаем сохраненные фильтры
+        val savedFilters = prefsManager.getOrderFilters()
+        Log.d(TAG, "Загрузка сохраненных фильтров: deviceTypes=${savedFilters.deviceTypes}, minPrice=${savedFilters.minPrice}, maxPrice=${savedFilters.maxPrice}, maxDistance=${savedFilters.maxDistance}, urgency=${savedFilters.urgency}")
+        _selectedDeviceTypes.value = savedFilters.deviceTypes
+        _minPrice.value = savedFilters.minPrice
+        _maxPrice.value = savedFilters.maxPrice
+        _maxDistance.value = savedFilters.maxDistance
+        _urgency.value = savedFilters.urgency
+        _sortBy.value = savedFilters.sortBy
+        
         loadNewOrders()
     }
     
@@ -180,12 +194,14 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     
     fun setDeviceTypeFilter(types: Set<String>) {
         _selectedDeviceTypes.value = types
+        saveFilters()
         applyFilters()
     }
     
     fun setPriceFilter(minPrice: Double?, maxPrice: Double?) {
         _minPrice.value = minPrice
         _maxPrice.value = maxPrice
+        saveFilters()
         loadNewOrders() // Перезагружаем заказы с новым фильтром
     }
     
@@ -196,17 +212,57 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     
     fun setUrgencyFilter(urgency: String?) {
         _urgency.value = urgency
+        saveFilters()
         loadNewOrders() // Перезагружаем заказы с новым фильтром
     }
     
     fun setMaxDistanceFilter(maxDistance: Double?) {
         _maxDistance.value = maxDistance
+        saveFilters()
         loadNewOrders()
     }
     
     fun setSortBy(sortBy: String?) {
         _sortBy.value = sortBy
+        saveFilters()
         loadNewOrders()
+    }
+    
+    /**
+     * Сохраняет текущие фильтры в SharedPreferences
+     */
+    private fun saveFilters() {
+        val filters = com.example.bestapp.data.OrderFilters(
+            deviceTypes = _selectedDeviceTypes.value,
+            minPrice = _minPrice.value,
+            maxPrice = _maxPrice.value,
+            maxDistance = _maxDistance.value,
+            urgency = _urgency.value,
+            sortBy = _sortBy.value
+        )
+        Log.d(TAG, "Сохранение фильтров: deviceTypes=${filters.deviceTypes}, minPrice=${filters.minPrice}, maxPrice=${filters.maxPrice}, maxDistance=${filters.maxDistance}, urgency=${filters.urgency}")
+        prefsManager.saveOrderFilters(
+            deviceTypes = filters.deviceTypes,
+            minPrice = filters.minPrice,
+            maxPrice = filters.maxPrice,
+            maxDistance = filters.maxDistance,
+            urgency = filters.urgency,
+            sortBy = filters.sortBy
+        )
+    }
+    
+    /**
+     * Получает текущие значения фильтров
+     */
+    fun getCurrentFilters(): com.example.bestapp.data.OrderFilters {
+        return com.example.bestapp.data.OrderFilters(
+            deviceTypes = _selectedDeviceTypes.value,
+            minPrice = _minPrice.value,
+            maxPrice = _maxPrice.value,
+            maxDistance = _maxDistance.value,
+            urgency = _urgency.value,
+            sortBy = _sortBy.value
+        )
     }
     
     // Локальные фильтры (применяются после получения данных с backend)
@@ -244,6 +300,36 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     
     fun refreshOrders() {
         loadNewOrders()
+    }
+    
+    fun loadCompletedOrders() {
+        viewModelScope.launch {
+            Log.d(TAG, "Loading completed orders...")
+            
+            val result = apiRepository.getOrders(
+                status = "completed",
+                deviceType = null,
+                orderType = null,
+                urgency = null,
+                maxDistance = null,
+                minPrice = null,
+                maxPrice = null,
+                sortBy = "created_at",
+                masterLatitude = null,
+                masterLongitude = null
+            )
+            
+            result.onSuccess { apiOrders ->
+                Log.d(TAG, "Loaded ${apiOrders.size} completed orders from API")
+                
+                // Конвертируем ApiOrder в Order
+                val convertedOrders = apiOrders.map { it.toOrder() }
+                _completedOrders.value = convertedOrders
+            }.onFailure { error ->
+                Log.e(TAG, "Failed to load completed orders from API: ${error.message}", error)
+                _completedOrders.value = emptyList()
+            }
+        }
     }
     
     fun startShift(latitude: Double = 56.859611, longitude: Double = 35.911896) {

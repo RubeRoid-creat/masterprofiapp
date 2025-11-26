@@ -89,11 +89,6 @@ class ProfileFragment : Fragment() {
             findNavController().navigate(R.id.action_profile_to_promotion)
         }
         
-        val btnRejectedOrders = view.findViewById<MaterialButton>(R.id.btn_rejected_orders)
-        btnRejectedOrders?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_rejected_orders)
-        }
-        
         btnLogout.setOnClickListener {
             logout()
         }
