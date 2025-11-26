@@ -98,6 +98,7 @@
                         android:text="@string/verification_documents"
                         android:textSize="16sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="8dp" />
 
                     <TextView
@@ -150,6 +151,7 @@
                         android:text="@string/verification_certificates"
                         android:textSize="16sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="8dp" />
 
                     <TextView
@@ -199,6 +201,7 @@
                         android:text="@string/verification_portfolio"
                         android:textSize="16sp"
                         android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="8dp" />
 
                     <TextView
