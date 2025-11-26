@@ -22,6 +22,8 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import java.util.UUID
 
 class VerificationFragment : Fragment() {
@@ -150,68 +152,88 @@ class VerificationFragment : Fragment() {
         lifecycleScope.launch {
             var successCount = 0
             var errorCount = 0
+            val errorMessages = mutableListOf<String>()
             
-            // Загружаем основной документ (паспорт)
+            // Собираем все задачи для параллельного выполнения
+            val allDocuments = mutableListOf<kotlin.Pair<Uri, kotlin.Triple<String, String, DocumentType>>>()
+            
+            // Добавляем основные документы
             for (doc in documents) {
-                try {
-                    val uri = Uri.parse(doc.filePath)
-                    val result = apiRepository.uploadVerificationDocument(
-                        fileUri = uri,
-                        documentType = when (doc.type) {
-                            DocumentType.PASSPORT -> "passport"
-                            DocumentType.DIPLOMA -> "diploma"
-                            else -> "other"
-                        },
-                        documentName = doc.fileName,
-                        inn = inn,
-                        context = requireContext()
-                    )
-                    
-                    result.onSuccess {
-                        successCount++
-                    }.onFailure { error ->
-                        errorCount++
-                        android.util.Log.e("VerificationFragment", "Error uploading document: ${error.message}")
-                    }
-                } catch (e: Exception) {
-                    errorCount++
-                    android.util.Log.e("VerificationFragment", "Error processing document", e)
+                val uri = Uri.parse(doc.filePath)
+                val docType = when (doc.type) {
+                    DocumentType.PASSPORT -> "passport"
+                    DocumentType.DIPLOMA -> "diploma"
+                    else -> "other"
                 }
+                allDocuments.add(kotlin.Pair(uri, kotlin.Triple(docType, doc.fileName, doc.type)))
             }
             
-            // Загружаем сертификаты
+            // Добавляем сертификаты
             for (cert in certificates) {
-                try {
-                    val uri = Uri.parse(cert.filePath)
-                    val result = apiRepository.uploadVerificationDocument(
-                        fileUri = uri,
-                        documentType = "certificate",
-                        documentName = cert.fileName,
-                        inn = inn,
-                        context = requireContext()
-                    )
-                    
-                    result.onSuccess {
-                        successCount++
-                    }.onFailure { error ->
-                        errorCount++
-                        android.util.Log.e("VerificationFragment", "Error uploading certificate: ${error.message}")
+                val uri = Uri.parse(cert.filePath)
+                allDocuments.add(kotlin.Pair(uri, kotlin.Triple("certificate", cert.fileName, DocumentType.CERTIFICATE)))
+            }
+            
+            // Выполняем все загрузки параллельно и ждем их завершения
+            val results = allDocuments.map { (uri, params) ->
+                async {
+                    try {
+                        val (docType, docName, _) = params
+                        apiRepository.uploadVerificationDocument(
+                            fileUri = uri,
+                            documentType = docType,
+                            documentName = docName,
+                            inn = inn,
+                            context = requireContext()
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.e("VerificationFragment", "Error processing document", e)
+                        Result.failure<com.example.bestapp.api.models.UploadDocumentResponse>(
+                            Exception("Ошибка обработки документа: ${e.message}")
+                        )
                     }
-                } catch (e: Exception) {
-                    errorCount++
-                    android.util.Log.e("VerificationFragment", "Error processing certificate", e)
                 }
             }
             
-            if (errorCount == 0) {
-                Toast.makeText(context, "Документы успешно загружены", Toast.LENGTH_SHORT).show()
+            // Ожидаем завершения всех загрузок
+            for (deferred in results) {
+                try {
+                    val result = deferred.await()
+                    result.onSuccess {
+                        successCount++
+                        android.util.Log.d("VerificationFragment", "Документ успешно загружен")
+                    }.onFailure { error ->
+                        errorCount++
+                        val errorMsg = error.message ?: "Неизвестная ошибка"
+                        errorMessages.add(errorMsg)
+                        android.util.Log.e("VerificationFragment", "Error uploading document: $errorMsg", error)
+                    }
+                } catch (e: Exception) {
+                    errorCount++
+                    val errorMsg = e.message ?: "Неизвестная ошибка"
+                    errorMessages.add(errorMsg)
+                    android.util.Log.e("VerificationFragment", "Error waiting for upload", e)
+                }
+            }
+            
+            // Показываем результат
+            if (errorCount == 0 && successCount > 0) {
+                Toast.makeText(context, "Документы успешно загружены ($successCount)", Toast.LENGTH_SHORT).show()
                 findNavController().navigateUp()
-            } else {
+            } else if (errorCount > 0) {
+                val errorText = if (errorMessages.isNotEmpty()) {
+                    "Ошибки: ${errorMessages.take(2).joinToString(", ")}${if (errorMessages.size > 2) "..." else ""}"
+                } else {
+                    "Загружено: $successCount, ошибок: $errorCount"
+                }
                 Toast.makeText(
                     context,
-                    "Загружено: $successCount, ошибок: $errorCount",
+                    errorText,
                     Toast.LENGTH_LONG
                 ).show()
+                android.util.Log.e("VerificationFragment", "Upload summary: success=$successCount, errors=$errorCount, messages=$errorMessages")
+            } else {
+                Toast.makeText(context, "Не удалось загрузить документы", Toast.LENGTH_SHORT).show()
             }
         }
     }

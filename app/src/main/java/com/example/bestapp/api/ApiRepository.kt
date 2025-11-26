@@ -803,7 +803,20 @@ class ApiRepository {
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "Upload document failed: ${response.code()}, body=$errorBody")
-                    Result.failure(Exception("Ошибка загрузки документа: ${response.code()}"))
+                    
+                    // Пытаемся извлечь сообщение об ошибке из ответа
+                    val errorMessage = try {
+                        if (errorBody != null) {
+                            val errorJson = com.google.gson.Gson().fromJson(errorBody, Map::class.java) as? Map<*, *>
+                            errorJson?.get("error") as? String ?: "Ошибка загрузки документа: ${response.code()}"
+                        } else {
+                            "Ошибка загрузки документа: ${response.code()}"
+                        }
+                    } catch (e: Exception) {
+                        "Ошибка загрузки документа: ${response.code()}"
+                    }
+                    
+                    Result.failure(Exception(errorMessage))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error uploading verification document", e)
