@@ -67,7 +67,8 @@ router.post('/check', (req, res) => {
     const minRequiredVersion = versionConfig.min_required_version || currentVersion;
     const forceUpdate = !!versionConfig.force_update;
     
-    const updateRequired = isVersionLess(app_version, minRequiredVersion);
+    // Обновление требуется, если текущая версия приложения меньше версии на сервере
+    const updateRequired = isVersionLess(app_version, currentVersion);
     
     const response = {
       update_required: updateRequired,
