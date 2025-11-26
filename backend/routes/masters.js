@@ -222,6 +222,8 @@ router.get('/wallet', authenticate, (req, res) => {
 // Получить статистику мастера
 router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
   try {
+    console.log(`[GET /api/masters/stats/me] User ID: ${req.user.id}, Role: ${req.user.role}`);
+    
     // Получаем данные мастера с информацией о пользователе
     const master = query.get(`
       SELECT 
@@ -233,92 +235,156 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
     `, [req.user.id]);
     
     if (!master) {
+      console.error(`[GET /api/masters/stats/me] Master not found for user_id: ${req.user.id}`);
       return res.status(404).json({ error: 'Профиль мастера не найден' });
     }
     
-    // Получаем статистику заказов
-    const totalOrders = query.get(
-      'SELECT COUNT(*) as count FROM orders WHERE assigned_master_id = ?',
-      [master.id]
-    );
+    console.log(`[GET /api/masters/stats/me] Master found: id=${master.id}, name=${master.name}`);
     
-    const completedOrders = query.get(
-      'SELECT COUNT(*) as count FROM orders WHERE assigned_master_id = ? AND repair_status = ?',
-      [master.id, 'completed']
-    );
+    // Получаем статистику заказов с обработкой ошибок
+    let totalOrders = null;
+    let completedOrders = null;
+    let inProgressOrders = null;
+    let avgRating = null;
     
-    const inProgressOrders = query.get(
-      'SELECT COUNT(*) as count FROM orders WHERE assigned_master_id = ? AND repair_status = ?',
-      [master.id, 'in_progress']
-    );
+    try {
+      totalOrders = query.get(
+        'SELECT COUNT(*) as count FROM orders WHERE assigned_master_id = ?',
+        [master.id]
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting totalOrders:`, e);
+      totalOrders = { count: 0 };
+    }
+    
+    try {
+      completedOrders = query.get(
+        'SELECT COUNT(*) as count FROM orders WHERE assigned_master_id = ? AND repair_status = ?',
+        [master.id, 'completed']
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting completedOrders:`, e);
+      completedOrders = { count: 0 };
+    }
+    
+    try {
+      inProgressOrders = query.get(
+        'SELECT COUNT(*) as count FROM orders WHERE assigned_master_id = ? AND repair_status = ?',
+        [master.id, 'in_progress']
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting inProgressOrders:`, e);
+      inProgressOrders = { count: 0 };
+    }
     
     // Получаем средний рейтинг из отзывов
-    const avgRating = query.get(
-      'SELECT AVG(rating) as avg, COUNT(*) as count FROM reviews WHERE master_id = ?',
-      [master.id]
-    );
+    try {
+      avgRating = query.get(
+        'SELECT AVG(rating) as avg, COUNT(*) as count FROM reviews WHERE master_id = ?',
+        [master.id]
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting avgRating:`, e);
+      avgRating = { avg: 0, count: 0 };
+    }
     
     // Получаем статистику за сегодня
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStart = today.toISOString();
-    const todayEnd = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString();
     
-    const todayOrders = query.get(
-      `SELECT COUNT(*) as count FROM orders 
-       WHERE assigned_master_id = ? 
-       AND (created_at >= ? OR updated_at >= ?)`,
-      [master.id, todayStart, todayStart]
-    );
+    let todayOrders = null;
+    let todayRevenue = null;
     
-    const todayRevenue = query.get(
-      `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
-       WHERE assigned_master_id = ? 
-       AND repair_status = 'completed' 
-       AND completed_at >= ?`,
-      [master.id, todayStart]
-    );
+    try {
+      todayOrders = query.get(
+        `SELECT COUNT(*) as count FROM orders 
+         WHERE assigned_master_id = ? 
+         AND (created_at >= ? OR updated_at >= ?)`,
+        [master.id, todayStart, todayStart]
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting todayOrders:`, e);
+      todayOrders = { count: 0 };
+    }
+    
+    try {
+      todayRevenue = query.get(
+        `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
+         WHERE assigned_master_id = ? 
+         AND repair_status = 'completed' 
+         AND completed_at >= ?`,
+        [master.id, todayStart]
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting todayRevenue:`, e);
+      todayRevenue = { total: 0 };
+    }
     
     // Получаем доходы за последние 7 дней
     const weeklyRevenue = [];
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dayStart = new Date(date.setHours(0, 0, 0, 0)).toISOString();
-      const dayEnd = new Date(date.setHours(23, 59, 59, 999)).toISOString();
-      
-      const dayRevenue = query.get(
-        `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
-         WHERE assigned_master_id = ? 
-         AND repair_status = 'completed' 
-         AND completed_at >= ? AND completed_at <= ?`,
-        [master.id, dayStart, dayEnd]
-      );
-      
-      weeklyRevenue.push(dayRevenue.total || 0);
+      try {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dayStart = new Date(date.setHours(0, 0, 0, 0)).toISOString();
+        const dayEnd = new Date(date.setHours(23, 59, 59, 999)).toISOString();
+        
+        const dayRevenue = query.get(
+          `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
+           WHERE assigned_master_id = ? 
+           AND repair_status = 'completed' 
+           AND completed_at >= ? AND completed_at <= ?`,
+          [master.id, dayStart, dayEnd]
+        );
+        
+        weeklyRevenue.push((dayRevenue && dayRevenue.total != null) ? dayRevenue.total : 0);
+      } catch (e) {
+        console.error(`[GET /api/masters/stats/me] Error getting revenue for day ${i}:`, e);
+        weeklyRevenue.push(0);
+      }
     }
     
     // Получаем новые заказы (не назначенные)
-    const newOrders = query.get(
-      'SELECT COUNT(*) as count FROM orders WHERE request_status = ?',
-      ['new']
-    );
+    let newOrders = null;
+    let uniqueClients = null;
+    let monthlyRevenue = null;
+    
+    try {
+      newOrders = query.get(
+        'SELECT COUNT(*) as count FROM orders WHERE request_status = ?',
+        ['new']
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting newOrders:`, e);
+      newOrders = { count: 0 };
+    }
     
     // Получаем количество уникальных клиентов
-    const uniqueClients = query.get(
-      'SELECT COUNT(DISTINCT client_id) as count FROM orders WHERE assigned_master_id = ?',
-      [master.id]
-    );
+    try {
+      uniqueClients = query.get(
+        'SELECT COUNT(DISTINCT client_id) as count FROM orders WHERE assigned_master_id = ?',
+        [master.id]
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting uniqueClients:`, e);
+      uniqueClients = { count: 0 };
+    }
     
     // Получаем доход за текущий месяц
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
-    const monthlyRevenue = query.get(
-      `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
-       WHERE assigned_master_id = ? 
-       AND repair_status = 'completed' 
-       AND completed_at >= ?`,
-      [master.id, monthStart]
-    );
+    try {
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+      monthlyRevenue = query.get(
+        `SELECT COALESCE(SUM(final_cost), 0) as total FROM orders 
+         WHERE assigned_master_id = ? 
+         AND repair_status = 'completed' 
+         AND completed_at >= ?`,
+        [master.id, monthStart]
+      );
+    } catch (e) {
+      console.error(`[GET /api/masters/stats/me] Error getting monthlyRevenue:`, e);
+      monthlyRevenue = { total: 0 };
+    }
     
     // Парсим специализацию
     let specialization = [];
@@ -331,33 +397,38 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
     res.json({
       master: {
         id: master.id,
-        name: master.name,
-        email: master.email,
-        phone: master.phone,
-        rating: master.rating,
-        completedOrders: master.completed_orders,
+        name: master.name || '',
+        email: master.email || '',
+        phone: master.phone || '',
+        rating: master.rating || 0,
+        completedOrders: master.completed_orders || 0,
         isOnShift: master.is_on_shift === 1,
-        status: master.status,
+        status: master.status || 'offline',
         specialization: specialization,
         verificationStatus: master.verification_status || 'not_verified'
       },
       stats: {
-        totalOrders: totalOrders.count,
-        completedOrders: completedOrders.count,
-        inProgressOrders: inProgressOrders.count,
-        averageRating: avgRating.avg || 0,
-        reviewsCount: avgRating.count,
-        todayOrders: todayOrders.count || 0,
-        todayRevenue: todayRevenue.total || 0,
+        totalOrders: (totalOrders && totalOrders.count) ? totalOrders.count : 0,
+        completedOrders: (completedOrders && completedOrders.count) ? completedOrders.count : 0,
+        inProgressOrders: (inProgressOrders && inProgressOrders.count) ? inProgressOrders.count : 0,
+        averageRating: (avgRating && avgRating.avg != null) ? avgRating.avg : 0,
+        reviewsCount: (avgRating && avgRating.count) ? avgRating.count : 0,
+        todayOrders: (todayOrders && todayOrders.count) ? todayOrders.count : 0,
+        todayRevenue: (todayRevenue && todayRevenue.total != null) ? todayRevenue.total : 0,
         weeklyRevenue: weeklyRevenue,
-        newOrders: newOrders.count || 0,
-        clientsCount: uniqueClients.count || 0,
-        monthlyRevenue: monthlyRevenue.total || 0
+        newOrders: (newOrders && newOrders.count) ? newOrders.count : 0,
+        clientsCount: (uniqueClients && uniqueClients.count) ? uniqueClients.count : 0,
+        monthlyRevenue: (monthlyRevenue && monthlyRevenue.total != null) ? monthlyRevenue.total : 0
       }
     });
   } catch (error) {
     console.error('Ошибка получения статистики:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      error: 'Ошибка сервера',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
