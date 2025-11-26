@@ -4,6 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
 import Users from './pages/Users';
@@ -42,6 +43,7 @@ function AppContent() {
       <Router basename="/admin">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/*"
             element={

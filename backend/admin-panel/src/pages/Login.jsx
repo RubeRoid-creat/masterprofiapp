@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -125,6 +125,14 @@ export default function Login() {
             >
               {loading ? 'Вход...' : 'Войти'}
             </Button>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2">
+                Нет аккаунта?{' '}
+                <Link to="/register" style={{ textDecoration: 'none' }}>
+                  Зарегистрироваться
+                </Link>
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </Box>
