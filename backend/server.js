@@ -71,7 +71,7 @@ app.use((req, res, next) => {
     // Проверяем и добавляем поле inn, если его нет
     try {
       const tableInfo = query.all("PRAGMA table_info(masters)");
-      const hasInn = tableInfo.some(col => col.name === 'inn');
+      const hasInn = tableInfo && Array.isArray(tableInfo) && tableInfo.some(col => col && col.name === 'inn');
       
       if (!hasInn) {
         console.log('📝 Добавление поля inn в таблицу masters...');
@@ -90,6 +90,15 @@ app.use((req, res, next) => {
       }
     } catch (e) {
       console.error('⚠️ Ошибка проверки поля inn:', e.message);
+      // При ошибке проверки все равно пытаемся добавить поле
+      try {
+        query.run('ALTER TABLE masters ADD COLUMN inn TEXT');
+        console.log('✅ Поле inn добавлено после ошибки проверки');
+      } catch (e2) {
+        if (!e2.message.includes('duplicate column') && !e2.message.includes('already exists')) {
+          console.error('⚠️ Критическая ошибка добавления поля inn:', e2.message);
+        }
+      }
     }
     
     // Инициализация Redis (опционально, если доступен)
