@@ -43,3 +43,5 @@ backend/backend-deploy.zip
 backend/admin-panel/node_modules/
 backend/admin-panel/dist/
 backend/admin-panel/build/
+
+backend/public/updates/*.apk
