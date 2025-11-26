@@ -44,7 +44,6 @@ class ProfileFragment : Fragment() {
         val btnVerification = view.findViewById<MaterialButton>(R.id.btn_verification)
         val btnWallet = view.findViewById<MaterialButton>(R.id.btn_wallet)
         val btnStatistics = view.findViewById<MaterialButton>(R.id.btn_statistics)
-        val btnReports = view.findViewById<MaterialButton>(R.id.btn_reports)
         val btnLogout = view.findViewById<MaterialButton>(R.id.btn_logout)
         
         loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
@@ -59,10 +58,6 @@ class ProfileFragment : Fragment() {
         
         btnStatistics?.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_statistics)
-        }
-        
-        btnReports?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_reports)
         }
         
         val btnSubscriptions = view.findViewById<MaterialButton>(R.id.btn_subscriptions)
