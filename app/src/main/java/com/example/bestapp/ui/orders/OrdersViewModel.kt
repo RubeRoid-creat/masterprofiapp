@@ -41,6 +41,14 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     private val _isShiftActive = MutableStateFlow(prefsManager.isShiftActive())
     val isShiftActive: StateFlow<Boolean> = _isShiftActive.asStateFlow()
     
+    // Статус верификации мастера
+    private val _isVerified = MutableStateFlow<Boolean?>(null) // null = еще не проверено
+    val isVerified: StateFlow<Boolean?> = _isVerified.asStateFlow()
+    
+    // Сообщение о необходимости верификации
+    private val _verificationMessage = MutableStateFlow<String?>(null)
+    val verificationMessage: StateFlow<String?> = _verificationMessage.asStateFlow()
+    
     // Настройки автоприема
     private val _autoAcceptSettings = MutableStateFlow(prefsManager.getAutoAcceptSettings())
     val autoAcceptSettings: StateFlow<com.example.bestapp.data.AutoAcceptSettings> = _autoAcceptSettings.asStateFlow()
@@ -68,7 +76,41 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
         _urgency.value = savedFilters.urgency
         _sortBy.value = savedFilters.sortBy
         
+        // Проверяем статус верификации при инициализации
+        checkVerificationStatus()
         loadNewOrders()
+    }
+    
+    /**
+     * Проверяет статус верификации мастера
+     */
+    private fun checkVerificationStatus() {
+        viewModelScope.launch {
+            try {
+                val statsResult = apiRepository.getMasterStats()
+                statsResult.onSuccess { response ->
+                    val masterData = response["master"] as? Map<*, *>
+                    val verificationStatus = masterData?.get("verificationStatus")?.toString()?.lowercase()
+                    val isVerified = verificationStatus == "verified"
+                    _isVerified.value = isVerified
+                    
+                    if (!isVerified) {
+                        _verificationMessage.value = "Для просмотра и принятия заказов необходимо пройти верификацию. Пожалуйста, перейдите в профиль и пройдите верификацию."
+                    } else {
+                        _verificationMessage.value = null
+                    }
+                    
+                    Log.d(TAG, "Verification status checked: $verificationStatus, isVerified: $isVerified")
+                }.onFailure { error ->
+                    Log.e(TAG, "Failed to check verification status: ${error.message}", error)
+                    // При ошибке загрузки профиля считаем, что мастер не верифицирован
+                    _isVerified.value = false
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception checking verification status", e)
+                _isVerified.value = false
+            }
+        }
     }
     
     private fun loadNewOrders() {
@@ -96,8 +138,16 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             result.onSuccess { apiOrders ->
                 Log.d(TAG, "Loaded ${apiOrders.size} orders from API")
                 
+                // Если мастер не верифицирован, не показываем заказы
+                if (_isVerified.value == false) {
+                    Log.d(TAG, "Master not verified, clearing orders list")
+                    _newOrders.value = emptyList()
+                    applyLocalFilters()
+                    return@launch
+                }
+                
                 // Проверяем автоприем для новых заказов
-                if (_isShiftActive.value && _autoAcceptSettings.value.isEnabled) {
+                if (_isShiftActive.value && _autoAcceptSettings.value.isEnabled && _isVerified.value == true) {
                     checkAutoAccept(apiOrders)
                 }
                 
@@ -151,6 +201,15 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             }.onFailure { error ->
                 Log.e(TAG, "Failed to load orders from API: ${error.message}", error)
                 error.printStackTrace()
+                
+                // Проверяем, не связана ли ошибка с верификацией
+                val errorMessage = error.message ?: ""
+                if (errorMessage.contains("верификац", ignoreCase = true) || 
+                    errorMessage.contains("verification", ignoreCase = true)) {
+                    _isVerified.value = false
+                    _verificationMessage.value = errorMessage
+                }
+                
                 _newOrders.value = emptyList()
                 applyLocalFilters()
             }

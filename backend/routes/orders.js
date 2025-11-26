@@ -137,7 +137,22 @@ router.get('/', authenticate, (req, res) => {
     // Если мастер, показываем заказы в зависимости от статуса
     if (req.user.role === 'master') {
       // Используем индекс по user_id (уже есть idx_masters_user_id)
-      const master = query.get('SELECT id, latitude, longitude FROM masters WHERE user_id = ? LIMIT 1', [req.user.id]);
+      const master = query.get('SELECT id, latitude, longitude, verification_status FROM masters WHERE user_id = ? LIMIT 1', [req.user.id]);
+      
+      // Проверяем верификацию мастера
+      if (!master) {
+        return res.status(404).json({ error: 'Профиль мастера не найден' });
+      }
+      
+      // Для новых заказов (status === 'new' или не указан) требуется верификация
+      if ((!status || status === 'new') && master.verification_status !== 'verified') {
+        return res.status(403).json({ 
+          error: 'Требуется верификация',
+          message: 'Для просмотра и принятия заказов необходимо пройти верификацию',
+          verificationRequired: true,
+          verificationStatus: master.verification_status
+        });
+      }
       
       if (status && (status === 'in_progress' || status === 'completed')) {
         // Для принятых заказов показываем только заказы мастера

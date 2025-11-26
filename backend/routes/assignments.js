@@ -80,10 +80,20 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
   try {
     const { status } = req.query;
     
-    // Получаем ID мастера
-    const master = query.get('SELECT id FROM masters WHERE user_id = ?', [req.user.id]);
+    // Получаем ID мастера и статус верификации
+    const master = query.get('SELECT id, verification_status FROM masters WHERE user_id = ?', [req.user.id]);
     if (!master) {
       return res.status(404).json({ error: 'Профиль мастера не найден' });
+    }
+    
+    // Проверяем верификацию мастера
+    if (master.verification_status !== 'verified') {
+      return res.status(403).json({ 
+        error: 'Требуется верификация',
+        message: 'Для просмотра и принятия заказов необходимо пройти верификацию',
+        verificationRequired: true,
+        verificationStatus: master.verification_status
+      });
     }
     
     let sql = `
@@ -141,7 +151,13 @@ router.get('/order/:orderId/active', authenticate, (req, res) => {
       console.log(`[GET /api/assignments/order/${orderId}/active] Назначение не найдено, проверяем возможность создания`);
       
       // Получаем информацию о мастере
-      const master = query.get('SELECT id, is_on_shift, status FROM masters WHERE user_id = ?', [req.user.id]);
+      const master = query.get('SELECT id, is_on_shift, status, verification_status FROM masters WHERE user_id = ?', [req.user.id]);
+      
+      // Проверяем верификацию перед автоматическим созданием назначения
+      if (master && master.verification_status !== 'verified') {
+        console.log(`[GET /api/assignments/order/${orderId}/active] Мастер #${master.id} не верифицирован, автоматическое назначение не создается`);
+        return res.status(404).json({ error: 'Активное назначение не найдено' });
+      }
       
       if (master && master.is_on_shift === 1 && master.status === 'available') {
         console.log(`[GET /api/assignments/order/${orderId}/active] Мастер на смене, проверяем заказ`);
@@ -213,10 +229,20 @@ router.post('/batch/accept', authenticate, authorize('master'), async (req, res)
       return res.status(400).json({ error: 'Можно принять максимум 5 заказов одновременно' });
     }
     
-    // Получаем ID мастера
-    const master = query.get('SELECT id FROM masters WHERE user_id = ?', [req.user.id]);
+    // Получаем ID мастера и статус верификации
+    const master = query.get('SELECT id, verification_status FROM masters WHERE user_id = ?', [req.user.id]);
     if (!master) {
       return res.status(404).json({ error: 'Профиль мастера не найден' });
+    }
+    
+    // Проверяем верификацию мастера
+    if (master.verification_status !== 'verified') {
+      return res.status(403).json({ 
+        error: 'Требуется верификация',
+        message: 'Для принятия заказов необходимо пройти верификацию. Пожалуйста, пройдите верификацию в разделе профиля.',
+        verificationRequired: true,
+        verificationStatus: master.verification_status
+      });
     }
     
     const results = [];
@@ -348,14 +374,25 @@ router.post('/:id/accept', authenticate, authorize('master'), async (req, res) =
     
     console.log(`📥 Принятие заказа: assignmentId=${assignmentId}, userId=${req.user.id}`);
     
-    // Получаем ID мастера
-    const master = query.get('SELECT id FROM masters WHERE user_id = ?', [req.user.id]);
+    // Получаем ID мастера и статус верификации
+    const master = query.get('SELECT id, verification_status FROM masters WHERE user_id = ?', [req.user.id]);
     if (!master) {
       console.log(`❌ Профиль мастера не найден для userId=${req.user.id}`);
       return res.status(404).json({ error: 'Профиль мастера не найден' });
     }
     
-    console.log(`✅ Мастер найден: masterId=${master.id}`);
+    // Проверяем верификацию мастера
+    if (master.verification_status !== 'verified') {
+      console.log(`❌ Мастер #${master.id} не верифицирован (status: ${master.verification_status})`);
+      return res.status(403).json({ 
+        error: 'Требуется верификация',
+        message: 'Для принятия заказов необходимо пройти верификацию. Пожалуйста, пройдите верификацию в разделе профиля.',
+        verificationRequired: true,
+        verificationStatus: master.verification_status
+      });
+    }
+    
+    console.log(`✅ Мастер найден: masterId=${master.id}, verified`);
     
     // Получаем назначение
     const assignment = query.get(

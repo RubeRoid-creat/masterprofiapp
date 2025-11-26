@@ -90,6 +90,7 @@ class OrdersFragment : Fragment() {
         setupTabs()
         observeOrders()
         observeCompletedOrders()
+        observeVerificationStatus()
         
         // Инициализируем карточку смены с текущим статусом
         updateShiftCard(viewModel.isShiftActive.value)
@@ -404,6 +405,12 @@ class OrdersFragment : Fragment() {
     }
     
     private fun acceptSelectedOrders() {
+        // Проверяем статус верификации
+        if (viewModel.isVerified.value == false) {
+            showVerificationDialog("Для принятия заказов необходимо пройти верификацию. Пожалуйста, перейдите в профиль и пройдите верификацию.")
+            return
+        }
+        
         val selectedOrderIds = adapter.getSelectedOrders()
         if (selectedOrderIds.isEmpty()) {
             android.widget.Toast.makeText(
@@ -449,11 +456,19 @@ class OrdersFragment : Fragment() {
                 exitSelectionMode()
                 viewModel.refreshOrders()
             }.onFailure { error ->
-                android.widget.Toast.makeText(
-                    context,
-                    "Ошибка принятия заказов: ${error.message}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                val errorMessage = error.message ?: "Ошибка принятия заказов"
+                
+                // Проверяем, не связана ли ошибка с верификацией
+                if (errorMessage.contains("верификац", ignoreCase = true) || 
+                    errorMessage.contains("verification", ignoreCase = true)) {
+                    showVerificationDialog(errorMessage)
+                } else {
+                    android.widget.Toast.makeText(
+                        context,
+                        errorMessage,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
@@ -616,6 +631,50 @@ class OrdersFragment : Fragment() {
         }
     }
     
+    private fun observeVerificationStatus() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.isVerified.collectLatest { isVerified ->
+                android.util.Log.d("OrdersFragment", "Verification status changed: $isVerified")
+                updateOrdersVisibility()
+                
+                // Если мастер не верифицирован, показываем сообщение
+                if (isVerified == false) {
+                    showVerificationMessage()
+                }
+            }
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.verificationMessage.collectLatest { message ->
+                if (message != null && viewModel.isVerified.value == false) {
+                    showVerificationDialog(message)
+                }
+            }
+        }
+    }
+    
+    private fun showVerificationMessage() {
+        // Обновляем emptyTextView для показа сообщения о верификации
+        emptyTextView?.text = "Для просмотра и принятия заказов необходимо пройти верификацию.\n\nПожалуйста, перейдите в профиль и загрузите документы для верификации."
+        emptyTextView?.visibility = View.VISIBLE
+        
+        // Скрываем RecyclerView
+        recyclerView?.visibility = View.GONE
+    }
+    
+    private fun showVerificationDialog(message: String) {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Требуется верификация")
+            .setMessage(message)
+            .setPositiveButton("Перейти в профиль") { _, _ ->
+                // Переход на экран профиля
+                findNavController().navigate(R.id.action_orders_to_profile)
+            }
+            .setNegativeButton("Отмена", null)
+            .setCancelable(false)
+            .show()
+    }
+    
     private fun updateShiftCard(isActive: Boolean) {
         if (isActive) {
             shiftStatusText?.text = "✅ Вы на смене"
@@ -631,17 +690,27 @@ class OrdersFragment : Fragment() {
     private fun updateOrdersVisibility() {
         val isShiftActive = viewModel.isShiftActive.value
         val orders = viewModel.filteredOrders.value
+        val isNotVerified = viewModel.isVerified.value == false
         
-        android.util.Log.d("OrdersFragment", "updateOrdersVisibility: isShiftActive=$isShiftActive, ordersCount=${orders.size}")
+        android.util.Log.d("OrdersFragment", "updateOrdersVisibility: isShiftActive=$isShiftActive, ordersCount=${orders.size}, isNotVerified=$isNotVerified")
+        
+        // Если мастер не верифицирован, показываем сообщение о верификации
+        if (isNotVerified) {
+            showVerificationMessage()
+            recyclerView?.visibility = View.GONE
+            return
+        }
         
         if (isShiftActive) {
             // При активной смене показываем заявки
+            emptyTextView?.text = "Нет доступных заказов"
             emptyTextView?.visibility = if (orders.isEmpty()) View.VISIBLE else View.GONE
             recyclerView?.visibility = if (orders.isEmpty()) View.GONE else View.VISIBLE
             android.util.Log.d("OrdersFragment", "Shift active: showing ${orders.size} orders")
         } else {
-            // При неактивной смене скрываем заявки
-            emptyTextView?.visibility = View.GONE
+            // При неактивной смене показываем сообщение
+            emptyTextView?.text = "Включите смену, чтобы видеть новые заказы"
+            emptyTextView?.visibility = View.VISIBLE
             recyclerView?.visibility = View.GONE
             android.util.Log.d("OrdersFragment", "Shift inactive: hiding orders")
         }

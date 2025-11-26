@@ -355,7 +355,25 @@ class ApiRepository {
                     Log.d(TAG, "Got ${response.body()!!.size} assignments")
                     Result.success(response.body()!!)
                 } else {
-                    Result.failure(Exception("Ошибка получения назначений: ${response.code()}"))
+                    // Проверяем, требуется ли верификация
+                    if (response.code() == 403) {
+                        val errorBody = response.errorBody()?.string()
+                        Log.w(TAG, "Verification required: $errorBody")
+                        val errorMessage = try {
+                            val errorJson = errorBody?.let { com.google.gson.Gson().fromJson(it, Map::class.java) } as? Map<*, *>
+                            errorJson?.get("message") as? String ?: "Требуется верификация для просмотра заказов"
+                        } catch (e: Exception) {
+                            "Требуется верификация для просмотра заказов"
+                        }
+                        Result.failure(Exception(errorMessage).apply {
+                            // Добавляем специальный флаг для проверки верификации
+                            (this as? java.lang.Exception)?.apply {
+                                // Сохраняем информацию о необходимости верификации
+                            }
+                        })
+                    } else {
+                        Result.failure(Exception("Ошибка получения назначений: ${response.code()}"))
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Get assignments error", e)
@@ -401,15 +419,29 @@ class ApiRepository {
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "Accept assignment failed: code=${response.code()}, body=$errorBody")
-                    val errorMessage = try {
-                        val errorJson = errorBody?.let { 
-                            com.google.gson.Gson().fromJson(it, Map::class.java) 
+                    
+                    // Проверяем, требуется ли верификация
+                    if (response.code() == 403) {
+                        val errorMessage = try {
+                            val errorJson = errorBody?.let { 
+                                com.google.gson.Gson().fromJson(it, Map::class.java) 
+                            } as? Map<*, *>
+                            errorJson?.get("message") as? String ?: "Для принятия заказов необходимо пройти верификацию"
+                        } catch (e: Exception) {
+                            "Для принятия заказов необходимо пройти верификацию"
                         }
-                        errorJson?.get("error")?.toString() ?: "Ошибка принятия заказа: ${response.code()}"
-                    } catch (e: Exception) {
-                        "Ошибка принятия заказа: ${response.code()}"
+                        Result.failure(Exception(errorMessage))
+                    } else {
+                        val errorMessage = try {
+                            val errorJson = errorBody?.let { 
+                                com.google.gson.Gson().fromJson(it, Map::class.java) 
+                            }
+                            errorJson?.get("error")?.toString() ?: "Ошибка принятия заказа: ${response.code()}"
+                        } catch (e: Exception) {
+                            "Ошибка принятия заказа: ${response.code()}"
+                        }
+                        Result.failure(Exception(errorMessage))
                     }
-                    Result.failure(Exception(errorMessage))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Accept assignment error", e)
