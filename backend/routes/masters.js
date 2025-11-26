@@ -338,7 +338,8 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
         completedOrders: master.completed_orders,
         isOnShift: master.is_on_shift === 1,
         status: master.status,
-        specialization: specialization
+        specialization: specialization,
+        verificationStatus: master.verification_status || 'not_verified'
       },
       stats: {
         totalOrders: totalOrders.count,

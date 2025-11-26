@@ -57,4 +57,10 @@
     <color name="status_in_progress">#FF9800</color>
     <color name="status_completed">#4CAF50</color>
     <color name="status_cancelled">#F44336</color>
+    
+    <!-- Verification status colors -->
+    <color name="verification_verified">#4CAF50</color>
+    <color name="verification_pending">#FF9800</color>
+    <color name="verification_rejected">#F44336</color>
+    <color name="verification_not_verified">#757575</color>
 </resources>

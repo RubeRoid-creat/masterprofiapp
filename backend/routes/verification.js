@@ -302,22 +302,61 @@ router.post('/admin/documents/:id/approve', authenticate, authorize('admin'), (r
       WHERE id = ?
     `, ['approved', req.user.id, id]);
     
-    // Проверяем, все ли документы мастера одобрены
-    const pendingDocuments = query.get(`
-      SELECT COUNT(*) as count 
+    // Проверяем статус всех документов мастера
+    const allDocuments = query.all(`
+      SELECT status 
       FROM master_verification_documents 
-      WHERE master_id = ? AND status = 'pending'
+      WHERE master_id = ?
     `, [document.master_id]);
     
-    // Если все документы одобрены, обновляем статус верификации мастера
-    if (pendingDocuments.count === 0) {
-      query.run(
-        'UPDATE masters SET verification_status = ? WHERE id = ?',
-        ['verified', document.master_id]
-      );
+    // Проверяем, что у мастера есть ИНН и текущий статус
+    const masterInfo = query.get('SELECT inn, verification_status FROM masters WHERE id = ?', [document.master_id]);
+    
+    if (!masterInfo) {
+      return res.status(404).json({ error: 'Мастер не найден' });
     }
     
-    res.json({ message: 'Документ одобрен' });
+    // Подсчитываем документы по статусам
+    const statusCounts = {
+      pending: 0,
+      approved: 0,
+      rejected: 0
+    };
+    
+    allDocuments.forEach(doc => {
+      if (doc.status === 'pending') statusCounts.pending++;
+      else if (doc.status === 'approved') statusCounts.approved++;
+      else if (doc.status === 'rejected') statusCounts.rejected++;
+    });
+    
+    // Если нет pending документов и есть хотя бы один одобренный - верифицируем мастера
+    if (statusCounts.pending === 0 && statusCounts.approved > 0) {
+      if (!masterInfo.inn) {
+        return res.json({ 
+          message: 'Документ одобрен. Для верификации мастера требуется указать ИНН.',
+          needsInn: true
+        });
+      }
+      
+      // Обновляем статус верификации мастера
+      query.run(
+        'UPDATE masters SET verification_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ['verified', document.master_id]
+      );
+      
+      console.log(`✅ Мастер #${document.master_id} автоматически верифицирован после одобрения всех документов`);
+      
+      res.json({ 
+        message: 'Документ одобрен. Мастер автоматически верифицирован.',
+        masterVerified: true
+      });
+    } else {
+      res.json({ 
+        message: 'Документ одобрен',
+        pendingCount: statusCounts.pending,
+        approvedCount: statusCounts.approved
+      });
+    }
   } catch (error) {
     console.error('Ошибка одобрения документа:', error);
     res.status(500).json({ error: 'Ошибка сервера', details: error.message });

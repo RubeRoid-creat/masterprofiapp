@@ -80,6 +80,24 @@ class ProfileFragment : Fragment() {
         }
     }
     
+    override fun onResume() {
+        super.onResume()
+        // Перезагружаем данные профиля при возвращении на экран для обновления статуса верификации
+        view?.let {
+            val masterName = it.findViewById<TextView>(R.id.master_name)
+            val masterEmail = it.findViewById<TextView>(R.id.master_email)
+            val masterPhone = it.findViewById<TextView>(R.id.master_phone)
+            val masterSpec = it.findViewById<TextView>(R.id.master_specialization)
+            val masterRating = it.findViewById<TextView>(R.id.master_rating)
+            val masterReviewsCount = it.findViewById<TextView>(R.id.master_reviews_count)
+            val masterStatus = it.findViewById<TextView>(R.id.master_status)
+            val statusIndicator = it.findViewById<View>(R.id.status_indicator)
+            val masterCompletedOrders = it.findViewById<TextView>(R.id.master_completed_orders)
+            val verificationChip = it.findViewById<Chip>(R.id.verification_status_chip)
+            loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
+        }
+    }
+    
     private fun loadMasterInfo(
         name: TextView, 
         email: TextView, 
@@ -129,6 +147,29 @@ class ProfileFragment : Fragment() {
                                 if (isShift) R.drawable.circle_green else R.drawable.circle_red
                             )
                         }
+                        
+                        // Статус верификации из API
+                        master["verificationStatus"]?.let { statusStr ->
+                            val verificationStatus = when (statusStr.toString().lowercase()) {
+                                "verified" -> VerificationStatus.VERIFIED
+                                "pending" -> VerificationStatus.PENDING
+                                "rejected" -> VerificationStatus.REJECTED
+                                else -> VerificationStatus.NOT_VERIFIED
+                            }
+                            chip.text = verificationStatus.displayName
+                            
+                            // Устанавливаем цвет чипа в зависимости от статуса
+                            chip.setChipBackgroundColorResource(when (verificationStatus) {
+                                VerificationStatus.VERIFIED -> R.color.verification_verified
+                                VerificationStatus.PENDING -> R.color.verification_pending
+                                VerificationStatus.REJECTED -> R.color.verification_rejected
+                                VerificationStatus.NOT_VERIFIED -> R.color.verification_not_verified
+                            })
+                        } ?: run {
+                            // Если статус не получен - показываем не верифицирован
+                            chip.text = VerificationStatus.NOT_VERIFIED.displayName
+                            chip.setChipBackgroundColorResource(R.color.verification_not_verified)
+                        }
                     }
                     
                     statsData?.let { stats ->
@@ -145,6 +186,7 @@ class ProfileFragment : Fragment() {
                     email.text = ""
                     phone.text = ""
                     spec.text = ""
+                    chip.text = VerificationStatus.NOT_VERIFIED.displayName
                 }
             } else {
                 // Нет токена - пользователь не залогинен
@@ -152,11 +194,8 @@ class ProfileFragment : Fragment() {
                 email.text = ""
                 phone.text = ""
                 spec.text = ""
+                chip.text = VerificationStatus.NOT_VERIFIED.displayName
             }
-            
-            // Статус верификации (пока demo)
-            val verificationStatus = VerificationStatus.NOT_VERIFIED
-            chip.text = verificationStatus.displayName
         }
     }
     
