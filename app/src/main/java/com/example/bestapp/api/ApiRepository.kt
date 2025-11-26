@@ -477,15 +477,36 @@ class ApiRepository {
     suspend fun getMasterStats(period: String? = null): Result<Map<String, Any>> {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "Requesting master stats with period: $period")
                 val response = api.getMasterStats(period)
-                if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                Log.d(TAG, "Master stats response: code=${response.code()}, isSuccessful=${response.isSuccessful}")
+                
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        Log.d(TAG, "Master stats received: $body")
+                        Result.success(body)
+                    } else {
+                        Log.e(TAG, "Master stats response body is null")
+                        Result.failure(Exception("Пустой ответ от сервера"))
+                    }
                 } else {
-                    Result.failure(Exception("Ошибка получения статистики: ${response.code()}"))
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "Get master stats failed: code=${response.code()}, message=${response.message()}, body=$errorBody")
+                    
+                    val errorMessage = when (response.code()) {
+                        401 -> "Требуется авторизация. Войдите в систему заново."
+                        403 -> "Доступ запрещен. У вас нет прав для просмотра статистики."
+                        404 -> "Профиль мастера не найден."
+                        500 -> "Ошибка сервера. Попробуйте позже."
+                        else -> "Ошибка получения статистики: ${response.code()} - ${errorBody ?: response.message()}"
+                    }
+                    Result.failure(Exception(errorMessage))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Get master stats error", e)
-                Result.failure(e)
+                e.printStackTrace()
+                Result.failure(Exception("Ошибка подключения: ${e.message}"))
             }
         }
     }
