@@ -18,12 +18,12 @@
     <color name="md_theme_light_errorContainer">#FFCDD2</color>
     <color name="md_theme_light_onErrorContainer">#B71C1C</color>
     <color name="md_theme_light_surface">#F8FAFC</color>
-    <color name="md_theme_light_onSurface">#1E293B</color>
+    <color name="md_theme_light_onSurface">#0F172A</color>
     <color name="md_theme_light_surfaceVariant">#F1F5F9</color>
-    <color name="md_theme_light_onSurfaceVariant">#64748B</color>
+    <color name="md_theme_light_onSurfaceVariant">#334155</color>
     <color name="md_theme_light_outline">#CBD5E1</color>
     <color name="md_theme_light_background">#FFFFFF</color>
-    <color name="md_theme_light_onBackground">#1E293B</color>
+    <color name="md_theme_light_onBackground">#0F172A</color>
 
     <!-- Additional custom colors -->
     <color name="stat_card_gradient_start">#00897B</color>

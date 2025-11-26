@@ -152,7 +152,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Получать уведомления о новых заказах"
                                 android:textSize="12sp"
-                                android:textColor="?android:attr/textColorSecondary" />
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
                         </LinearLayout>
 
@@ -186,7 +186,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Получать уведомления на email"
                                 android:textSize="12sp"
-                                android:textColor="?android:attr/textColorSecondary" />
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
                         </LinearLayout>
 
