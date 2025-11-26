@@ -99,13 +99,28 @@ export async function initDatabase() {
             let tableName = null;
             
             // Автоматическое добавление поля inn в таблицу masters
-            if (columnName === 'inn' && statement.includes('masters')) {
+            if (columnName === 'inn' && (statement.includes('masters') || statement.toUpperCase().includes('FROM masters') || statement.toUpperCase().includes('UPDATE masters') || statement.toUpperCase().includes('INTO masters'))) {
               try {
-                db.run('ALTER TABLE masters ADD COLUMN inn TEXT');
-                console.log('✅ Добавлено поле inn в таблицу masters');
-                continue;
+                // Проверяем, существует ли уже поле
+                const tableInfo = db.prepare("PRAGMA table_info(masters)").all();
+                const hasInn = tableInfo && tableInfo.some(col => col.name === 'inn');
+                
+                if (!hasInn) {
+                  db.run('ALTER TABLE masters ADD COLUMN inn TEXT');
+                  console.log('✅ Автоматически добавлено поле inn в таблицу masters');
+                  // Повторяем запрос после добавления поля
+                  try {
+                    db.run(statement);
+                    continue;
+                  } catch (retryError) {
+                    if (retryError.message.includes('already exists') || retryError.message.includes('duplicate')) {
+                      continue;
+                    }
+                    throw retryError;
+                  }
+                }
               } catch (alterError) {
-                if (!alterError.message.includes('duplicate column')) {
+                if (!alterError.message.includes('duplicate column') && !alterError.message.includes('already exists')) {
                   console.error('Ошибка добавления поля inn:', alterError);
                 }
               }
@@ -172,45 +187,126 @@ export async function initDatabase() {
   console.log('✅ База данных инициализирована');
 }
 
+// Функция для автоматического добавления поля inn при ошибке
+function addInnColumnIfNeeded(sql) {
+  try {
+    // Проверяем, существует ли уже поле inn
+    const tableInfo = db.prepare("PRAGMA table_info(masters)").all();
+    if (tableInfo && Array.isArray(tableInfo) && tableInfo.some(col => col.name === 'inn')) {
+      return false; // Поле уже существует
+    }
+    
+    // Проверяем, относится ли запрос к таблице masters
+    const sqlUpper = sql.toUpperCase();
+    if (sqlUpper.includes('MASTERS') || sqlUpper.includes('FROM masters') || sqlUpper.includes('UPDATE masters') || sqlUpper.includes('INTO masters') || sqlUpper.includes('JOIN masters')) {
+      db.run('ALTER TABLE masters ADD COLUMN inn TEXT');
+      console.log('✅ Автоматически добавлено поле inn в таблицу masters');
+      saveDatabase();
+      return true; // Поле добавлено
+    }
+  } catch (e) {
+    if (!e.message.includes('duplicate column') && !e.message.includes('already exists')) {
+      console.error('Ошибка добавления поля inn:', e.message);
+    }
+  }
+  return false;
+}
+
 // Утилита для выполнения запросов
 // Если используется PostgreSQL, делегируем запросы туда
 export const query = config.databaseType === 'postgresql' && postgresQuery ? postgresQuery : {
   get: (sql, params = []) => {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const result = stmt.step() ? stmt.getAsObject() : null;
-    stmt.free();
-    return result;
+    try {
+      const stmt = db.prepare(sql);
+      stmt.bind(params);
+      const result = stmt.step() ? stmt.getAsObject() : null;
+      stmt.free();
+      return result;
+    } catch (error) {
+      // Обрабатываем ошибку "no such column: inn"
+      if (error.message.includes('no such column: inn')) {
+        if (addInnColumnIfNeeded(sql)) {
+          // Повторяем запрос после добавления поля
+          const stmt = db.prepare(sql);
+          stmt.bind(params);
+          const result = stmt.step() ? stmt.getAsObject() : null;
+          stmt.free();
+          return result;
+        }
+      }
+      throw error;
+    }
   },
   
   all: (sql, params = []) => {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const results = [];
-    while (stmt.step()) {
-      results.push(stmt.getAsObject());
+    try {
+      const stmt = db.prepare(sql);
+      stmt.bind(params);
+      const results = [];
+      while (stmt.step()) {
+        results.push(stmt.getAsObject());
+      }
+      stmt.free();
+      return results;
+    } catch (error) {
+      // Обрабатываем ошибку "no such column: inn"
+      if (error.message.includes('no such column: inn')) {
+        if (addInnColumnIfNeeded(sql)) {
+          // Повторяем запрос после добавления поля
+          const stmt = db.prepare(sql);
+          stmt.bind(params);
+          const results = [];
+          while (stmt.step()) {
+            results.push(stmt.getAsObject());
+          }
+          stmt.free();
+          return results;
+        }
+      }
+      throw error;
     }
-    stmt.free();
-    return results;
   },
   
   run: (sql, params = []) => {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    stmt.step();
-    stmt.free();
-    
-    // Получаем lastInsertRowid ДО сохранения
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const lastInsertRowid = result[0]?.values[0]?.[0] || 0;
-    
-    // Сохраняем после каждого изменения
-    saveDatabase();
-    
-    return {
-      lastInsertRowid: lastInsertRowid,
-      changes: db.getRowsModified()
-    };
+    try {
+      const stmt = db.prepare(sql);
+      stmt.bind(params);
+      stmt.step();
+      stmt.free();
+      
+      // Получаем lastInsertRowid ДО сохранения
+      const result = db.exec('SELECT last_insert_rowid() as id');
+      const lastInsertRowid = result[0]?.values[0]?.[0] || 0;
+      
+      // Сохраняем после каждого изменения
+      saveDatabase();
+      
+      return {
+        lastInsertRowid: lastInsertRowid,
+        changes: db.getRowsModified()
+      };
+    } catch (error) {
+      // Обрабатываем ошибку "no such column: inn"
+      if (error.message.includes('no such column: inn')) {
+        if (addInnColumnIfNeeded(sql)) {
+          // Повторяем запрос после добавления поля
+          const stmt = db.prepare(sql);
+          stmt.bind(params);
+          stmt.step();
+          stmt.free();
+          
+          const result = db.exec('SELECT last_insert_rowid() as id');
+          const lastInsertRowid = result[0]?.values[0]?.[0] || 0;
+          saveDatabase();
+          
+          return {
+            lastInsertRowid: lastInsertRowid,
+            changes: db.getRowsModified()
+          };
+        }
+      }
+      throw error;
+    }
   },
   
   transaction: (fn) => {

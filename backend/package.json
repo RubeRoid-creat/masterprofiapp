@@ -16,6 +16,7 @@
     "create-admin": "node scripts/create-admin.js",
     "check-admin": "node scripts/check-admin.js",
     "migrate-to-postgres": "node scripts/migrate-to-postgres.js",
+    "migrate-inn": "node scripts/migrate-inn-to-masters.js",
     "package": "node scripts/package-backend.js",
     "seed": "node scripts/seed-test-data.js"
   },
