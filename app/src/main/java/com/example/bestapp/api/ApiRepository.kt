@@ -1115,6 +1115,166 @@ class ApiRepository {
             }
         }
     }
+    
+    // ============= MLM =============
+    
+    suspend fun getMLMStructure(): Result<com.example.bestapp.api.models.ApiMLMStructureResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getMLMStructure()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting MLM structure", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getMLMStatistics(): Result<com.example.bestapp.api.models.ApiMLMStatisticsResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getMLMStatistics()
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        Result.success(body)
+                    } else {
+                        // Создаем пустой ответ, если тело пустое
+                        val emptyStats = com.example.bestapp.api.models.ApiMLMStatisticsResponse(
+                            success = true,
+                            statistics = com.example.bestapp.api.models.ApiMLMStatistics(
+                                masterId = 0L,
+                                userId = 0L,
+                                rank = "junior_master",
+                                joinDate = "",
+                                downline = com.example.bestapp.api.models.ApiMLMDownlineStats(
+                                    level1 = 0,
+                                    level2 = 0,
+                                    level3 = 0,
+                                    total = 0,
+                                    active = 0
+                                ),
+                                commissions = com.example.bestapp.api.models.ApiMLMCommissionsStats(
+                                    last30Days = com.example.bestapp.api.models.ApiMLMCommissionsByLevel(0, 0.0),
+                                    total = com.example.bestapp.api.models.ApiMLMCommissionsByLevel(0, 0.0),
+                                    byLevel = emptyMap()
+                                )
+                            )
+                        )
+                        Result.success(emptyStats)
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    val errorMsg = when (response.code()) {
+                        404 -> "MLM данные еще не доступны. Начните приглашать мастеров!"
+                        401 -> "Требуется авторизация"
+                        403 -> "Доступ запрещен"
+                        else -> "Ошибка загрузки статистики: ${response.code()}"
+                    }
+                    Result.failure(Exception(errorMsg))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting MLM statistics", e)
+                Result.failure(Exception("Ошибка подключения: ${e.message}"))
+            }
+        }
+    }
+    
+    suspend fun getMLMCommissions(
+        limit: Int = 50,
+        offset: Int = 0,
+        startDate: String? = null,
+        endDate: String? = null
+    ): Result<com.example.bestapp.api.models.ApiMLMCommissionsResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getMLMCommissions(limit, offset, startDate, endDate)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting MLM commissions", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getMLMReferralCode(): Result<com.example.bestapp.api.models.ApiMLMReferralCodeResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getMLMReferralCode()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting MLM referral code", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun inviteMaster(userId: Long? = null, email: String? = null): Result<com.example.bestapp.api.models.MessageResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = com.example.bestapp.api.models.ApiMLMInviteRequest(userId, email)
+                val response = api.inviteMaster(request)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error inviting master", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getMLMUpline(): Result<com.example.bestapp.api.models.ApiMLMUplineResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getMLMUpline()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting MLM upline", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getMLMTeamPerformance(period: Int = 30): Result<com.example.bestapp.api.models.ApiMLMTeamPerformanceResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getMLMTeamPerformance(period)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting MLM team performance", e)
+                Result.failure(e)
+            }
+        }
+    }
 }
 
 

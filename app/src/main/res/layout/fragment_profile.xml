@@ -430,7 +430,20 @@
                         android:id="@+id/btn_verification"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_go_to_verification" />
+                        android:text="@string/profile_go_to_verification"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_mlm"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Моя команда"
+                        android:visibility="visible"
+                        android:minHeight="56dp"
+                        android:backgroundTint="?attr/colorPrimary"
+                        app:icon="@android:drawable/ic_menu_share"
+                        app:iconTint="@android:color/white"
+                        android:layout_marginTop="8dp" />
 
                 </LinearLayout>
 

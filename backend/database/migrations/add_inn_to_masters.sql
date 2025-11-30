@@ -5,3 +5,4 @@
 -- Если нет, добавляем его
 ALTER TABLE masters ADD COLUMN inn TEXT;
 
+

@@ -62,6 +62,10 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
         bottomNav = findViewById(R.id.bottom_navigation)
+        
+        // Настраиваем отображение всех элементов меню
+        bottomNav.menu.clear()
+        bottomNav.inflateMenu(R.menu.bottom_navigation_menu)
         bottomNav.setupWithNavController(navController)
         
         navController.addOnDestinationChangedListener { _, destination, _ ->

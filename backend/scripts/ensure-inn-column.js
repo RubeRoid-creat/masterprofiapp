@@ -82,3 +82,4 @@ async function ensureInnColumn() {
 // Запускаем проверку
 ensureInnColumn();
 
+

@@ -1110,6 +1110,15 @@ router.put('/:id/complete', authenticate, authorize('master'), async (req, res) 
         ]);
         
         console.log(`💰 Начислено мастеру #${master.id}: ${commission.netAmount.toFixed(2)} ₽ (комиссия: ${commission.commissionAmount.toFixed(2)} ₽, ${commission.commissionPercentage}%)`);
+        
+        // Рассчитываем и начисляем MLM комиссии спонсорам
+        try {
+          const { calculateMLMCommissions } = await import('../services/mlm-service.js');
+          calculateMLMCommissions(id, master.id, finalCost);
+        } catch (mlmError) {
+          console.error('Ошибка расчета MLM комиссий:', mlmError);
+          // Продолжаем выполнение, даже если MLM комиссии не удалось рассчитать
+        }
       } catch (error) {
         console.error('Ошибка начисления средств мастеру:', error);
         // Продолжаем выполнение, даже если начисление не удалось

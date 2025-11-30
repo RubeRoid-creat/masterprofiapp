@@ -30,6 +30,7 @@ class SettingsFragment : Fragment() {
     private var switchPushNotifications: SwitchMaterial? = null
     private var switchEmailNotifications: SwitchMaterial? = null
     private var btnAutoAcceptSettings: MaterialButton? = null
+    private var btnMLM: MaterialButton? = null
     private var btnProfileSettings: MaterialButton? = null
     private var btnLogout: MaterialButton? = null
     private var btnPrivacyPolicy: MaterialButton? = null
@@ -57,6 +58,7 @@ class SettingsFragment : Fragment() {
         switchPushNotifications = view.findViewById(R.id.switch_push_notifications)
         switchEmailNotifications = view.findViewById(R.id.switch_email_notifications)
         btnAutoAcceptSettings = view.findViewById(R.id.btn_auto_accept_settings)
+        btnMLM = view.findViewById(R.id.btn_mlm)
         btnLogout = view.findViewById(R.id.btn_logout)
         btnPrivacyPolicy = view.findViewById(R.id.btn_privacy_policy)
         btnTerms = view.findViewById(R.id.btn_terms)
@@ -129,6 +131,11 @@ class SettingsFragment : Fragment() {
         // Навигация к настройкам автоприема
         btnAutoAcceptSettings?.setOnClickListener {
             findNavController().navigate(R.id.action_settings_to_autoAcceptSettingsFragment)
+        }
+        
+        // Навигация к MLM
+        btnMLM?.setOnClickListener {
+            findNavController().navigate(R.id.action_settings_to_mlm)
         }
         
         // Выход из аккаунта

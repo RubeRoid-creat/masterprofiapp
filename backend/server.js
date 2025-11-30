@@ -24,6 +24,7 @@ import subscriptionsRoutes from './routes/subscriptions.js';
 import promotionsRoutes from './routes/promotions.js';
 import loyaltyRoutes from './routes/loyalty.js';
 import routeOptimizationRoutes from './routes/route-optimization.js';
+import mlmRoutes from './routes/mlm.js';
 // Импортируем push-notification-service для инициализации Firebase Admin SDK
 import './services/push-notification-service.js';
 // Инициализируем Redis для кэширования
@@ -164,6 +165,7 @@ app.get('/', (req, res) => {
       subscriptions: '/api/subscriptions',
       promotions: '/api/promotions',
       loyalty: '/api/loyalty',
+      mlm: '/api/mlm',
       version: '/api/version',
       websocket: '/ws'
     }
@@ -188,6 +190,7 @@ app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/promotions', promotionsRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/orders', routeOptimizationRoutes);
+app.use('/api/mlm', mlmRoutes);
 app.use('/api/version', versionRoutes);
 
 // Health check

@@ -4,6 +4,7 @@
     <string name="nav_orders">Заказы</string>
     <string name="nav_my_orders">Мои заказы</string>
     <string name="nav_profile">Профиль</string>
+    <string name="nav_mlm">Моя команда</string>
     <string name="nav_settings">Настройки</string>
     <string name="home_title">Главная</string>
     <string name="orders_title">Заказы</string>
@@ -134,4 +135,7 @@
     <string name="orders_map_accept_order">Принять заказ</string>
     <string name="orders_map_order_accepted">Заказ принят</string>
     <string name="orders_map_no_assignment">Нет активного назначения для этого заказа</string>
+    
+    <!-- Material Design behavior -->
+    <string name="appbar_scrolling_view_behavior">com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior</string>
 </resources>

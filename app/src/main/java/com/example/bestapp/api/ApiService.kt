@@ -255,6 +255,34 @@ interface ApiService {
     
     @DELETE("api/verification/documents/{id}")
     suspend fun deleteVerificationDocument(@Path("id") id: Long): Response<com.example.bestapp.api.models.MessageResponse>
+    
+    // ============= MLM =============
+    
+    @GET("api/mlm/structure")
+    suspend fun getMLMStructure(): Response<com.example.bestapp.api.models.ApiMLMStructureResponse>
+    
+    @GET("api/mlm/statistics")
+    suspend fun getMLMStatistics(): Response<com.example.bestapp.api.models.ApiMLMStatisticsResponse>
+    
+    @GET("api/mlm/commissions")
+    suspend fun getMLMCommissions(
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+        @Query("start_date") startDate: String? = null,
+        @Query("end_date") endDate: String? = null
+    ): Response<com.example.bestapp.api.models.ApiMLMCommissionsResponse>
+    
+    @GET("api/mlm/my-referral-code")
+    suspend fun getMLMReferralCode(): Response<com.example.bestapp.api.models.ApiMLMReferralCodeResponse>
+    
+    @POST("api/mlm/invite")
+    suspend fun inviteMaster(@Body request: com.example.bestapp.api.models.ApiMLMInviteRequest): Response<com.example.bestapp.api.models.MessageResponse>
+    
+    @GET("api/mlm/upline")
+    suspend fun getMLMUpline(): Response<com.example.bestapp.api.models.ApiMLMUplineResponse>
+    
+    @GET("api/mlm/team-performance")
+    suspend fun getMLMTeamPerformance(@Query("period") period: Int? = null): Response<com.example.bestapp.api.models.ApiMLMTeamPerformanceResponse>
 }
 
 

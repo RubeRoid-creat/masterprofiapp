@@ -42,3 +42,4 @@ async function migrateInnToMasters() {
 // Запускаем миграцию
 migrateInnToMasters();
 
+

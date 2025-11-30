@@ -61,3 +61,4 @@ ALTER TABLE masters ADD COLUMN inn TEXT;
 2. Запустите `npm run ensure-inn` для детальной проверки
 3. Убедитесь, что используется правильная база данных (проверьте DATABASE_PATH в .env)
 
+

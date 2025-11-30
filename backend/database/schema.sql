@@ -6,8 +6,11 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     phone TEXT NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('client', 'master', 'admin')),
+    sponsor_id INTEGER, -- ID спонсора (мастера, который пригласил)
+    rank TEXT DEFAULT 'junior_master' CHECK(rank IN ('junior_master', 'senior_master', 'team_leader', 'regional_manager')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sponsor_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Таблица мастеров
@@ -582,5 +585,68 @@ CREATE INDEX IF NOT EXISTS idx_loyalty_points_expires_at ON loyalty_points(expir
 CREATE INDEX IF NOT EXISTS idx_loyalty_points_used ON loyalty_points(used);
 CREATE INDEX IF NOT EXISTS idx_loyalty_transactions_client_id ON loyalty_transactions(client_id);
 CREATE INDEX IF NOT EXISTS idx_loyalty_transactions_order_id ON loyalty_transactions(order_id);
+
+-- ==================== MLM СИСТЕМА ====================
+
+-- Таблица структуры сети (иерархия мастеров)
+CREATE TABLE IF NOT EXISTS network_structure (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL, -- ID пользователя (мастера)
+    sponsor_id INTEGER NOT NULL, -- ID спонсора (мастера, который пригласил)
+    level INTEGER NOT NULL CHECK(level >= 1 AND level <= 3), -- Уровень в структуре (1-3)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (sponsor_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, sponsor_id, level)
+);
+
+CREATE INDEX IF NOT EXISTS idx_network_structure_user_id ON network_structure(user_id);
+CREATE INDEX IF NOT EXISTS idx_network_structure_sponsor_id ON network_structure(sponsor_id);
+CREATE INDEX IF NOT EXISTS idx_network_structure_level ON network_structure(level);
+
+-- Таблица MLM комиссий
+CREATE TABLE IF NOT EXISTS mlm_commissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    from_user_id INTEGER NOT NULL, -- ID мастера, выполнившего заказ
+    to_user_id INTEGER NOT NULL, -- ID мастера, которому начисляется комиссия
+    amount REAL NOT NULL, -- Сумма заказа
+    commission_rate REAL NOT NULL, -- Процент комиссии (0.03 = 3%)
+    commission_amount REAL NOT NULL, -- Сумма комиссии
+    level INTEGER NOT NULL CHECK(level >= 1 AND level <= 3), -- Уровень в структуре
+    commission_type TEXT DEFAULT 'referral' CHECK(commission_type IN ('referral', 'volume_bonus', 'team_growth', 'leadership')),
+    status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'completed', 'cancelled')),
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_mlm_commissions_order_id ON mlm_commissions(order_id);
+CREATE INDEX IF NOT EXISTS idx_mlm_commissions_from_user_id ON mlm_commissions(from_user_id);
+CREATE INDEX IF NOT EXISTS idx_mlm_commissions_to_user_id ON mlm_commissions(to_user_id);
+CREATE INDEX IF NOT EXISTS idx_mlm_commissions_level ON mlm_commissions(level);
+CREATE INDEX IF NOT EXISTS idx_mlm_commissions_status ON mlm_commissions(status);
+CREATE INDEX IF NOT EXISTS idx_mlm_commissions_created_at ON mlm_commissions(created_at);
+
+-- Таблица истории изменения рангов
+CREATE TABLE IF NOT EXISTS ranks_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    old_rank TEXT,
+    new_rank TEXT NOT NULL CHECK(new_rank IN ('junior_master', 'senior_master', 'team_leader', 'regional_manager')),
+    achieved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT, -- Причина повышения (например, "50 заказов выполнено")
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ranks_history_user_id ON ranks_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_ranks_history_achieved_at ON ranks_history(achieved_at);
+
+-- Индексы для оптимизации MLM запросов
+CREATE INDEX IF NOT EXISTS idx_users_sponsor_id ON users(sponsor_id);
+CREATE INDEX IF NOT EXISTS idx_users_rank ON users(rank);
 
 

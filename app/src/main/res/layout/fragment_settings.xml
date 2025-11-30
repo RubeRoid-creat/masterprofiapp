@@ -232,6 +232,14 @@
                         android:layout_marginBottom="12dp"
                         app:icon="@android:drawable/ic_menu_agenda" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_mlm"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/nav_mlm"
+                        app:icon="@android:drawable/ic_menu_share" />
+
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>

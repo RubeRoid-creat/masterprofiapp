@@ -562,4 +562,155 @@ data class UploadDocumentResponse(
     val document: ApiVerificationDocument
 )
 
+// ============= MLM Models =============
+
+data class ApiMLMNetworkMember(
+    @SerializedName("user_id") val userId: Long,
+    val name: String,
+    val email: String,
+    @SerializedName("master_id") val masterId: Long,
+    val rating: Double,
+    @SerializedName("completed_orders") val completedOrders: Int,
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("verification_status") val verificationStatus: String?,
+    val activity: String // 'active' или 'inactive'
+)
+
+data class ApiMLMNetworkStructure(
+    @SerializedName("level_1") val level1: List<ApiMLMNetworkMember>,
+    @SerializedName("level_2") val level2: List<ApiMLMNetworkMember>,
+    @SerializedName("level_3") val level3: List<ApiMLMNetworkMember>,
+    @SerializedName("total_members") val totalMembers: Int,
+    @SerializedName("active_members") val activeMembers: Int
+)
+
+data class ApiMLMStructureResponse(
+    val success: Boolean,
+    val structure: ApiMLMNetworkStructure
+)
+
+data class ApiMLMCommission(
+    val id: Long,
+    @SerializedName("order_id") val orderId: Long,
+    @SerializedName("order_number") val orderNumber: String?,
+    @SerializedName("final_cost") val finalCost: Double?,
+    @SerializedName("from_user_id") val fromUserId: Long,
+    @SerializedName("from_master_name") val fromMasterName: String,
+    @SerializedName("to_user_id") val toUserId: Long,
+    @SerializedName("to_master_name") val toMasterName: String,
+    val amount: Double,
+    @SerializedName("commission_rate") val commissionRate: Double,
+    @SerializedName("commission_amount") val commissionAmount: Double,
+    val level: Int,
+    @SerializedName("commission_type") val commissionType: String,
+    val status: String,
+    val description: String?,
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("completed_at") val completedAt: String?
+)
+
+data class ApiMLMCommissionsResponse(
+    val success: Boolean,
+    val commissions: List<ApiMLMCommission>,
+    val pagination: ApiPagination
+)
+
+data class ApiPagination(
+    val total: Int,
+    val limit: Int,
+    val offset: Int
+)
+
+data class ApiMLMCommissionsByLevel(
+    val count: Int,
+    val amount: Double
+)
+
+data class ApiMLMCommissionsStats(
+    @SerializedName("last_30_days") val last30Days: ApiMLMCommissionsByLevel,
+    val total: ApiMLMCommissionsByLevel,
+    @SerializedName("by_level") val byLevel: Map<String, ApiMLMCommissionsByLevel>
+)
+
+data class ApiMLMDownlineStats(
+    @SerializedName("level_1") val level1: Int,
+    @SerializedName("level_2") val level2: Int,
+    @SerializedName("level_3") val level3: Int,
+    val total: Int,
+    val active: Int
+)
+
+data class ApiMLMStatistics(
+    @SerializedName("master_id") val masterId: Long,
+    @SerializedName("user_id") val userId: Long,
+    val rank: String,
+    @SerializedName("join_date") val joinDate: String,
+    val downline: ApiMLMDownlineStats,
+    val commissions: ApiMLMCommissionsStats
+)
+
+data class ApiMLMStatisticsResponse(
+    val success: Boolean,
+    val statistics: ApiMLMStatistics
+)
+
+data class ApiMLMReferralCode(
+    @SerializedName("referral_code") val referralCode: String,
+    @SerializedName("referral_link") val referralLink: String,
+    @SerializedName("user_id") val userId: Long
+)
+
+data class ApiMLMReferralCodeResponse(
+    val success: Boolean,
+    @SerializedName("referral_code") val referralCode: String,
+    @SerializedName("referral_link") val referralLink: String,
+    @SerializedName("user_id") val userId: Long
+)
+
+data class ApiMLMInviteRequest(
+    @SerializedName("user_id") val userId: Long? = null,
+    val email: String? = null
+)
+
+data class ApiMLMTeamPerformance(
+    @SerializedName("total_orders") val totalOrders: Int,
+    @SerializedName("total_revenue") val totalRevenue: Double,
+    @SerializedName("active_members") val activeMembers: Int,
+    @SerializedName("by_level") val byLevel: Map<String, ApiMLMTeamLevelStats>
+)
+
+data class ApiMLMTeamLevelStats(
+    val orders: Int,
+    val revenue: Double,
+    val active: Int
+)
+
+data class ApiMLMTeamPerformanceResponse(
+    val success: Boolean,
+    @SerializedName("period_days") val periodDays: Int,
+    @SerializedName("team_performance") val teamPerformance: ApiMLMTeamPerformance
+)
+
+data class ApiMLMUplineMember(
+    @SerializedName("user_id") val userId: Long,
+    @SerializedName("sponsor_id") val sponsorId: Long,
+    val level: Int,
+    @SerializedName("sponsor_info") val sponsorInfo: ApiMLMUplineSponsorInfo?
+)
+
+data class ApiMLMUplineSponsorInfo(
+    val id: Long,
+    val name: String,
+    val email: String,
+    @SerializedName("master_id") val masterId: Long?,
+    val rating: Double?,
+    @SerializedName("completed_orders") val completedOrders: Int?,
+    val rank: String?
+)
+
+data class ApiMLMUplineResponse(
+    val success: Boolean,
+    val upline: List<ApiMLMUplineMember>
+)
+
 

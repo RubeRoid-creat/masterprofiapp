@@ -29,6 +29,8 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        Log.d("ProfileFragment", "=== onViewCreated START ===")
+        
         val masterName = view.findViewById<TextView>(R.id.master_name)
         val masterEmail = view.findViewById<TextView>(R.id.master_email)
         val masterPhone = view.findViewById<TextView>(R.id.master_phone)
@@ -50,6 +52,24 @@ class ProfileFragment : Fragment() {
         
         btnVerification.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_verification)
+        }
+        
+        // Настройка кнопки MLM
+        val btnMLM = view.findViewById<MaterialButton>(R.id.btn_mlm)
+        if (btnMLM != null) {
+            btnMLM.visibility = View.VISIBLE
+            btnMLM.setOnClickListener {
+                Log.d("ProfileFragment", "MLM button clicked, navigating to MLM fragment")
+                try {
+                    findNavController().navigate(R.id.action_profile_to_mlm)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Error navigating to MLM", e)
+                    Toast.makeText(context, "Ошибка перехода к MLM: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            Log.d("ProfileFragment", "MLM button setup completed")
+        } else {
+            Log.e("ProfileFragment", "ERROR: btn_mlm button not found in layout!")
         }
         
         btnWallet?.setOnClickListener {
@@ -90,6 +110,23 @@ class ProfileFragment : Fragment() {
             val masterCompletedOrders = it.findViewById<TextView>(R.id.master_completed_orders)
             val verificationChip = it.findViewById<Chip>(R.id.verification_status_chip)
             loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
+            
+            // Убеждаемся, что кнопка MLM настроена и видима
+            val btnMLM = it.findViewById<MaterialButton>(R.id.btn_mlm)
+            if (btnMLM != null) {
+                btnMLM.visibility = View.VISIBLE
+                btnMLM.setOnClickListener {
+                    Log.d("ProfileFragment", "MLM button clicked from onResume")
+                    try {
+                        findNavController().navigate(R.id.action_profile_to_mlm)
+                    } catch (e: Exception) {
+                        Log.e("ProfileFragment", "Error navigating to MLM", e)
+                        Toast.makeText(context, "Ошибка перехода к MLM: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                Log.e("ProfileFragment", "btn_mlm not found in layout in onResume")
+            }
         }
     }
     
@@ -307,4 +344,3 @@ class ProfileFragment : Fragment() {
         }
     }
 }
-
