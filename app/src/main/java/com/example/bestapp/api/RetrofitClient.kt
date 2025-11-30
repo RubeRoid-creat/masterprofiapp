@@ -1,6 +1,8 @@
 package com.example.bestapp.api
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import com.example.bestapp.data.PreferencesManager
 import kotlinx.coroutines.Dispatchers
@@ -19,11 +21,44 @@ object RetrofitClient {
     const val BASE_URL = "http://212.74.227.208:3000/"
     
     /**
+     * Проверка наличия интернет-подключения
+     */
+    fun isNetworkAvailable(context: Context?): Boolean {
+        if (context == null) {
+            Log.w(TAG, "⚠️ Context is null, cannot check network")
+            return true // Предполагаем, что сеть есть, если контекст недоступен
+        }
+        
+        return try {
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            val network = connectivityManager?.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+            
+            val isConnected = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            
+            Log.d(TAG, "Network check: ${if (isConnected) "✅ Connected" else "❌ Not connected"}")
+            isConnected
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking network", e)
+            true // Предполагаем, что сеть есть при ошибке проверки
+        }
+    }
+    
+    /**
      * Проверка доступности сервера
      * @return Pair<Boolean, String> где Boolean - доступен ли сервер, String - сообщение
      */
     suspend fun checkServerAvailability(): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        // Сначала проверяем сеть
+        if (appContext != null && !isNetworkAvailable(appContext)) {
+            val message = "Нет подключения к интернету. Проверьте Wi-Fi или мобильные данные."
+            Log.e(TAG, "❌ $message")
+            return@withContext Pair(false, message)
+        }
+        
         try {
+            Log.d(TAG, "Проверка доступности сервера: $BASE_URL")
             val client = OkHttpClient.Builder()
                 .connectTimeout(5, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.SECONDS)
@@ -45,8 +80,14 @@ object RetrofitClient {
             response.close()
             Pair(isAvailable, message)
         } catch (e: Exception) {
-            val errorMsg = "Сервер недоступен: ${e.message ?: "Неизвестная ошибка"}"
-            Log.e(TAG, "❌ $errorMsg")
+            val errorType = when (e) {
+                is java.net.ConnectException -> "Сервер не отвечает. Проверьте, запущен ли сервер."
+                is java.net.SocketTimeoutException -> "Превышено время ожидания. Сервер не отвечает."
+                is java.net.UnknownHostException -> "Не удалось найти сервер. Проверьте адрес сервера."
+                else -> "Ошибка подключения: ${e.message ?: "Неизвестная ошибка"}"
+            }
+            val errorMsg = "$errorType\nURL: $BASE_URL"
+            Log.e(TAG, "❌ $errorMsg", e)
             Pair(false, errorMsg)
         }
     }
@@ -173,7 +214,20 @@ object RetrofitClient {
         }
         
         val newRequest = requestBuilder.build()
+        
+        // Проверяем наличие сети перед запросом
+        if (appContext != null && !isNetworkAvailable(appContext)) {
+            Log.e(TAG, "❌ No network connection for ${originalRequest.method} ${originalRequest.url}")
+        }
+        
         val response = chain.proceed(newRequest)
+        
+        // Логируем ошибки подключения
+        if (response.code >= 500) {
+            Log.e(TAG, "⚠️ Server error ${response.code} for ${originalRequest.method} ${originalRequest.url}")
+        } else if (response.code == 404) {
+            Log.w(TAG, "⚠️ Not found (404) for ${originalRequest.method} ${originalRequest.url}")
+        }
         
         // Логируем ответ
         if (response.code == 401) {
