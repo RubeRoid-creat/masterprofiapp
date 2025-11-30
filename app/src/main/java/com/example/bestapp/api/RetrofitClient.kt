@@ -3,6 +3,8 @@ package com.example.bestapp.api
 import android.content.Context
 import android.util.Log
 import com.example.bestapp.data.PreferencesManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -14,7 +16,40 @@ object RetrofitClient {
     private const val TAG = "RetrofitClient"
     
     // Продакшн‑backend на сервере
-    private const val BASE_URL = "http://212.74.227.208:3000/"
+    const val BASE_URL = "http://212.74.227.208:3000/"
+    
+    /**
+     * Проверка доступности сервера
+     * @return Pair<Boolean, String> где Boolean - доступен ли сервер, String - сообщение
+     */
+    suspend fun checkServerAvailability(): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        try {
+            val client = OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                .build()
+            
+            val request = okhttp3.Request.Builder()
+                .url("$BASE_URL")
+                .get()
+                .build()
+            
+            val response = client.newCall(request).execute()
+            val isAvailable = response.isSuccessful || response.code in 200..499
+            val message = if (isAvailable) {
+                "Сервер доступен (код: ${response.code})"
+            } else {
+                "Сервер недоступен (код: ${response.code})"
+            }
+            Log.d(TAG, "Server availability check: ${if (isAvailable) "✅" else "❌"} $message")
+            response.close()
+            Pair(isAvailable, message)
+        } catch (e: Exception) {
+            val errorMsg = "Сервер недоступен: ${e.message ?: "Неизвестная ошибка"}"
+            Log.e(TAG, "❌ $errorMsg")
+            Pair(false, errorMsg)
+        }
+    }
     
     @Volatile
     private var authToken: String? = null
@@ -161,9 +196,10 @@ object RetrofitClient {
         OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true) // Автоматическая повторная попытка при ошибках подключения
             .build()
     }
     

@@ -5,12 +5,84 @@ import com.example.bestapp.api.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import java.net.SocketTimeoutException
+import java.net.ConnectException
+import java.net.UnknownHostException
+import java.io.IOException
 
 class ApiRepository {
     private val api = RetrofitClient.apiService
     
     companion object {
         private const val TAG = "ApiRepository"
+        
+        /**
+         * Преобразует исключение в понятное сообщение об ошибке для пользователя
+         */
+        fun getErrorMessage(exception: Exception, defaultMessage: String = "Ошибка загрузки данных"): String {
+            return when (exception) {
+                is SocketTimeoutException -> "Превышено время ожидания ответа сервера (${RetrofitClient.BASE_URL}). Проверьте подключение к интернету или попробуйте позже."
+                is ConnectException -> "Не удалось подключиться к серверу (${RetrofitClient.BASE_URL}). Проверьте:\n• Подключение к интернету\n• Доступность сервера\n• Настройки сети или VPN"
+                is UnknownHostException -> "Сервер недоступен (${RetrofitClient.BASE_URL}). Проверьте подключение к интернету."
+                is IOException -> {
+                    val message = exception.message?.lowercase() ?: ""
+                    when {
+                        message.contains("timeout") -> "Превышено время ожидания. Проверьте подключение к интернету."
+                        message.contains("connection") -> "Ошибка подключения к серверу. Проверьте интернет-соединение."
+                        message.contains("network") -> "Проблема с сетью. Проверьте подключение к интернету."
+                        else -> "Ошибка сети: ${exception.message ?: defaultMessage}"
+                    }
+                }
+                else -> {
+                    val message = exception.message ?: defaultMessage
+                    // Если это ошибка от сервера с кодом, оставляем как есть
+                    if (message.contains("Ошибка") || message.contains("error") || message.contains("404") || message.contains("500")) {
+                        message
+                    } else {
+                        "$defaultMessage: $message"
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Обрабатывает ответ сервера и возвращает Result с понятным сообщением об ошибке
+         */
+        private fun <T> handleResponse(response: retrofit2.Response<T>, errorContext: String): Result<T> {
+            return if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    Log.w(TAG, "$errorContext: Response body is null")
+                    Result.failure(Exception("Пустой ответ от сервера"))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    val errorJson = errorBody?.let {
+                        com.google.gson.Gson().fromJson(it, Map::class.java)
+                    }
+                    errorJson?.get("error")?.toString() ?: when (response.code()) {
+                        404 -> "Данные не найдены"
+                        401 -> "Требуется авторизация. Войдите заново."
+                        403 -> "Доступ запрещен"
+                        500 -> "Ошибка сервера. Попробуйте позже."
+                        503 -> "Сервер временно недоступен. Попробуйте позже."
+                        else -> "$errorContext: ${response.code()}"
+                    }
+                } catch (e: Exception) {
+                    when (response.code()) {
+                        404 -> "Данные не найдены"
+                        401 -> "Требуется авторизация. Войдите заново."
+                        500 -> "Ошибка сервера. Попробуйте позже."
+                        else -> "$errorContext: ${response.code()}"
+                    }
+                }
+                Log.e(TAG, "$errorContext failed: code=${response.code()}, message=$errorMessage")
+                Result.failure(Exception(errorMessage))
+            }
+        }
     }
     
     // ============= Авторизация =============
@@ -52,7 +124,8 @@ class ApiRepository {
             } catch (e: Exception) {
                 Log.e(TAG, "Login error: ${e.message}", e)
                 e.printStackTrace()
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка входа")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -162,7 +235,8 @@ class ApiRepository {
             } catch (e: Exception) {
                 Log.e(TAG, "Get orders error: ${e.message}", e)
                 e.printStackTrace()
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка загрузки заказов")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -178,7 +252,8 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Get order error", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка загрузки заказа")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -207,7 +282,8 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Complete order error", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка завершения заказа")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -224,7 +300,8 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Create order error", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка создания заказа")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -466,7 +543,8 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Batch accept error", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка принятия заказов")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -482,7 +560,8 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Get rejected assignments error", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка загрузки истории отклонений")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -538,7 +617,8 @@ class ApiRepository {
             } catch (e: Exception) {
                 Log.e(TAG, "Get master stats error", e)
                 e.printStackTrace()
-                Result.failure(Exception("Ошибка подключения: ${e.message}"))
+                val errorMessage = getErrorMessage(e, "Ошибка загрузки статистики")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -585,7 +665,8 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Create/update schedule error", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка создания/обновления расписания")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -601,7 +682,8 @@ class ApiRepository {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Delete schedule error", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка удаления расписания")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
@@ -920,7 +1002,8 @@ class ApiRepository {
                 Log.e(TAG, "❌ Exception getting wallet", e)
                 Log.e(TAG, "Exception message: ${e.message}")
                 Log.e(TAG, "Exception stack: ${e.stackTraceToString()}")
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка загрузки кошелька")
+                Result.failure(Exception(errorMessage))
             }
         }
     }
