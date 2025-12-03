@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 
 class WebSocketChatClient(
     private val prefsManager: PreferencesManager,
-    private val baseUrl: String = "ws://192.168.0.100:3000/ws" // Для реального устройства
+    private val baseUrl: String = "ws://212.74.227.208:3000/ws" // Продакшн-сервер
 ) {
     private var webSocket: WebSocket? = null
     private val client = OkHttpClient.Builder()

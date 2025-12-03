@@ -27,7 +27,7 @@ sealed class WebSocketEvent {
 
 class WebSocketService(
     private val prefsManager: PreferencesManager,
-    private val baseUrl: String = "ws://10.0.2.2:3000/ws" // Для эмулятора Android
+    private val baseUrl: String = "ws://212.74.227.208:3000/ws" // Продакшн-сервер
 ) {
     private var webSocket: WebSocket? = null
     private val client = OkHttpClient.Builder()
