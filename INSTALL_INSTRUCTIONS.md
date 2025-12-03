@@ -77,3 +77,4 @@
 ## Версия:
 - **versionCode**: 12
 - **versionName**: 1.2.0
+

@@ -481,3 +481,4 @@ YOOMONEY_CLIENT_SECRET=your_client_secret_here
 - [Интеграция онлайн-кассы (ФЗ-54)](https://yookassa.ru/developers/payments/receipts)
 
 
+

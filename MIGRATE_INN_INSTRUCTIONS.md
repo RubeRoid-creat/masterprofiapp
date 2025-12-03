@@ -62,3 +62,4 @@ ALTER TABLE masters ADD COLUMN inn TEXT;
 3. Убедитесь, что используется правильная база данных (проверьте DATABASE_PATH в .env)
 
 
+

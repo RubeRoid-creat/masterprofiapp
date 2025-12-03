@@ -118,6 +118,7 @@ router.get('/', authenticate, (req, res) => {
     // Получаем координаты мастера из query или из БД
     let masterLatitude = req.query.masterLatitude ? parseFloat(req.query.masterLatitude) : null;
     let masterLongitude = req.query.masterLongitude ? parseFloat(req.query.masterLongitude) : null;
+    let master = null;
     
     console.log(`[GET /api/orders] User ID: ${req.user?.id}, Role: ${req.user?.role}`);
     console.log(`[GET /api/orders] Query params:`, req.query);
@@ -137,7 +138,7 @@ router.get('/', authenticate, (req, res) => {
     // Если мастер, показываем заказы в зависимости от статуса
     if (req.user.role === 'master') {
       // Используем индекс по user_id (уже есть idx_masters_user_id)
-      const master = query.get('SELECT id, latitude, longitude, verification_status FROM masters WHERE user_id = ? LIMIT 1', [req.user.id]);
+      master = query.get('SELECT id, latitude, longitude, verification_status, specialization FROM masters WHERE user_id = ? LIMIT 1', [req.user.id]);
       
       // Проверяем верификацию мастера
       if (!master) {
@@ -267,6 +268,30 @@ router.get('/', authenticate, (req, res) => {
     
     let orders = query.all(sql, params);
     console.log(`[GET /api/orders] Found ${orders.length} orders`);
+
+    // Для мастеров дополнительно фильтруем новые заказы по специализации
+    if (req.user.role === 'master' && master) {
+      try {
+        const specializations = JSON.parse(master.specialization || '[]');
+        if (Array.isArray(specializations) && specializations.length > 0) {
+          const beforeCount = orders.length;
+          orders = orders.filter(order => {
+            // Для новых заказов применяем фильтр по специализации
+            if (order.repair_status === 'new') {
+              return !!order.device_type && specializations.includes(order.device_type);
+            }
+            // Для остальных статусов (in_progress, completed и т.д.) ничего не меняем
+            return true;
+          });
+          const afterCount = orders.length;
+          console.log(`[GET /api/orders] Master specialization filter applied: ${beforeCount} -> ${afterCount} orders`);
+        } else {
+          console.log('[GET /api/orders] Master has no specialization set, specialization filter skipped');
+        }
+      } catch (specError) {
+        console.error('[GET /api/orders] Error parsing master specialization, filter skipped:', specError);
+      }
+    }
     
     // Вычисляем расстояние для каждого заказа (если есть координаты мастера)
     if (req.user.role === 'master' && masterLatitude && masterLongitude) {

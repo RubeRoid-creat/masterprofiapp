@@ -102,6 +102,66 @@ app.use((req, res, next) => {
       }
     }
     
+    // Проверяем и добавляем поле sponsor_id в таблицу users, если его нет
+    try {
+      const usersTableInfo = query.all("PRAGMA table_info(users)");
+      const hasSponsorId = usersTableInfo && Array.isArray(usersTableInfo) && usersTableInfo.some(col => col && col.name === 'sponsor_id');
+      
+      if (!hasSponsorId) {
+        console.log('📝 Добавление поля sponsor_id в таблицу users...');
+        try {
+          query.run('ALTER TABLE users ADD COLUMN sponsor_id INTEGER');
+          console.log('✅ Поле sponsor_id успешно добавлено в таблицу users');
+          
+          // Создаем индекс после добавления колонки
+          try {
+            query.run('CREATE INDEX IF NOT EXISTS idx_users_sponsor_id ON users(sponsor_id)');
+            console.log('✅ Индекс idx_users_sponsor_id создан');
+          } catch (indexError) {
+            if (!indexError.message.includes('already exists')) {
+              console.warn('⚠️ Ошибка создания индекса idx_users_sponsor_id:', indexError.message);
+            }
+          }
+        } catch (e) {
+          if (e.message.includes('duplicate column') || e.message.includes('already exists')) {
+            console.log('ℹ️ Поле sponsor_id уже существует');
+          } else {
+            console.error('⚠️ Ошибка добавления поля sponsor_id:', e.message);
+          }
+        }
+      } else {
+        console.log('✅ Поле sponsor_id присутствует в таблице users');
+        
+        // Проверяем наличие индекса
+        try {
+          query.run('CREATE INDEX IF NOT EXISTS idx_users_sponsor_id ON users(sponsor_id)');
+          console.log('✅ Индекс idx_users_sponsor_id проверен');
+        } catch (indexError) {
+          if (!indexError.message.includes('already exists')) {
+            console.warn('⚠️ Ошибка создания индекса idx_users_sponsor_id:', indexError.message);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ Ошибка проверки поля sponsor_id:', e.message);
+      // При ошибке проверки все равно пытаемся добавить поле
+      try {
+        query.run('ALTER TABLE users ADD COLUMN sponsor_id INTEGER');
+        console.log('✅ Поле sponsor_id добавлено после ошибки проверки');
+        
+        // Создаем индекс
+        try {
+          query.run('CREATE INDEX IF NOT EXISTS idx_users_sponsor_id ON users(sponsor_id)');
+        } catch (indexError) {
+          // Игнорируем ошибки индекса
+        }
+      } catch (e2) {
+        if (!e2.message.includes('duplicate column') && !e2.message.includes('already exists')) {
+          console.error('⚠️ Критическая ошибка добавления поля sponsor_id:', e2.message);
+        }
+      }
+    }
+    
     // Инициализация Redis (опционально, если доступен)
     await initRedis();
     

@@ -126,6 +126,34 @@ export async function initDatabase() {
               }
             }
             
+            // Автоматическое добавление поля sponsor_id в таблицу users
+            if (columnName === 'sponsor_id' && (statement.includes('users') || statement.toUpperCase().includes('FROM users') || statement.toUpperCase().includes('UPDATE users') || statement.toUpperCase().includes('INTO users') || statement.toUpperCase().includes('idx_users_sponsor_id'))) {
+              try {
+                // Проверяем, существует ли уже поле
+                const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+                const hasSponsorId = tableInfo && tableInfo.some(col => col.name === 'sponsor_id');
+                
+                if (!hasSponsorId) {
+                  db.run('ALTER TABLE users ADD COLUMN sponsor_id INTEGER');
+                  console.log('✅ Автоматически добавлено поле sponsor_id в таблицу users');
+                  // Повторяем запрос после добавления поля
+                  try {
+                    db.run(statement);
+                    continue;
+                  } catch (retryError) {
+                    if (retryError.message.includes('already exists') || retryError.message.includes('duplicate')) {
+                      continue;
+                    }
+                    throw retryError;
+                  }
+                }
+              } catch (alterError) {
+                if (!alterError.message.includes('duplicate column') && !alterError.message.includes('already exists')) {
+                  console.error('Ошибка добавления поля sponsor_id:', alterError);
+                }
+              }
+            }
+            
             if (statement.includes('loyalty_points')) {
               tableName = 'loyalty_points';
             } else if (statement.includes('clients')) {

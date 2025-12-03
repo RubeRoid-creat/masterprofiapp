@@ -14,6 +14,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.yandex.mapkit.MapKitFactory
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.example.bestapp.api.ApiRepository
+import com.example.bestapp.api.RetrofitClient
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -29,7 +30,26 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setupNavigation()
         setupAuth()
+        checkServerConnection()
         checkAppVersion()
+    }
+    
+    private fun checkServerConnection() {
+        lifecycleScope.launch {
+            try {
+                Log.d("MainActivity", "Проверка подключения к серверу...")
+                val (isAvailable, message) = RetrofitClient.checkServerAvailability()
+                if (!isAvailable) {
+                    Log.e("MainActivity", "❌ Сервер недоступен: $message")
+                    // Показываем предупреждение только в логах, чтобы не мешать пользователю
+                    // При реальных запросах пользователь увидит понятное сообщение об ошибке
+                } else {
+                    Log.d("MainActivity", "✅ $message")
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Ошибка проверки подключения к серверу", e)
+            }
+        }
     }
     
     private fun setupAuth() {
