@@ -392,20 +392,43 @@ class ProfileFragment : Fragment() {
                         }
                     }
                 }.onFailure { error ->
-                    Log.e("ProfileFragment", "Failed to load master stats", error)
-                    error.printStackTrace()
-                    name.text = "Ошибка загрузки"
-                    email.text = ""
-                    phone.text = ""
-                    spec.text = ""
-                    chip.text = VerificationStatus.NOT_VERIFIED.displayName
+                    // Определяем тип ошибки
+                    val isConnectionError = error.message?.contains("подключ", ignoreCase = true) == true
+                            || error.message?.contains("connection", ignoreCase = true) == true
+                            || error.message?.contains("недоступен", ignoreCase = true) == true
+                            || error.message?.contains("unavailable", ignoreCase = true) == true
+                            || error.message?.contains("timeout", ignoreCase = true) == true
+                            || error.cause is java.net.ConnectException
+                            || error.cause is java.net.UnknownHostException
+                            || error.cause is java.net.SocketTimeoutException
                     
-                    // Показываем Toast с информацией об ошибке
-                    Toast.makeText(
-                        context, 
-                        "Ошибка загрузки профиля: ${error.message}", 
-                        Toast.LENGTH_LONG
-                    ).show()
+                    if (isConnectionError) {
+                        // При ошибке подключения логируем и показываем более мягкое сообщение
+                        Log.w("ProfileFragment", "Сервер недоступен, профиль не загружен: ${error.message}")
+                        
+                        // Не изменяем поля профиля при ошибке подключения - оставляем как есть
+                        // Показываем короткое сообщение о проблеме с подключением
+                        Toast.makeText(
+                            context,
+                            "Сервер недоступен. Проверьте подключение к интернету.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        // При других ошибках показываем полную информацию
+                        Log.e("ProfileFragment", "Failed to load master stats", error)
+                        error.printStackTrace()
+                        name.text = "Ошибка загрузки"
+                        email.text = ""
+                        phone.text = ""
+                        spec.text = ""
+                        chip.text = VerificationStatus.NOT_VERIFIED.displayName
+                        
+                        Toast.makeText(
+                            context,
+                            "Ошибка загрузки профиля: ${error.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             } else {
                 // Нет токена - пользователь не залогинен
