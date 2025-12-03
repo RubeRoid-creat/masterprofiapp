@@ -590,9 +590,13 @@ class ProfileFragment : Fragment() {
                     }
                 }
                 
+                // Определяем MIME-тип файла
+                val mimeType = requireContext().contentResolver.getType(uri) ?: "image/jpeg"
+                Log.d("ProfileFragment", "Uploading avatar: file=${file.name}, size=${file.length()}, mimeType=$mimeType")
+                
                 // Создаем MultipartBody.Part
-                val requestFile = file.asRequestBody("image/jpeg".toMediaType())
-                val photoPart = MultipartBody.Part.createFormData("photo", file.name, requestFile)
+                val requestFile = file.asRequestBody(mimeType.toMediaType())
+                val photoPart = MultipartBody.Part.createFormData("photo", "avatar.jpg", requestFile)
                 
                 val apiRepository = ApiRepository()
                 val result = apiRepository.uploadMasterAvatar(photoPart)

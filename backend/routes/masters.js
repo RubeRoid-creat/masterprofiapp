@@ -2,6 +2,7 @@ import express from 'express';
 import { query } from '../database/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { upload, handleUploadError } from '../middleware/upload.js';
+import multer from 'multer';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
@@ -757,31 +758,60 @@ router.put('/profile', authenticate, authorize('master'), (req, res) => {
 });
 
 // Загрузить фото профиля мастера
-router.post('/profile/photo', authenticate, authorize('master'), upload.single('photo'), handleUploadError, (req, res) => {
+router.post('/profile/photo', authenticate, authorize('master'), (req, res, next) => {
+  console.log('[POST /api/masters/profile/photo] Запрос на загрузку фото профиля');
+  console.log('[POST /api/masters/profile/photo] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('[POST /api/masters/profile/photo] Content-Type:', req.headers['content-type']);
+  next();
+}, upload.single('photo'), (err, req, res, next) => {
+  if (err) {
+    console.error('[POST /api/masters/profile/photo] Ошибка multer:', err);
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Файл слишком большой. Максимум 50MB' });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ error: 'Слишком много файлов. Максимум 5' });
+      }
+      return res.status(400).json({ error: `Ошибка загрузки: ${err.message}`, code: err.code });
+    }
+    return res.status(400).json({ error: err.message || 'Ошибка загрузки файла' });
+  }
+  next();
+}, (req, res) => {
   try {
+    console.log('[POST /api/masters/profile/photo] Файл получен:', req.file ? `filename=${req.file.filename}, size=${req.file.size}, mimetype=${req.file.mimetype}` : 'null');
+    
     if (!req.file) {
-      return res.status(400).json({ error: 'Файл не загружен' });
+      console.error('[POST /api/masters/profile/photo] Файл не загружен. Request body keys:', Object.keys(req.body || {}));
+      return res.status(400).json({ error: 'Файл не загружен. Убедитесь, что поле называется "photo"' });
     }
     
     const master = query.get('SELECT id FROM masters WHERE user_id = ?', [req.user.id]);
     if (!master) {
+      console.error('[POST /api/masters/profile/photo] Профиль мастера не найден для user_id:', req.user.id);
       return res.status(404).json({ error: 'Профиль мастера не найден' });
     }
     
     const fileUrl = `/uploads/${req.file.filename}`;
+    
+    console.log('[POST /api/masters/profile/photo] Обновление photo_url для master_id:', master.id, 'fileUrl:', fileUrl);
     
     query.run(
       'UPDATE masters SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [fileUrl, master.id]
     );
     
+    console.log('[POST /api/masters/profile/photo] Фото профиля успешно загружено');
+    
     res.json({
       message: 'Фото профиля загружено',
       photo_url: fileUrl
     });
   } catch (error) {
-    console.error('Ошибка загрузки фото профиля:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('[POST /api/masters/profile/photo] Ошибка загрузки фото профиля:', error);
+    console.error('[POST /api/masters/profile/photo] Stack trace:', error.stack);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
   }
 });
 
