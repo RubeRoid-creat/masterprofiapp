@@ -162,6 +162,39 @@ app.use((req, res, next) => {
       }
     }
     
+    // Проверяем и добавляем поле photo_url в таблицу masters, если его нет
+    try {
+      const mastersTableInfo = query.all("PRAGMA table_info(masters)");
+      const hasPhotoUrl = mastersTableInfo && Array.isArray(mastersTableInfo) && mastersTableInfo.some(col => col && col.name === 'photo_url');
+      
+      if (!hasPhotoUrl) {
+        console.log('📝 Добавление поля photo_url в таблицу masters...');
+        try {
+          query.run('ALTER TABLE masters ADD COLUMN photo_url TEXT');
+          console.log('✅ Поле photo_url успешно добавлено в таблицу masters');
+        } catch (e) {
+          if (e.message.includes('duplicate column') || e.message.includes('already exists')) {
+            console.log('ℹ️ Поле photo_url уже существует');
+          } else {
+            console.error('⚠️ Ошибка добавления поля photo_url:', e.message);
+          }
+        }
+      } else {
+        console.log('✅ Поле photo_url присутствует в таблице masters');
+      }
+    } catch (e) {
+      console.error('⚠️ Ошибка проверки поля photo_url:', e.message);
+      // При ошибке проверки все равно пытаемся добавить поле
+      try {
+        query.run('ALTER TABLE masters ADD COLUMN photo_url TEXT');
+        console.log('✅ Поле photo_url добавлено после ошибки проверки');
+      } catch (e2) {
+        if (!e2.message.includes('duplicate column') && !e2.message.includes('already exists')) {
+          console.error('⚠️ Критическая ошибка добавления поля photo_url:', e2.message);
+        }
+      }
+    }
+    
     // Инициализация Redis (опционально, если доступен)
     await initRedis();
     

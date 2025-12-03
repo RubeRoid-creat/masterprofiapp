@@ -19,6 +19,7 @@
     "migrate-inn": "node scripts/migrate-inn-to-masters.js",
     "ensure-inn": "node scripts/ensure-inn-column.js",
     "ensure-sponsor-id": "node scripts/ensure-sponsor-id-column.js",
+    "ensure-photo-url": "node scripts/ensure-photo-url-column.js",
     "package": "node scripts/package-backend.js",
     "seed": "node scripts/seed-test-data.js"
   },
