@@ -142,6 +142,16 @@ app.use((req, res, next) => {
             console.warn('⚠️ Ошибка создания индекса idx_users_sponsor_id:', indexError.message);
           }
         }
+        
+        // Проверяем наличие индекса для rank
+        try {
+          query.run('CREATE INDEX IF NOT EXISTS idx_users_rank ON users(rank)');
+          console.log('✅ Индекс idx_users_rank проверен');
+        } catch (indexError) {
+          if (!indexError.message.includes('already exists')) {
+            console.warn('⚠️ Ошибка создания индекса idx_users_rank:', indexError.message);
+          }
+        }
       }
     } catch (e) {
       console.error('⚠️ Ошибка проверки поля sponsor_id:', e.message);
