@@ -328,14 +328,54 @@ router.get('/', authenticate, (req, res) => {
       }
     }
     
-    // Для каждого заказа получаем количество медиафайлов
+    // Для каждого заказа нормализуем problem_tags и получаем количество медиафайлов
     const ordersWithMediaCount = orders.map(order => {
       const mediaCount = query.get(
         'SELECT COUNT(*) as count FROM order_media WHERE order_id = ?',
         [order.id]
       );
+
+      // Нормализуем problem_tags: в БД хранится TEXT (часто JSON-строка),
+      // на фронт отправляем всегда как массив строк.
+      let normalizedProblemTags = [];
+      if (order.problem_tags != null) {
+        try {
+          const raw = order.problem_tags;
+          let parsed = raw;
+
+          if (typeof raw === 'string') {
+            // Пытаемся распарсить как JSON
+            try {
+              parsed = JSON.parse(raw);
+            } catch {
+              // Если это не JSON, пробуем разделить по запятым
+              normalizedProblemTags = raw
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+            }
+          }
+
+          if (Array.isArray(parsed)) {
+            normalizedProblemTags = parsed
+              .map(t => (typeof t === 'string' ? t : String(t)))
+              .filter(t => t.length > 0);
+          } else if (typeof parsed === 'string' && normalizedProblemTags.length === 0) {
+            // Один тег строкой
+            const trimmed = parsed.trim();
+            if (trimmed.length > 0) {
+              normalizedProblemTags = [trimmed];
+            }
+          }
+        } catch (e) {
+          console.warn('[GET /api/orders] Failed to normalize problem_tags for order', order.id, e.message);
+          normalizedProblemTags = [];
+        }
+      }
+
       return {
         ...order,
+        problem_tags: normalizedProblemTags,
         media_count: mediaCount ? mediaCount.count : 0
       };
     });
