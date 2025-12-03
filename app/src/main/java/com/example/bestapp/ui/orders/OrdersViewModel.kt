@@ -103,12 +103,14 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                     Log.d(TAG, "Verification status checked: $verificationStatus, isVerified: $isVerified")
                 }.onFailure { error ->
                     Log.e(TAG, "Failed to check verification status: ${error.message}", error)
-                    // При ошибке загрузки профиля считаем, что мастер не верифицирован
-                    _isVerified.value = false
+                    // При ошибке загрузки профиля не блокируем заявки:
+                    // считаем статус неизвестным (null), чтобы не скрывать заказы
+                    _isVerified.value = null
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception checking verification status", e)
-                _isVerified.value = false
+                // При исключении также не блокируем заявки
+                _isVerified.value = null
             }
         }
     }
