@@ -21,13 +21,23 @@ pm2 save
 
 ### Проверка порта:
 
+Если `netstat` не установлен, используйте альтернативные команды:
+
 ```bash
-# Проверьте, слушает ли процесс на порту 3000
-sudo netstat -tulpn | grep 3000
-# или
+# Вариант 1: Используйте ss (обычно установлен по умолчанию)
 sudo ss -tulpn | grep 3000
-# или
+
+# Вариант 2: Используйте lsof (если установлен)
 sudo lsof -i :3000
+
+# Вариант 3: Через /proc/net (всегда доступно)
+cat /proc/net/tcp | grep 0BB8  # 0BB8 = 3000 в hex
+
+# Вариант 4: Установите netstat (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install net-tools
+# Затем:
+sudo netstat -tulpn | grep 3000
 ```
 
 **Ожидаемый результат:** Должен быть процесс Node.js, слушающий на `0.0.0.0:3000` или `*:3000`
