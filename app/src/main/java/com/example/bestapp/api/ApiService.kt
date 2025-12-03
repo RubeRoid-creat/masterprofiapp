@@ -263,6 +263,23 @@ interface ApiService {
     @DELETE("api/verification/documents/{id}")
     suspend fun deleteVerificationDocument(@Path("id") id: Long): Response<com.example.bestapp.api.models.MessageResponse>
     
+    // ============= Verification Codes =============
+    
+    @POST("api/verification-codes/send-email-code")
+    suspend fun sendEmailVerificationCode(): Response<com.example.bestapp.api.models.MessageResponse>
+    
+    @POST("api/verification-codes/send-phone-code")
+    suspend fun sendPhoneVerificationCode(): Response<com.example.bestapp.api.models.MessageResponse>
+    
+    @POST("api/verification-codes/verify-email-code")
+    suspend fun verifyEmailCode(@Body request: com.example.bestapp.api.models.VerifyCodeRequest): Response<com.example.bestapp.api.models.MessageResponse>
+    
+    @POST("api/verification-codes/verify-phone-code")
+    suspend fun verifyPhoneCode(@Body request: com.example.bestapp.api.models.VerifyCodeRequest): Response<com.example.bestapp.api.models.MessageResponse>
+    
+    @GET("api/verification-codes/status")
+    suspend fun getVerificationStatus(): Response<com.example.bestapp.api.models.VerificationStatusResponse>
+    
     // ============= MLM =============
     
     @GET("api/mlm/structure")

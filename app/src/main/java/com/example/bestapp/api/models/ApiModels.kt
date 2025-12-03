@@ -567,6 +567,17 @@ data class UploadDocumentResponse(
     val document: ApiVerificationDocument
 )
 
+// ============= Verification Codes Models =============
+
+data class VerifyCodeRequest(
+    val code: String
+)
+
+data class VerificationStatusResponse(
+    @SerializedName("emailVerified") val emailVerified: Boolean,
+    @SerializedName("phoneVerified") val phoneVerified: Boolean
+)
+
 // ============= MLM Models =============
 
 data class ApiMLMNetworkMember(

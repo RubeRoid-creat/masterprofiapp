@@ -35,6 +35,31 @@ export const config = {
     database: process.env.POSTGRES_DB || 'bestapp',
     user: process.env.POSTGRES_USER || 'bestapp_user',
     password: process.env.POSTGRES_PASSWORD || ''
+  },
+  
+  // Настройки email (для отправки кодов подтверждения)
+  email: {
+    from: process.env.EMAIL_FROM || 'noreply@bestapp.ru',
+    smt: process.env.EMAIL_SMTP_ENABLED === 'true' ? {
+      host: process.env.EMAIL_SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_SMTP_PORT || '587'),
+      secure: process.env.EMAIL_SMTP_SECURE === 'true', // true для 465, false для других портов
+      user: process.env.EMAIL_SMTP_USER || '',
+      password: process.env.EMAIL_SMTP_PASSWORD || ''
+    } : null
+  },
+  
+  // Настройки SMS (для отправки кодов подтверждения)
+  sms: {
+    provider: process.env.SMS_PROVIDER || null, // 'smsru', 'twilio', или null для режима разработки
+    smsru: {
+      api_id: process.env.SMSRU_API_ID || ''
+    },
+    twilio: {
+      accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+      authToken: process.env.TWILIO_AUTH_TOKEN || '',
+      phoneNumber: process.env.TWILIO_PHONE_NUMBER || ''
+    }
   }
 };
 

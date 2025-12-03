@@ -251,6 +251,25 @@
                                         android:ellipsize="end"
                                         android:gravity="center"
                                         tools:text="master@test.ru" />
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_verify_email"
+                                        style="@style/Widget.Material3.Button.TextButton"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:textSize="10sp"
+                                        android:text="Подтвердить"
+                                        android:layout_marginTop="4dp"
+                                        android:padding="0dp"
+                                        android:minHeight="0dp"
+                                        android:minWidth="0dp" />
+                                    <TextView
+                                        android:id="@+id/email_verified_status"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:textSize="10sp"
+                                        android:textColor="@android:color/holo_green_dark"
+                                        android:visibility="gone"
+                                        android:text="✓ Подтвержден" />
                                 </LinearLayout>
                             </com.google.android.material.card.MaterialCardView>
 
@@ -287,6 +306,25 @@
                                         android:ellipsize="end"
                                         android:gravity="center"
                                         tools:text="+7 (999) 123-45-67" />
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btn_verify_phone"
+                                        style="@style/Widget.Material3.Button.TextButton"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:textSize="10sp"
+                                        android:text="Подтвердить"
+                                        android:layout_marginTop="4dp"
+                                        android:padding="0dp"
+                                        android:minHeight="0dp"
+                                        android:minWidth="0dp" />
+                                    <TextView
+                                        android:id="@+id/phone_verified_status"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:textSize="10sp"
+                                        android:textColor="@android:color/holo_green_dark"
+                                        android:visibility="gone"
+                                        android:text="✓ Подтвержден" />
                                 </LinearLayout>
                             </com.google.android.material.card.MaterialCardView>
                         </LinearLayout>

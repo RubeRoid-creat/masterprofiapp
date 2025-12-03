@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT NOT NULL CHECK(role IN ('client', 'master', 'admin')),
     sponsor_id INTEGER, -- ID спонсора (мастера, который пригласил)
     rank TEXT DEFAULT 'junior_master' CHECK(rank IN ('junior_master', 'senior_master', 'team_leader', 'regional_manager')),
+    email_verified INTEGER DEFAULT 0, -- 0 = false, 1 = true
+    phone_verified INTEGER DEFAULT 0, -- 0 = false, 1 = true
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sponsor_id) REFERENCES users(id) ON DELETE SET NULL
@@ -649,5 +651,22 @@ CREATE INDEX IF NOT EXISTS idx_ranks_history_achieved_at ON ranks_history(achiev
 -- Индексы для оптимизации MLM запросов
 CREATE INDEX IF NOT EXISTS idx_users_sponsor_id ON users(sponsor_id);
 CREATE INDEX IF NOT EXISTS idx_users_rank ON users(rank);
+
+-- Таблица кодов подтверждения (email и телефон)
+CREATE TABLE IF NOT EXISTS verification_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL CHECK(type IN ('email', 'phone')),
+    code TEXT NOT NULL, -- 6-значный код
+    expires_at DATETIME NOT NULL, -- Время истечения (обычно 10 минут)
+    verified INTEGER DEFAULT 0, -- 0 = не использован, 1 = использован
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_verification_codes_user_id ON verification_codes(user_id);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_type ON verification_codes(type);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_code ON verification_codes(code);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_expires_at ON verification_codes(expires_at);
 
 

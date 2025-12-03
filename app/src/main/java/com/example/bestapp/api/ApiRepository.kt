@@ -1379,6 +1379,95 @@ class ApiRepository {
             }
         }
     }
+    
+    // ============= Verification Codes =============
+    
+    suspend fun sendEmailVerificationCode(): Result<com.example.bestapp.api.models.MessageResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.sendEmailVerificationCode()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending email verification code", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun sendPhoneVerificationCode(): Result<com.example.bestapp.api.models.MessageResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.sendPhoneVerificationCode()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending phone verification code", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun verifyEmailCode(code: String): Result<com.example.bestapp.api.models.MessageResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = com.example.bestapp.api.models.VerifyCodeRequest(code)
+                val response = api.verifyEmailCode(request)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error verifying email code", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun verifyPhoneCode(code: String): Result<com.example.bestapp.api.models.MessageResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = com.example.bestapp.api.models.VerifyCodeRequest(code)
+                val response = api.verifyPhoneCode(request)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error verifying phone code", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getVerificationStatus(): Result<com.example.bestapp.api.models.VerificationStatusResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getVerificationStatus()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting verification status", e)
+                Result.failure(e)
+            }
+        }
+    }
 }
 
 

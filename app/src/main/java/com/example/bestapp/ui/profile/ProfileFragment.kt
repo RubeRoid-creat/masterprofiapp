@@ -28,6 +28,8 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -79,8 +81,24 @@ class ProfileFragment : Fragment() {
         val btnVerification = view.findViewById<MaterialButton>(R.id.btn_verification)
         val btnWallet = view.findViewById<MaterialButton>(R.id.btn_wallet)
         val btnStatistics = view.findViewById<MaterialButton>(R.id.btn_statistics)
+        val btnVerifyEmail = view.findViewById<MaterialButton>(R.id.btn_verify_email)
+        val btnVerifyPhone = view.findViewById<MaterialButton>(R.id.btn_verify_phone)
+        val emailVerifiedStatus = view.findViewById<TextView>(R.id.email_verified_status)
+        val phoneVerifiedStatus = view.findViewById<TextView>(R.id.phone_verified_status)
         
         loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip, masterAvatar)
+        
+        // Загружаем статус подтверждения
+        loadVerificationStatus(emailVerifiedStatus, phoneVerifiedStatus, btnVerifyEmail, btnVerifyPhone)
+        
+        // Настройка кнопок подтверждения
+        btnVerifyEmail?.setOnClickListener {
+            showVerificationCodeDialog("email")
+        }
+        
+        btnVerifyPhone?.setOnClickListener {
+            showVerificationCodeDialog("phone")
+        }
 
         // Делаем специализацию кликабельной для изменения
         // Находим родительский CardView и делаем его кликабельным
@@ -147,6 +165,13 @@ class ProfileFragment : Fragment() {
             val verificationChip = it.findViewById<Chip>(R.id.verification_status_chip)
             val masterAvatar = it.findViewById<ImageView>(R.id.master_avatar)
             loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip, masterAvatar)
+            
+            // Загружаем статус подтверждения
+            val emailStatus = it.findViewById<TextView>(R.id.email_verified_status)
+            val phoneStatus = it.findViewById<TextView>(R.id.phone_verified_status)
+            val btnEmail = it.findViewById<MaterialButton>(R.id.btn_verify_email)
+            val btnPhone = it.findViewById<MaterialButton>(R.id.btn_verify_phone)
+            loadVerificationStatus(emailStatus, phoneStatus, btnEmail, btnPhone)
             
             // Восстанавливаем кликабельность специализации после обновления данных
             val specCardView = findParentCardView(masterSpec)
@@ -630,5 +655,191 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    // Функция logout больше не используется, так как кнопка выхода убрана из профиля
+    /**
+     * Загружает статус подтверждения email и телефона
+     */
+    private fun loadVerificationStatus(
+        emailVerifiedStatus: TextView?,
+        phoneVerifiedStatus: TextView?,
+        btnVerifyEmail: MaterialButton?,
+        btnVerifyPhone: MaterialButton?
+    ) {
+        lifecycleScope.launch {
+            try {
+                val apiRepository = ApiRepository()
+                val result = apiRepository.getVerificationStatus()
+                result.onSuccess { status ->
+                    // Обновляем статус email
+                    if (status.emailVerified) {
+                        emailVerifiedStatus?.visibility = View.VISIBLE
+                        btnVerifyEmail?.visibility = View.GONE
+                    } else {
+                        emailVerifiedStatus?.visibility = View.GONE
+                        btnVerifyEmail?.visibility = View.VISIBLE
+                    }
+                    
+                    // Обновляем статус телефона
+                    if (status.phoneVerified) {
+                        phoneVerifiedStatus?.visibility = View.VISIBLE
+                        btnVerifyPhone?.visibility = View.GONE
+                    } else {
+                        phoneVerifiedStatus?.visibility = View.GONE
+                        btnVerifyPhone?.visibility = View.VISIBLE
+                    }
+                }.onFailure { error ->
+                    Log.e("ProfileFragment", "Ошибка загрузки статуса подтверждения", error)
+                }
+            } catch (e: Exception) {
+                Log.e("ProfileFragment", "Ошибка загрузки статуса подтверждения", e)
+            }
+        }
+    }
+    
+    /**
+     * Показывает диалог для ввода кода подтверждения
+     */
+    private fun showVerificationCodeDialog(type: String) {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_verification_code, null)
+        
+        val inputCode = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.input_verification_code)
+        val hintText = dialogView.findViewById<TextView>(R.id.verification_hint)
+        val timerText = dialogView.findViewById<TextView>(R.id.verification_timer)
+        val btnResend = dialogView.findViewById<MaterialButton>(R.id.btn_resend_code)
+        val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btn_cancel_verification)
+        val btnConfirm = dialogView.findViewById<MaterialButton>(R.id.btn_confirm_verification)
+        
+        val title = if (type == "email") "Подтверждение email" else "Подтверждение телефона"
+        hintText.text = if (type == "email") {
+            "Код отправлен на ваш email"
+        } else {
+            "Код отправлен на ваш телефон"
+        }
+        
+        var timeLeft = 600 // 10 минут в секундах
+        var timerJob: kotlinx.coroutines.Job? = null
+        
+        fun updateTimer() {
+            val minutes = timeLeft / 60
+            val seconds = timeLeft % 60
+            timerText.text = "Код действителен ${minutes}:${String.format("%02d", seconds)}"
+        }
+        
+        fun startTimer() {
+            timerJob?.cancel()
+            timerJob = lifecycleScope.launch {
+                while (timeLeft > 0) {
+                    delay(1000)
+                    timeLeft--
+                    updateTimer()
+                }
+                timerText.text = "Код истек"
+                btnResend.isEnabled = true
+            }
+        }
+        
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+        
+        // Отправка кода при открытии диалога
+        lifecycleScope.launch {
+            try {
+                val apiRepository = ApiRepository()
+                val result = if (type == "email") {
+                    apiRepository.sendEmailVerificationCode()
+                } else {
+                    apiRepository.sendPhoneVerificationCode()
+                }
+                
+                result.onSuccess {
+                    Toast.makeText(context, "Код отправлен", Toast.LENGTH_SHORT).show()
+                    startTimer()
+                    btnResend.isEnabled = false
+                }.onFailure { error ->
+                    Toast.makeText(context, "Ошибка отправки кода: ${error.message}", Toast.LENGTH_LONG).show()
+                    dialog.dismiss()
+                }
+            } catch (e: Exception) {
+                Log.e("ProfileFragment", "Ошибка отправки кода", e)
+                Toast.makeText(context, "Ошибка отправки кода: ${e.message}", Toast.LENGTH_LONG).show()
+                dialog.dismiss()
+            }
+        }
+        
+        btnResend.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    val apiRepository = ApiRepository()
+                    val result = if (type == "email") {
+                        apiRepository.sendEmailVerificationCode()
+                    } else {
+                        apiRepository.sendPhoneVerificationCode()
+                    }
+                    
+                    result.onSuccess {
+                        Toast.makeText(context, "Код отправлен повторно", Toast.LENGTH_SHORT).show()
+                        timeLeft = 600
+                        startTimer()
+                        btnResend.isEnabled = false
+                    }.onFailure { error ->
+                        Toast.makeText(context, "Ошибка отправки кода: ${error.message}", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка повторной отправки кода", e)
+                    Toast.makeText(context, "Ошибка отправки кода: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        
+        btnConfirm.setOnClickListener {
+            val code = inputCode.text?.toString()?.trim()
+            if (code.isNullOrEmpty() || code.length != 6) {
+                Toast.makeText(context, "Введите 6-значный код", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            lifecycleScope.launch {
+                try {
+                    btnConfirm.isEnabled = false
+                    val apiRepository = ApiRepository()
+                    val result = if (type == "email") {
+                        apiRepository.verifyEmailCode(code)
+                    } else {
+                        apiRepository.verifyPhoneCode(code)
+                    }
+                    
+                    result.onSuccess {
+                        Toast.makeText(context, "Успешно подтверждено!", Toast.LENGTH_SHORT).show()
+                        timerJob?.cancel()
+                        dialog.dismiss()
+                        
+                        // Обновляем статус подтверждения
+                        val emailStatus = view?.findViewById<TextView>(R.id.email_verified_status)
+                        val phoneStatus = view?.findViewById<TextView>(R.id.phone_verified_status)
+                        val btnEmail = view?.findViewById<MaterialButton>(R.id.btn_verify_email)
+                        val btnPhone = view?.findViewById<MaterialButton>(R.id.btn_verify_phone)
+                        loadVerificationStatus(emailStatus, phoneStatus, btnEmail, btnPhone)
+                    }.onFailure { error ->
+                        Toast.makeText(context, "Ошибка: ${error.message}", Toast.LENGTH_LONG).show()
+                        btnConfirm.isEnabled = true
+                    }
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка проверки кода", e)
+                    Toast.makeText(context, "Ошибка проверки кода: ${e.message}", Toast.LENGTH_LONG).show()
+                    btnConfirm.isEnabled = true
+                }
+            }
+        }
+        
+        btnCancel.setOnClickListener {
+            timerJob?.cancel()
+            dialog.dismiss()
+        }
+        
+        dialog.show()
+        updateTimer()
+    }
 }

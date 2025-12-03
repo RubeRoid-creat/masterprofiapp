@@ -195,6 +195,56 @@ app.use((req, res, next) => {
       }
     }
     
+    // Проверяем и добавляем поля email_verified и phone_verified в таблицу users
+    try {
+      const usersTableInfo = query.all("PRAGMA table_info(users)");
+      const hasEmailVerified = usersTableInfo && Array.isArray(usersTableInfo) && usersTableInfo.some(col => col && col.name === 'email_verified');
+      const hasPhoneVerified = usersTableInfo && Array.isArray(usersTableInfo) && usersTableInfo.some(col => col && col.name === 'phone_verified');
+      
+      if (!hasEmailVerified) {
+        console.log('📝 Добавление поля email_verified в таблицу users...');
+        try {
+          query.run('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0');
+          console.log('✅ Поле email_verified успешно добавлено в таблицу users');
+        } catch (e) {
+          if (e.message.includes('duplicate column') || e.message.includes('already exists')) {
+            console.log('ℹ️ Поле email_verified уже существует');
+          } else {
+            console.error('⚠️ Ошибка добавления поля email_verified:', e.message);
+          }
+        }
+      } else {
+        console.log('✅ Поле email_verified присутствует в таблице users');
+      }
+      
+      if (!hasPhoneVerified) {
+        console.log('📝 Добавление поля phone_verified в таблицу users...');
+        try {
+          query.run('ALTER TABLE users ADD COLUMN phone_verified INTEGER DEFAULT 0');
+          console.log('✅ Поле phone_verified успешно добавлено в таблицу users');
+        } catch (e) {
+          if (e.message.includes('duplicate column') || e.message.includes('already exists')) {
+            console.log('ℹ️ Поле phone_verified уже существует');
+          } else {
+            console.error('⚠️ Ошибка добавления поля phone_verified:', e.message);
+          }
+        }
+      } else {
+        console.log('✅ Поле phone_verified присутствует в таблице users');
+      }
+    } catch (e) {
+      console.error('⚠️ Ошибка проверки полей подтверждения:', e.message);
+      try {
+        query.run('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0');
+        query.run('ALTER TABLE users ADD COLUMN phone_verified INTEGER DEFAULT 0');
+        console.log('✅ Поля подтверждения добавлены после ошибки проверки');
+      } catch (e2) {
+        if (!e2.message.includes('duplicate column') && !e2.message.includes('already exists')) {
+          console.error('⚠️ Критическая ошибка добавления полей подтверждения:', e2.message);
+        }
+      }
+    }
+    
     // Инициализация Redis (опционально, если доступен)
     await initRedis();
     
@@ -276,6 +326,7 @@ app.use('/api/fcm', fcmRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/verification-codes', (await import('./routes/verification-codes.js')).default);
 app.use('/api/complaints', complaintsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentsRoutes);
