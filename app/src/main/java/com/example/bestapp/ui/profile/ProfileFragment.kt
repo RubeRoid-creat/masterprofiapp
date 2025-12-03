@@ -350,9 +350,21 @@ class ProfileFragment : Fragment() {
                             Log.w("ProfileFragment", "Verification status not found, defaulting to NOT_VERIFIED")
                         }
                         
-                        // Загружаем аватар, если есть photo_url
-                        // TODO: добавить photo_url в ответ API getMasterStats
-                        // Пока используем заглушку - аватар уже установлен в layout
+                        // Загружаем аватар, если есть photoUrl
+                        masterData["photoUrl"]?.let { photoUrlStr ->
+                            if (photoUrlStr.toString().isNotEmpty()) {
+                                val baseUrl = com.example.bestapp.api.RetrofitClient.BASE_URL
+                                val fullUrl = if (photoUrlStr.toString().startsWith("http")) {
+                                    photoUrlStr.toString()
+                                } else {
+                                    baseUrl.removeSuffix("/") + photoUrlStr.toString()
+                                }
+                                Glide.with(requireContext())
+                                    .load(fullUrl)
+                                    .circleCrop()
+                                    .into(avatar)
+                            }
+                        }
                     } else {
                         Log.e("ProfileFragment", "Master data is null in response")
                         name.text = "Данные не найдены"

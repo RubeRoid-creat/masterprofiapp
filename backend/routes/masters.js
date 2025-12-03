@@ -229,7 +229,7 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
     const master = query.get(`
       SELECT 
         m.*,
-        u.name, u.phone, u.email
+        u.name, u.phone, u.email, u.email_verified, u.phone_verified
       FROM masters m
       JOIN users u ON m.user_id = u.id
       WHERE m.user_id = ?
@@ -406,7 +406,10 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
         isOnShift: master.is_on_shift === 1,
         status: master.status || 'offline',
         specialization: specialization,
-        verificationStatus: master.verification_status || 'not_verified'
+        verificationStatus: master.verification_status || 'not_verified',
+        photoUrl: master.photo_url || null,
+        emailVerified: master.email_verified === 1,
+        phoneVerified: master.phone_verified === 1
       },
       stats: {
         totalOrders: (totalOrders && totalOrders.count) ? totalOrders.count : 0,
@@ -423,10 +426,24 @@ router.get('/stats/me', authenticate, authorize('master'), (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Ошибка получения статистики:', error);
-    console.error('Stack trace:', error.stack);
-    res.status(500).json({ 
-      error: 'Ошибка сервера',
+    console.error('[GET /api/masters/stats/me] Ошибка получения статистики:', error);
+    console.error('[GET /api/masters/stats/me] Stack trace:', error.stack);
+    console.error('[GET /api/masters/stats/me] User ID:', req.user?.id);
+    
+    // Более детальная обработка ошибок
+    let errorMessage = 'Ошибка сервера при получении статистики';
+    let statusCode = 500;
+    
+    if (error.message && error.message.includes('no such column')) {
+      errorMessage = `Ошибка базы данных: ${error.message}. Возможно, требуется миграция.`;
+      statusCode = 500;
+    } else if (error.message && error.message.includes('SQLITE')) {
+      errorMessage = 'Ошибка базы данных. Попробуйте позже.';
+      statusCode = 500;
+    }
+    
+    res.status(statusCode).json({ 
+      error: errorMessage,
       details: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
