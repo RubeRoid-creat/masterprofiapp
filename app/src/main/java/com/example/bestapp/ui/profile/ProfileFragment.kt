@@ -110,6 +110,9 @@ class ProfileFragment : Fragment() {
             val verificationChip = it.findViewById<Chip>(R.id.verification_status_chip)
             loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
             
+            // Восстанавливаем кликабельность специализации после обновления данных
+            setupSpecializationEditor(masterSpec)
+            
             // Убеждаемся, что кнопка MLM настроена и видима
             val btnMLM = it.findViewById<MaterialButton>(R.id.btn_mlm)
             if (btnMLM != null) {
@@ -394,6 +397,8 @@ class ProfileFragment : Fragment() {
                                 } else {
                                     specView.text = "Специализация не указана"
                                 }
+                                // Восстанавливаем кликабельность после обновления текста
+                                setupSpecializationEditor(specView)
                                 Toast.makeText(
                                     requireContext(),
                                     "Специализация обновлена",
@@ -420,8 +425,12 @@ class ProfileFragment : Fragment() {
                 .show()
         }
 
+        // Убеждаемся, что TextView всегда кликабелен, даже если текст пустой
         specView.isClickable = true
         specView.isFocusable = true
+        specView.isEnabled = true
+        // Удаляем старый обработчик, если есть, и устанавливаем новый
+        specView.setOnClickListener(null)
         specView.setOnClickListener { openDialog() }
     }
 
