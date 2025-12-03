@@ -589,14 +589,6 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Logout Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_logout"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/profile_logout" />
-
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

@@ -46,7 +46,6 @@ class ProfileFragment : Fragment() {
         val btnVerification = view.findViewById<MaterialButton>(R.id.btn_verification)
         val btnWallet = view.findViewById<MaterialButton>(R.id.btn_wallet)
         val btnStatistics = view.findViewById<MaterialButton>(R.id.btn_statistics)
-        val btnLogout = view.findViewById<MaterialButton>(R.id.btn_logout)
         
         loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
         
@@ -88,10 +87,6 @@ class ProfileFragment : Fragment() {
         val btnPromotions = view.findViewById<MaterialButton>(R.id.btn_promotions)
         btnPromotions?.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_promotion)
-        }
-        
-        btnLogout.setOnClickListener {
-            logout()
         }
     }
     
@@ -335,12 +330,5 @@ class ProfileFragment : Fragment() {
         }
     }
     
-    private fun logout() {
-        lifecycleScope.launch {
-            val authManager = AuthManager(requireContext())
-            authManager.clearUserId()
-            Toast.makeText(context, "Выход выполнен", Toast.LENGTH_SHORT).show()
-            findNavController().navigate(R.id.action_profile_to_login)
-        }
-    }
+    // Функция logout больше не используется, так как кнопка выхода убрана из профиля
 }
