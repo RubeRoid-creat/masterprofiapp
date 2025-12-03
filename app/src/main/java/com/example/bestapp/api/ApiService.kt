@@ -4,6 +4,7 @@ import com.example.bestapp.api.models.*
 import retrofit2.Response
 import retrofit2.http.*
 import okhttp3.MultipartBody
+import retrofit2.http.Multipart
 
 interface ApiService {
     
@@ -71,6 +72,12 @@ interface ApiService {
     suspend fun updateMasterProfile(
         @Body request: UpdateMasterProfileRequest
     ): Response<MessageResponse>
+    
+    @Multipart
+    @POST("api/masters/profile/photo")
+    suspend fun uploadMasterAvatar(
+        @Part photo: okhttp3.MultipartBody.Part
+    ): Response<com.example.bestapp.api.models.UploadAvatarResponse>
     
     @POST("api/masters/shift/start")
     suspend fun startShift(@Body location: LocationRequest): Response<MessageResponse>

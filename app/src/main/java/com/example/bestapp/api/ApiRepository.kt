@@ -422,6 +422,27 @@ class ApiRepository {
         }
     }
     
+    suspend fun uploadMasterAvatar(photoPart: okhttp3.MultipartBody.Part): Result<com.example.bestapp.api.models.UploadAvatarResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Uploading master avatar")
+                val response = api.uploadMasterAvatar(photoPart)
+                if (response.isSuccessful && response.body() != null) {
+                    Log.d(TAG, "Master avatar uploaded successfully: ${response.body()!!.photoUrl}")
+                    Result.success(response.body()!!)
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "Upload master avatar failed: code=${response.code()}, body=$errorBody")
+                    Result.failure(Exception("Ошибка загрузки аватара: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Upload master avatar error", e)
+                val errorMessage = getErrorMessage(e, "Ошибка загрузки аватара")
+                Result.failure(Exception(errorMessage))
+            }
+        }
+    }
+    
     // ============= Назначения =============
     
     suspend fun getMyAssignments(status: String? = null): Result<List<ApiAssignment>> {

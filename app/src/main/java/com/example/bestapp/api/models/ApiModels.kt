@@ -294,6 +294,11 @@ data class MessageResponse(
     val isOnShift: Boolean? = null
 )
 
+data class UploadAvatarResponse(
+    val message: String,
+    @SerializedName("photo_url") val photoUrl: String
+)
+
 data class ErrorResponse(
     val error: String,
     val message: String? = null

@@ -1,15 +1,22 @@
 package com.example.bestapp.ui.profile
 
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.bumptech.glide.Glide
 import com.example.bestapp.R
 import com.example.bestapp.auth.AuthManager
 import com.example.bestapp.api.ApiRepository
@@ -21,8 +28,32 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 class ProfileFragment : Fragment() {
+    
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                uploadAvatar(uri)
+            }
+        }
+    }
+    
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            openImagePicker()
+        } else {
+            Toast.makeText(context, "Нужно разрешение для выбора изображения", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_profile, container, false)
@@ -49,12 +80,15 @@ class ProfileFragment : Fragment() {
         val btnWallet = view.findViewById<MaterialButton>(R.id.btn_wallet)
         val btnStatistics = view.findViewById<MaterialButton>(R.id.btn_statistics)
         
-        loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
+        loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip, masterAvatar)
 
         // Делаем специализацию кликабельной для изменения
         // Находим родительский CardView и делаем его кликабельным
         val specCardView = findParentCardView(masterSpec)
         setupSpecializationEditor(masterSpec, specCardView)
+        
+        // Делаем аватар кликабельным для загрузки фото
+        setupAvatarEditor(masterAvatar)
         
         btnVerification.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_verification)
@@ -111,7 +145,8 @@ class ProfileFragment : Fragment() {
             val statusIndicator = it.findViewById<View>(R.id.status_indicator)
             val masterCompletedOrders = it.findViewById<TextView>(R.id.master_completed_orders)
             val verificationChip = it.findViewById<Chip>(R.id.verification_status_chip)
-            loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
+            val masterAvatar = it.findViewById<ImageView>(R.id.master_avatar)
+            loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip, masterAvatar)
             
             // Восстанавливаем кликабельность специализации после обновления данных
             val specCardView = findParentCardView(masterSpec)
@@ -146,7 +181,8 @@ class ProfileFragment : Fragment() {
         status: TextView?,
         statusIndicator: View?,
         completedOrders: TextView?,
-        chip: Chip
+        chip: Chip,
+        avatar: ImageView
     ) {
         lifecycleScope.launch {
             val prefsManager = com.example.bestapp.data.PreferencesManager.getInstance(requireContext())
@@ -288,6 +324,10 @@ class ProfileFragment : Fragment() {
                             chip.setChipBackgroundColorResource(R.color.verification_not_verified)
                             Log.w("ProfileFragment", "Verification status not found, defaulting to NOT_VERIFIED")
                         }
+                        
+                        // Загружаем аватар, если есть photo_url
+                        // TODO: добавить photo_url в ответ API getMasterStats
+                        // Пока используем заглушку - аватар уже установлен в layout
                     } else {
                         Log.e("ProfileFragment", "Master data is null in response")
                         name.text = "Данные не найдены"
@@ -484,6 +524,96 @@ class ProfileFragment : Fragment() {
             specView.setOnClickListener { 
                 Log.d("ProfileFragment", "TextView clicked (no CardView), opening specialization dialog")
                 openDialog() 
+            }
+        }
+    }
+
+    /**
+     * Делает аватар кликабельным для загрузки фото
+     */
+    private fun setupAvatarEditor(avatarView: ImageView) {
+        avatarView.isClickable = true
+        avatarView.isFocusable = true
+        avatarView.setOnClickListener {
+            checkPermissionAndOpenPicker()
+        }
+    }
+    
+    /**
+     * Проверяет разрешение и открывает выбор изображения
+     */
+    private fun checkPermissionAndOpenPicker() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED -> {
+                openImagePicker()
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
+    }
+    
+    /**
+     * Открывает галерею для выбора изображения
+     */
+    private fun openImagePicker() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        imagePickerLauncher.launch(intent)
+    }
+    
+    /**
+     * Загружает выбранное изображение на сервер
+     */
+    private fun uploadAvatar(uri: Uri) {
+        lifecycleScope.launch {
+            try {
+                // Показываем индикатор загрузки
+                Toast.makeText(context, "Загрузка аватара...", Toast.LENGTH_SHORT).show()
+                
+                // Получаем файл из URI
+                val inputStream = requireContext().contentResolver.openInputStream(uri)
+                val file = File.createTempFile("avatar_", ".jpg", requireContext().cacheDir)
+                inputStream?.use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                
+                // Создаем MultipartBody.Part
+                val requestFile = file.asRequestBody("image/jpeg".toMediaType())
+                val photoPart = MultipartBody.Part.createFormData("photo", file.name, requestFile)
+                
+                val apiRepository = ApiRepository()
+                val result = apiRepository.uploadMasterAvatar(photoPart)
+                result.onSuccess { response ->
+                    Log.d("ProfileFragment", "Avatar uploaded successfully: ${response.photoUrl}")
+                    Toast.makeText(context, "Аватар успешно загружен", Toast.LENGTH_SHORT).show()
+                    
+                    // Обновляем аватар в UI
+                    val avatarView = view?.findViewById<ImageView>(R.id.master_avatar)
+                    avatarView?.let { av ->
+                        // Загружаем изображение с сервера
+                        val baseUrl = com.example.bestapp.api.RetrofitClient.BASE_URL
+                        val fullUrl = if (response.photoUrl.startsWith("http")) {
+                            response.photoUrl
+                        } else {
+                            baseUrl.removeSuffix("/") + response.photoUrl
+                        }
+                        Glide.with(requireContext())
+                            .load(fullUrl)
+                            .circleCrop()
+                            .into(av)
+                    }
+                }.onFailure { error ->
+                    Log.e("ProfileFragment", "Ошибка загрузки аватара", error)
+                    Toast.makeText(context, "Ошибка загрузки: ${error.message}", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Log.e("ProfileFragment", "Ошибка загрузки аватара", e)
+                Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
