@@ -543,15 +543,23 @@ class ProfileFragment : Fragment() {
      * Проверяет разрешение и открывает выбор изображения
      */
     private fun checkPermissionAndOpenPicker() {
+        val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+ (API 33+)
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            // Android 12 и ниже
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        
         when {
             ContextCompat.checkSelfPermission(
                 requireContext(),
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                permission
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED -> {
                 openImagePicker()
             }
             else -> {
-                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                requestPermissionLauncher.launch(permission)
             }
         }
     }
