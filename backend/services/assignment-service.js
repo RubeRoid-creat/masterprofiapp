@@ -165,6 +165,36 @@ function calculateTimeout(attemptNumber) {
   }
 }
 
+// Фильтрует данные назначения в зависимости от статуса
+// До принятия мастер видит только: адрес, тип техники, проблему
+// После принятия видит все детали
+export function filterAssignmentData(assignment, includeFullDetails = false) {
+  if (!assignment) return null;
+  
+  // Если статус pending и не запрошены полные детали - показываем только базовую информацию
+  if (assignment.status === 'pending' && !includeFullDetails) {
+    return {
+      id: assignment.id,
+      order_id: assignment.order_id,
+      master_id: assignment.master_id,
+      status: assignment.status,
+      created_at: assignment.created_at,
+      expires_at: assignment.expires_at,
+      attempt_number: assignment.attempt_number || 1,
+      // Только базовая информация согласно правилам
+      device_type: assignment.device_type,
+      address: assignment.address || assignment.client_address,
+      problem_description: assignment.problem_description,
+      latitude: assignment.latitude,
+      longitude: assignment.longitude
+      // НЕ включаем: device_brand, device_model, client_name, client_phone, estimated_cost, arrival_time
+    };
+  }
+  
+  // Для принятых/отклоненных назначений и при запросе полных деталей - возвращаем всё
+  return assignment;
+}
+
 // Создаем назначение для мастера
 export function createAssignment(orderId, masterId, attemptNumber = 1) {
   try {
@@ -179,7 +209,7 @@ export function createAssignment(orderId, masterId, attemptNumber = 1) {
     const assignmentId = result.lastInsertRowid;
     
     // Получаем полную информацию о назначении
-    const assignment = query.get(`
+    const fullAssignment = query.get(`
       SELECT 
         oa.*,
         o.device_type, o.device_brand, o.device_model,
@@ -193,14 +223,19 @@ export function createAssignment(orderId, masterId, attemptNumber = 1) {
       WHERE oa.id = ?
     `, [assignmentId]);
     
-    // Отправляем уведомление мастеру через WebSocket
+    // Отправляем уведомление мастеру через WebSocket (только базовая информация для pending)
     const master = query.get('SELECT user_id FROM masters WHERE id = ?', [masterId]);
-    if (master) {
+    if (master && fullAssignment) {
+      // Фильтруем данные - показываем только базовую информацию до принятия
+      const filteredAssignment = filterAssignmentData(fullAssignment, false);
       broadcastToMaster(master.user_id, {
         type: 'new_assignment',
-        assignment
+        assignment: filteredAssignment
       });
     }
+    
+    // Возвращаем полную информацию для внутреннего использования
+    const assignment = fullAssignment;
     
     // Устанавливаем таймер для истечения времени
     const timer = setTimeout(() => {
@@ -374,7 +409,8 @@ export default {
   handleAssignmentExpiration,
   findNextMaster,
   notifyMasters,
-  cancelAssignments
+  cancelAssignments,
+  filterAssignmentData
 };
 
 

@@ -3,7 +3,7 @@ import { query } from '../database/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { broadcastToMaster, broadcastToClient } from '../websocket.js';
 import { notifyMasterAssigned, notifyOrderStatusChange } from '../services/push-notification-service.js';
-import { createAssignment } from '../services/assignment-service.js';
+import { createAssignment, filterAssignmentData } from '../services/assignment-service.js';
 
 const router = express.Router();
 
@@ -119,7 +119,18 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
     sql += ' ORDER BY oa.created_at DESC';
     
     const assignments = query.all(sql, params);
-    res.json(assignments);
+    
+    // Фильтруем данные назначений: для pending показываем только базовую информацию
+    const filteredAssignments = assignments.map(assignment => {
+      // Для pending назначений скрываем детали (brand, model, client info, cost)
+      if (assignment.status === 'pending') {
+        return filterAssignmentData(assignment, false);
+      }
+      // Для принятых/отклоненных - показываем всё
+      return assignment;
+    });
+    
+    res.json(filteredAssignments);
   } catch (error) {
     console.error('Ошибка получения назначений:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -209,7 +220,25 @@ router.get('/order/:orderId/active', authenticate, (req, res) => {
       return res.status(404).json({ error: 'Активное назначение не найдено' });
     }
     
-    res.json(assignment);
+    // Для активного назначения нужно получить полные данные о заказе
+    const fullAssignment = query.get(`
+      SELECT 
+        oa.*,
+        o.device_type, o.device_brand, o.device_model,
+        o.problem_description, o.address, o.latitude, o.longitude,
+        o.arrival_time, o.order_type, o.estimated_cost,
+        u.name as client_name, u.phone as client_phone
+      FROM order_assignments oa
+      JOIN orders o ON oa.order_id = o.id
+      JOIN clients c ON o.client_id = c.id
+      JOIN users u ON c.user_id = u.id
+      WHERE oa.id = ?
+    `, [assignment.id]);
+    
+    // Фильтруем данные: для pending показываем только базовую информацию
+    const filteredAssignment = filterAssignmentData(fullAssignment || assignment, false);
+    
+    res.json(filteredAssignment);
   } catch (error) {
     console.error('Ошибка получения назначения:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
