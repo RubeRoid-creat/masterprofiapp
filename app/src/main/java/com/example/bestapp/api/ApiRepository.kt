@@ -1457,14 +1457,36 @@ class ApiRepository {
             try {
                 val response = api.getVerificationStatus()
                 if (response.isSuccessful) {
-                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                    val body = response.body()
+                    if (body != null) {
+                        Result.success(body)
+                    } else {
+                        Log.w(TAG, "Verification status response body is null")
+                        Result.failure(Exception("Пустой ответ от сервера"))
+                    }
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Result.failure(Exception("Ошибка: ${response.code()}, $errorBody"))
+                    val errorMessage = try {
+                        val errorJson = errorBody?.let {
+                            com.google.gson.Gson().fromJson(it, Map::class.java)
+                        }
+                        errorJson?.get("error")?.toString() ?: when (response.code()) {
+                            404 -> "Данные не найдены"
+                            401 -> "Требуется авторизация"
+                            403 -> "Доступ запрещен"
+                            500 -> "Ошибка сервера"
+                            else -> "Ошибка получения статуса: ${response.code()}"
+                        }
+                    } catch (e: Exception) {
+                        "Ошибка получения статуса: ${response.code()}"
+                    }
+                    Log.e(TAG, "Get verification status failed: code=${response.code()}, message=$errorMessage")
+                    Result.failure(Exception(errorMessage))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error getting verification status", e)
-                Result.failure(e)
+                val errorMessage = getErrorMessage(e, "Ошибка загрузки статуса подтверждения")
+                Result.failure(Exception(errorMessage))
             }
         }
     }

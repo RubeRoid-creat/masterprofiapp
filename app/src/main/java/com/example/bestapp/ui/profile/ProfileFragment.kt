@@ -699,10 +699,32 @@ class ProfileFragment : Fragment() {
                         btnVerifyPhone?.visibility = View.VISIBLE
                     }
                 }.onFailure { error ->
-                    Log.e("ProfileFragment", "Ошибка загрузки статуса подтверждения", error)
+                    // Не показываем ошибку пользователю, так как это не критично для работы приложения
+                    // Просто логируем ошибку и оставляем кнопки подтверждения видимыми по умолчанию
+                    val isConnectionError = error.message?.contains("подключ", ignoreCase = true) == true
+                            || error.message?.contains("connection", ignoreCase = true) == true
+                            || error.message?.contains("недоступен", ignoreCase = true) == true
+                            || error.message?.contains("unavailable", ignoreCase = true) == true
+                    
+                    if (isConnectionError) {
+                        Log.w("ProfileFragment", "Сервер недоступен, статус подтверждения не обновлен: ${error.message}")
+                        // При ошибке подключения не показываем кнопки подтверждения, так как они не будут работать
+                        // Пользователь увидит стандартное состояние (кнопки видны)
+                    } else {
+                        Log.e("ProfileFragment", "Ошибка загрузки статуса подтверждения: ${error.message}", error)
+                    }
                 }
             } catch (e: Exception) {
-                Log.e("ProfileFragment", "Ошибка загрузки статуса подтверждения", e)
+                // Ошибки подключения не критичны, просто логируем
+                val isConnectionError = e is java.net.ConnectException 
+                        || e is java.net.UnknownHostException
+                        || e is java.net.SocketTimeoutException
+                
+                if (isConnectionError) {
+                    Log.w("ProfileFragment", "Сервер недоступен, статус подтверждения не загружен: ${e.message}")
+                } else {
+                    Log.e("ProfileFragment", "Ошибка загрузки статуса подтверждения", e)
+                }
             }
         }
     }
