@@ -58,33 +58,57 @@ object RetrofitClient {
         }
         
         try {
-            Log.d(TAG, "Проверка доступности сервера: $BASE_URL")
+            Log.d(TAG, "🔍 Проверка доступности сервера: $BASE_URL")
+            
+            // Проверяем доступность через простой HTTP запрос
             val client = OkHttpClient.Builder()
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.SECONDS)
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
                 .build()
             
+            // Пробуем подключиться к корню сервера
             val request = okhttp3.Request.Builder()
                 .url("$BASE_URL")
                 .get()
                 .build()
             
+            Log.d(TAG, "📡 Отправка запроса к серверу...")
             val response = client.newCall(request).execute()
+            
             val isAvailable = response.isSuccessful || response.code in 200..499
             val message = if (isAvailable) {
-                "Сервер доступен (код: ${response.code})"
+                "✅ Сервер доступен (код: ${response.code})"
             } else {
-                "Сервер недоступен (код: ${response.code})"
+                "⚠️ Сервер отвечает, но с ошибкой (код: ${response.code})"
             }
-            Log.d(TAG, "Server availability check: ${if (isAvailable) "✅" else "❌"} $message")
+            Log.d(TAG, "Server availability check: $message")
             response.close()
             Pair(isAvailable, message)
         } catch (e: Exception) {
             val errorType = when (e) {
-                is java.net.ConnectException -> "Сервер не отвечает. Проверьте, запущен ли сервер."
-                is java.net.SocketTimeoutException -> "Превышено время ожидания. Сервер не отвечает."
-                is java.net.UnknownHostException -> "Не удалось найти сервер. Проверьте адрес сервера."
-                else -> "Ошибка подключения: ${e.message ?: "Неизвестная ошибка"}"
+                is java.net.ConnectException -> {
+                    Log.e(TAG, "❌ ConnectException: Не удалось подключиться к серверу")
+                    Log.e(TAG, "   Возможные причины:")
+                    Log.e(TAG, "   1. Сервер не запущен")
+                    Log.e(TAG, "   2. Неправильный IP-адрес или порт")
+                    Log.e(TAG, "   3. Файрвол блокирует подключение")
+                    Log.e(TAG, "   4. Приложение находится в другой сети")
+                    "Сервер не отвечает. Проверьте:\n• Запущен ли сервер\n• Правильность IP: 212.74.227.208:3000\n• Настройки сети"
+                }
+                is java.net.SocketTimeoutException -> {
+                    Log.e(TAG, "❌ SocketTimeoutException: Превышено время ожидания")
+                    "Превышено время ожидания. Сервер не отвечает."
+                }
+                is java.net.UnknownHostException -> {
+                    Log.e(TAG, "❌ UnknownHostException: Не удалось найти сервер")
+                    Log.e(TAG, "   URL: $BASE_URL")
+                    "Не удалось найти сервер. Проверьте адрес: $BASE_URL"
+                }
+                else -> {
+                    Log.e(TAG, "❌ Неизвестная ошибка: ${e.javaClass.simpleName}")
+                    Log.e(TAG, "   Сообщение: ${e.message}")
+                    "Ошибка подключения: ${e.message ?: "Неизвестная ошибка"}"
+                }
             }
             val errorMsg = "$errorType\nURL: $BASE_URL"
             Log.e(TAG, "❌ $errorMsg", e)
@@ -247,12 +271,28 @@ object RetrofitClient {
     
     // OkHttp клиент с interceptors (создается лениво)
     private val okHttpClient: OkHttpClient by lazy {
+        Log.d(TAG, "🔧 Initializing OkHttpClient for BASE_URL: $BASE_URL")
         OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val request = chain.request()
+                Log.d(TAG, "📡 Request: ${request.method} ${request.url}")
+                Log.d(TAG, "   Headers: ${request.headers}")
+                try {
+                    val response = chain.proceed(request)
+                    Log.d(TAG, "📥 Response: ${response.code} ${response.message}")
+                    response
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Request failed: ${request.method} ${request.url}", e)
+                    Log.e(TAG, "   Error type: ${e.javaClass.simpleName}")
+                    Log.e(TAG, "   Error message: ${e.message}")
+                    throw e
+                }
+            }
+            .connectTimeout(30, TimeUnit.SECONDS) // Увеличено с 15 до 30 секунд
+            .readTimeout(60, TimeUnit.SECONDS) // Увеличено с 30 до 60 секунд
+            .writeTimeout(60, TimeUnit.SECONDS) // Увеличено с 30 до 60 секунд
             .retryOnConnectionFailure(true) // Автоматическая повторная попытка при ошибках подключения
             .build()
     }
