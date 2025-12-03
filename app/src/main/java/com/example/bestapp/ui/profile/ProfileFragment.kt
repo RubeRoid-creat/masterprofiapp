@@ -18,6 +18,7 @@ import com.example.bestapp.data.VerificationStatus
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
+import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -51,7 +52,9 @@ class ProfileFragment : Fragment() {
         loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
 
         // Делаем специализацию кликабельной для изменения
-        setupSpecializationEditor(masterSpec)
+        // Находим родительский CardView и делаем его кликабельным
+        val specCardView = findParentCardView(masterSpec)
+        setupSpecializationEditor(masterSpec, specCardView)
         
         btnVerification.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_verification)
@@ -111,7 +114,8 @@ class ProfileFragment : Fragment() {
             loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
             
             // Восстанавливаем кликабельность специализации после обновления данных
-            setupSpecializationEditor(masterSpec)
+            val specCardView = findParentCardView(masterSpec)
+            setupSpecializationEditor(masterSpec, specCardView)
             
             // Убеждаемся, что кнопка MLM настроена и видима
             val btnMLM = it.findViewById<MaterialButton>(R.id.btn_mlm)
@@ -338,10 +342,24 @@ class ProfileFragment : Fragment() {
     }
     
     /**
+     * Находит родительский MaterialCardView для указанного View
+     */
+    private fun findParentCardView(view: View?): MaterialCardView? {
+        var parent = view?.parent
+        while (parent != null) {
+            if (parent is MaterialCardView) {
+                return parent
+            }
+            parent = parent.parent
+        }
+        return null
+    }
+    
+    /**
      * Делает поле специализации кликабельным и открывает диалог выбора специализаций
      * с последующим сохранением через API.
      */
-    private fun setupSpecializationEditor(specView: TextView) {
+    private fun setupSpecializationEditor(specView: TextView, cardView: MaterialCardView? = null) {
         val allSpecs = listOf(
             "Стиральная машина",
             "Посудомоечная машина",
@@ -398,7 +416,8 @@ class ProfileFragment : Fragment() {
                                     specView.text = "Специализация не указана"
                                 }
                                 // Восстанавливаем кликабельность после обновления текста
-                                setupSpecializationEditor(specView)
+                                val specCardView = findParentCardView(specView)
+                                setupSpecializationEditor(specView, specCardView)
                                 Toast.makeText(
                                     requireContext(),
                                     "Специализация обновлена",
@@ -429,9 +448,44 @@ class ProfileFragment : Fragment() {
         specView.isClickable = true
         specView.isFocusable = true
         specView.isEnabled = true
-        // Удаляем старый обработчик, если есть, и устанавливаем новый
-        specView.setOnClickListener(null)
-        specView.setOnClickListener { openDialog() }
+        
+        // Отключаем перехват кликов у родительских LinearLayout
+        var parent = specView.parent
+        while (parent != null && parent !is MaterialCardView) {
+            if (parent is ViewGroup) {
+                (parent as ViewGroup).isClickable = false
+                (parent as ViewGroup).isFocusable = false
+            }
+            parent = parent.parent
+        }
+        
+        // Если есть CardView, делаем его кликабельным и устанавливаем обработчик на него
+        // Это гарантирует, что клик будет работать даже если TextView перекрыт
+        if (cardView != null) {
+            Log.d("ProfileFragment", "Found CardView for specialization, setting up click handler")
+            cardView.isClickable = true
+            cardView.isFocusable = true
+            cardView.isFocusableInTouchMode = true
+            cardView.setOnClickListener(null)
+            cardView.setOnClickListener { 
+                Log.d("ProfileFragment", "CardView clicked, opening specialization dialog")
+                openDialog() 
+            }
+            // Также устанавливаем обработчик на TextView для надежности
+            specView.setOnClickListener(null)
+            specView.setOnClickListener { 
+                Log.d("ProfileFragment", "TextView clicked, opening specialization dialog")
+                openDialog() 
+            }
+        } else {
+            Log.w("ProfileFragment", "CardView not found for specialization, using TextView only")
+            // Если CardView не найден, используем только TextView
+            specView.setOnClickListener(null)
+            specView.setOnClickListener { 
+                Log.d("ProfileFragment", "TextView clicked (no CardView), opening specialization dialog")
+                openDialog() 
+            }
+        }
     }
 
     // Функция logout больше не используется, так как кнопка выхода убрана из профиля
