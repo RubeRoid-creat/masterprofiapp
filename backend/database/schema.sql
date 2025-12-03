@@ -649,7 +649,7 @@ CREATE INDEX IF NOT EXISTS idx_ranks_history_user_id ON ranks_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_ranks_history_achieved_at ON ranks_history(achieved_at);
 
 -- Индексы для оптимизации MLM запросов
-CREATE INDEX IF NOT EXISTS idx_users_sponsor_id ON users(sponsor_id);
+-- Индекс idx_users_sponsor_id создается в server.js после добавления колонки
 CREATE INDEX IF NOT EXISTS idx_users_rank ON users(rank);
 
 -- Таблица кодов подтверждения (email и телефон)
