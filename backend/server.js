@@ -143,14 +143,23 @@ app.use((req, res, next) => {
           }
         }
         
-        // Проверяем наличие индекса для rank
+        // Проверяем наличие колонки rank и индекса
         try {
-          query.run('CREATE INDEX IF NOT EXISTS idx_users_rank ON users(rank)');
-          console.log('✅ Индекс idx_users_rank проверен');
-        } catch (indexError) {
-          if (!indexError.message.includes('already exists')) {
-            console.warn('⚠️ Ошибка создания индекса idx_users_rank:', indexError.message);
+          const hasRank = usersTableInfo && Array.isArray(usersTableInfo) && usersTableInfo.some(col => col && col.name === 'rank');
+          if (hasRank) {
+            try {
+              query.run('CREATE INDEX IF NOT EXISTS idx_users_rank ON users(rank)');
+              console.log('✅ Индекс idx_users_rank проверен');
+            } catch (indexError) {
+              if (!indexError.message.includes('already exists') && !indexError.message.includes('no such column')) {
+                console.warn('⚠️ Ошибка создания индекса idx_users_rank:', indexError.message);
+              }
+            }
+          } else {
+            console.log('⚠️ Колонка rank отсутствует в таблице users, индекс не создается');
           }
+        } catch (e) {
+          console.warn('⚠️ Ошибка проверки колонки rank:', e.message);
         }
       }
     } catch (e) {
