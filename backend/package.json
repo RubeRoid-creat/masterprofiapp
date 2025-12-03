@@ -21,7 +21,8 @@
     "ensure-sponsor-id": "node scripts/ensure-sponsor-id-column.js",
     "ensure-photo-url": "node scripts/ensure-photo-url-column.js",
     "package": "node scripts/package-backend.js",
-    "seed": "node scripts/seed-test-data.js"
+    "seed": "node scripts/seed-test-data.js",
+    "check-connection": "node scripts/check-server-connection.js"
   },
   "keywords": [
     "repair",
