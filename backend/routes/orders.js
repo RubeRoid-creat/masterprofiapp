@@ -668,6 +668,27 @@ router.get('/:id', authenticate, (req, res) => {
       if (client && order.client_id !== client.id) {
         return res.status(403).json({ error: 'Доступ запрещен' });
       }
+    } else if (req.user.role === 'master') {
+      // Мастер может видеть детали заказа только если он его принял
+      const master = query.get('SELECT id FROM masters WHERE user_id = ?', [req.user.id]);
+      if (master) {
+        // Проверяем, принял ли мастер этот заказ
+        const acceptedAssignment = query.get(
+          'SELECT * FROM order_assignments WHERE order_id = ? AND master_id = ? AND status = ?',
+          [id, master.id, 'accepted']
+        );
+        
+        // Также проверяем, является ли мастер назначенным мастером заказа
+        const isAssignedMaster = order.assigned_master_id === master.id;
+        
+        if (!acceptedAssignment && !isAssignedMaster) {
+          // Мастер не может видеть детали заказа, который еще не принял
+          return res.status(403).json({ 
+            error: 'Доступ запрещен',
+            message: 'Мастер не может открыть детали заказа, пока не примет его'
+          });
+        }
+      }
     }
     
     // Получаем медиафайлы
