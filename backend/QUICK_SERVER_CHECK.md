@@ -80,3 +80,26 @@ sudo yum install net-tools
 ```
 
 Но обычно `ss` работает лучше и установлен по умолчанию!
+
+## Если сервер не запускается из-за отсутствующих пакетов:
+
+Если видите ошибку типа `Cannot find package 'nodemailer'`:
+
+```bash
+# Перейдите в папку проекта
+cd ~/masterprofiapp/backend
+
+# Установите зависимости
+npm install --production
+
+# Перезапустите сервер
+pm2 restart bestapp-backend
+
+# Проверьте логи
+pm2 logs bestapp-backend --lines 20
+```
+
+**Быстрое исправление:**
+```bash
+cd ~/masterprofiapp/backend && npm install --production && pm2 restart bestapp-backend
+```
