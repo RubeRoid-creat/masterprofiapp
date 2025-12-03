@@ -102,7 +102,12 @@ export async function initDatabase() {
             if (columnName === 'inn' && (statement.includes('masters') || statement.toUpperCase().includes('FROM masters') || statement.toUpperCase().includes('UPDATE masters') || statement.toUpperCase().includes('INTO masters'))) {
               try {
                 // Проверяем, существует ли уже поле
-                const tableInfo = db.prepare("PRAGMA table_info(masters)").all();
+                const stmt = db.prepare("PRAGMA table_info(masters)");
+                const tableInfo = [];
+                while (stmt.step()) {
+                  tableInfo.push(stmt.getAsObject());
+                }
+                stmt.free();
                 const hasInn = tableInfo && tableInfo.some(col => col.name === 'inn');
                 
                 if (!hasInn) {
@@ -130,7 +135,12 @@ export async function initDatabase() {
             if (columnName === 'sponsor_id' && (statement.includes('users') || statement.toUpperCase().includes('FROM users') || statement.toUpperCase().includes('UPDATE users') || statement.toUpperCase().includes('INTO users') || statement.toUpperCase().includes('idx_users_sponsor_id'))) {
               try {
                 // Проверяем, существует ли уже поле
-                const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+                const stmt = db.prepare("PRAGMA table_info(users)");
+                const tableInfo = [];
+                while (stmt.step()) {
+                  tableInfo.push(stmt.getAsObject());
+                }
+                stmt.free();
                 const hasSponsorId = tableInfo && tableInfo.some(col => col.name === 'sponsor_id');
                 
                 if (!hasSponsorId) {
