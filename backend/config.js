@@ -40,7 +40,7 @@ export const config = {
   // Настройки email (для отправки кодов подтверждения)
   email: {
     from: process.env.EMAIL_FROM || 'noreply@bestapp.ru',
-    smt: process.env.EMAIL_SMTP_ENABLED === 'true' ? {
+    smtp: process.env.EMAIL_SMTP_ENABLED === 'true' ? {
       host: process.env.EMAIL_SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.EMAIL_SMTP_PORT || '587'),
       secure: process.env.EMAIL_SMTP_SECURE === 'true', // true для 465, false для других портов

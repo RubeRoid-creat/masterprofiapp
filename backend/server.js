@@ -25,6 +25,7 @@ import promotionsRoutes from './routes/promotions.js';
 import loyaltyRoutes from './routes/loyalty.js';
 import routeOptimizationRoutes from './routes/route-optimization.js';
 import mlmRoutes from './routes/mlm.js';
+import verificationCodesRoutes from './routes/verification-codes.js';
 // Импортируем push-notification-service для инициализации Firebase Admin SDK
 import './services/push-notification-service.js';
 // Инициализируем Redis для кэширования
@@ -326,7 +327,7 @@ app.use('/api/fcm', fcmRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/verification', verificationRoutes);
-app.use('/api/verification-codes', (await import('./routes/verification-codes.js')).default);
+app.use('/api/verification-codes', verificationCodesRoutes);
 app.use('/api/complaints', complaintsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentsRoutes);
