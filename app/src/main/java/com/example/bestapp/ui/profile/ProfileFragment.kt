@@ -15,6 +15,7 @@ import com.example.bestapp.auth.AuthManager
 import com.example.bestapp.api.ApiRepository
 import android.util.Log
 import com.example.bestapp.data.VerificationStatus
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import kotlinx.coroutines.flow.first
@@ -48,6 +49,9 @@ class ProfileFragment : Fragment() {
         val btnStatistics = view.findViewById<MaterialButton>(R.id.btn_statistics)
         
         loadMasterInfo(masterName, masterEmail, masterPhone, masterSpec, masterRating, masterReviewsCount, masterStatus, statusIndicator, masterCompletedOrders, verificationChip)
+
+        // Делаем специализацию кликабельной для изменения
+        setupSpecializationEditor(masterSpec)
         
         btnVerification.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_verification)
@@ -330,5 +334,96 @@ class ProfileFragment : Fragment() {
         }
     }
     
+    /**
+     * Делает поле специализации кликабельным и открывает диалог выбора специализаций
+     * с последующим сохранением через API.
+     */
+    private fun setupSpecializationEditor(specView: TextView) {
+        val allSpecs = listOf(
+            "Стиральная машина",
+            "Посудомоечная машина",
+            "Холодильник",
+            "Морозильник",
+            "Духовой шкаф",
+            "Плита",
+            "Варочная панель",
+            "Микроволновка",
+            "Кондиционер",
+            "Водонагреватель",
+            "Ноутбук",
+            "Десктоп",
+            "Кофемашина"
+        )
+
+        fun openDialog() {
+            // Текущее значение специализаций из текста
+            val current = specView.text?.toString()
+                ?.split(",")
+                ?.map { it.trim() }
+                ?.filter { it.isNotEmpty() && it != "Специализация не указана" }
+                ?.toSet() ?: emptySet()
+
+            val selected = current.toMutableSet()
+            val checked = BooleanArray(allSpecs.size) { index ->
+                selected.contains(allSpecs[index])
+            }
+
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.auth_specialization)
+                .setMultiChoiceItems(allSpecs.toTypedArray(), checked) { _, which, isChecked ->
+                    val value = allSpecs[which]
+                    if (isChecked) {
+                        selected.add(value)
+                    } else {
+                        selected.remove(value)
+                    }
+                }
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    // Сохраняем выбор через API
+                    val newSpecs = selected.toList()
+                    lifecycleScope.launch {
+                        try {
+                            val apiRepository = ApiRepository()
+                            val result = apiRepository.updateMasterProfile(
+                                specialization = newSpecs
+                            )
+                            result.onSuccess {
+                                // Обновляем текст в профиле
+                                if (newSpecs.isNotEmpty()) {
+                                    specView.text = newSpecs.joinToString(", ")
+                                } else {
+                                    specView.text = "Специализация не указана"
+                                }
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Специализация обновлена",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }.onFailure { error ->
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Ошибка сохранения специализации: ${error.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        } catch (e: Exception) {
+                            Log.e("ProfileFragment", "Error updating specialization", e)
+                            Toast.makeText(
+                                requireContext(),
+                                "Ошибка сохранения специализации: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+
+        specView.isClickable = true
+        specView.isFocusable = true
+        specView.setOnClickListener { openDialog() }
+    }
+
     // Функция logout больше не используется, так как кнопка выхода убрана из профиля
 }
