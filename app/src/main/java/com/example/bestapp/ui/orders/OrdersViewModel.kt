@@ -264,8 +264,15 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                 Log.d(TAG, "✅ Активных назначений: ${activeAssignments.size} из ${pendingAssignments.size} pending")
                 
                 // Конвертируем assignments в orders для отображения (только активные, не истекшие)
+                val currentTime = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                }.format(java.util.Date())
+                
                 val apiOrders = activeAssignments
                     .map { assignment ->
+                        // assignedAt не может быть null в модели ApiAssignment, используем его или текущее время
+                        val assignedAt = if (assignment.assignedAt.isNotBlank()) assignment.assignedAt else currentTime
+                        
                         ApiOrder(
                             id = assignment.orderId,
                             clientId = 0, // Не нужно для назначения
@@ -283,7 +290,7 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                             paymentStatus = null,
                             estimatedCost = assignment.estimatedCost,
                             orderNumber = null,
-                            createdAt = assignment.assignedAt,
+                            createdAt = assignedAt, // Используем assignedAt или текущее время
                             assignedMasterId = assignment.masterId,
                             distance = null, // Будет рассчитано если нужно
                             urgency = assignment.orderType,
@@ -326,8 +333,8 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                             specialEquipment = null,
                             repairComplexity = null,
                             estimatedRepairTime = null,
-                            assignmentDate = assignment.assignedAt,
-                            updatedAt = assignment.assignedAt,
+                            assignmentDate = assignedAt,
+                            updatedAt = assignedAt,
                             finalCost = null,
                             clientEmail = null,
                             media = null,
