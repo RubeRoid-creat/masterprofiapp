@@ -104,6 +104,11 @@ class ProfileFragment : Fragment() {
         // Находим родительский CardView и делаем его кликабельным
         val specCardView = findParentCardView(masterSpec)
         setupSpecializationEditor(masterSpec, specCardView)
+
+        // Настраиваем кнопку редактирования (карандаш)
+        btnEditMasterInfo.setOnClickListener {
+            openSpecializationDialog(masterSpec)
+        }
         
         // Делаем аватар кликабельным для загрузки фото
         setupAvatarEditor(masterAvatar)
@@ -456,94 +461,108 @@ class ProfileFragment : Fragment() {
     }
     
     /**
+     * Открывает диалог выбора специализаций
+     */
+    private fun openSpecializationDialog(specView: TextView) {
+        val allSpecs = listOf(
+            "Холодильник",
+            "Стиральная машина",
+            "Посудомоечная машина",
+            "Духовой шкаф",
+            "Варочная панель",
+            "Микроволновая печь",
+            "Кондиционер",
+            "Кофемашина",
+            "Ноутбук",
+            "Десктоп",
+            "Морозильный ларь",
+            "Водонагреватель",
+            "Плита"
+        )
+
+        // Текущее значение специализаций из текста
+        val current = specView.text?.toString()
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() && it != "Специализация не указана" }
+            ?.toSet() ?: emptySet()
+
+        val selected = current.toMutableSet()
+        // Очищаем selected от устаревших названий если нужно, или мапим их
+        // Например если там "Микроволновка", а мы хотим "Микроволновая печь"
+        if (selected.contains("Микроволновка")) {
+            selected.remove("Микроволновка")
+            selected.add("Микроволновая печь")
+        }
+        if (selected.contains("Морозильник")) {
+            selected.remove("Морозильник")
+            selected.add("Морозильный ларь")
+        }
+
+        val checked = BooleanArray(allSpecs.size) { index ->
+            selected.contains(allSpecs[index])
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.auth_specialization)
+            .setMultiChoiceItems(allSpecs.toTypedArray(), checked) { _, which, isChecked ->
+                val value = allSpecs[which]
+                if (isChecked) {
+                    selected.add(value)
+                } else {
+                    selected.remove(value)
+                }
+            }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                // Сохраняем выбор через API
+                val newSpecs = selected.toList()
+                lifecycleScope.launch {
+                    try {
+                        val apiRepository = ApiRepository()
+                        val result = apiRepository.updateMasterProfile(
+                            specialization = newSpecs
+                        )
+                        result.onSuccess {
+                            // Обновляем текст в профиле
+                            if (newSpecs.isNotEmpty()) {
+                                specView.text = newSpecs.joinToString(", ")
+                            } else {
+                                specView.text = "Специализация не указана"
+                            }
+                            // Восстанавливаем кликабельность после обновления текста
+                            val specCardView = findParentCardView(specView)
+                            setupSpecializationEditor(specView, specCardView)
+                            Toast.makeText(
+                                requireContext(),
+                                "Специализация обновлена",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }.onFailure { error ->
+                            Toast.makeText(
+                                requireContext(),
+                                "Ошибка сохранения специализации: ${error.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ProfileFragment", "Error updating specialization", e)
+                        Toast.makeText(
+                            requireContext(),
+                            "Ошибка сохранения специализации: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /**
      * Делает поле специализации кликабельным и открывает диалог выбора специализаций
      * с последующим сохранением через API.
      */
     private fun setupSpecializationEditor(specView: TextView, cardView: MaterialCardView? = null) {
-        val allSpecs = listOf(
-            "Стиральная машина",
-            "Посудомоечная машина",
-            "Холодильник",
-            "Морозильник",
-            "Духовой шкаф",
-            "Плита",
-            "Варочная панель",
-            "Микроволновка",
-            "Кондиционер",
-            "Водонагреватель",
-            "Ноутбук",
-            "Десктоп",
-            "Кофемашина"
-        )
-
-        fun openDialog() {
-            // Текущее значение специализаций из текста
-            val current = specView.text?.toString()
-                ?.split(",")
-                ?.map { it.trim() }
-                ?.filter { it.isNotEmpty() && it != "Специализация не указана" }
-                ?.toSet() ?: emptySet()
-
-            val selected = current.toMutableSet()
-            val checked = BooleanArray(allSpecs.size) { index ->
-                selected.contains(allSpecs[index])
-            }
-
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.auth_specialization)
-                .setMultiChoiceItems(allSpecs.toTypedArray(), checked) { _, which, isChecked ->
-                    val value = allSpecs[which]
-                    if (isChecked) {
-                        selected.add(value)
-                    } else {
-                        selected.remove(value)
-                    }
-                }
-                .setPositiveButton(android.R.string.ok) { _, _ ->
-                    // Сохраняем выбор через API
-                    val newSpecs = selected.toList()
-                    lifecycleScope.launch {
-                        try {
-                            val apiRepository = ApiRepository()
-                            val result = apiRepository.updateMasterProfile(
-                                specialization = newSpecs
-                            )
-                            result.onSuccess {
-                                // Обновляем текст в профиле
-                                if (newSpecs.isNotEmpty()) {
-                                    specView.text = newSpecs.joinToString(", ")
-                                } else {
-                                    specView.text = "Специализация не указана"
-                                }
-                                // Восстанавливаем кликабельность после обновления текста
-                                val specCardView = findParentCardView(specView)
-                                setupSpecializationEditor(specView, specCardView)
-                                Toast.makeText(
-                                    requireContext(),
-                                    "Специализация обновлена",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }.onFailure { error ->
-                                Toast.makeText(
-                                    requireContext(),
-                                    "Ошибка сохранения специализации: ${error.message}",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        } catch (e: Exception) {
-                            Log.e("ProfileFragment", "Error updating specialization", e)
-                            Toast.makeText(
-                                requireContext(),
-                                "Ошибка сохранения специализации: ${e.message}",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-        }
-
         // Убеждаемся, что TextView всегда кликабелен, даже если текст пустой
         specView.isClickable = true
         specView.isFocusable = true
@@ -559,32 +578,27 @@ class ProfileFragment : Fragment() {
             parent = parent.parent
         }
         
+        val clickListener = View.OnClickListener {
+            Log.d("ProfileFragment", "Opening specialization dialog")
+            openSpecializationDialog(specView)
+        }
+        
         // Если есть CardView, делаем его кликабельным и устанавливаем обработчик на него
-        // Это гарантирует, что клик будет работать даже если TextView перекрыт
         if (cardView != null) {
             Log.d("ProfileFragment", "Found CardView for specialization, setting up click handler")
             cardView.isClickable = true
             cardView.isFocusable = true
             cardView.isFocusableInTouchMode = true
             cardView.setOnClickListener(null)
-            cardView.setOnClickListener { 
-                Log.d("ProfileFragment", "CardView clicked, opening specialization dialog")
-                openDialog() 
-            }
+            cardView.setOnClickListener(clickListener)
+            
             // Также устанавливаем обработчик на TextView для надежности
             specView.setOnClickListener(null)
-            specView.setOnClickListener { 
-                Log.d("ProfileFragment", "TextView clicked, opening specialization dialog")
-                openDialog() 
-            }
+            specView.setOnClickListener(clickListener)
         } else {
             Log.w("ProfileFragment", "CardView not found for specialization, using TextView only")
-            // Если CardView не найден, используем только TextView
             specView.setOnClickListener(null)
-            specView.setOnClickListener { 
-                Log.d("ProfileFragment", "TextView clicked (no CardView), opening specialization dialog")
-                openDialog() 
-            }
+            specView.setOnClickListener(clickListener)
         }
     }
 
