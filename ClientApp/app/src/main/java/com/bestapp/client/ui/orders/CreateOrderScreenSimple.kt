@@ -12,11 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.bestapp.client.R
 import com.bestapp.client.ui.map.MapAddressPicker
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -24,7 +26,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateOrderScreen(
+fun CreateOrderScreenSimple(
     navController: NavController,
     viewModel: OrdersViewModel = viewModel()
 ) {
@@ -34,9 +36,7 @@ fun CreateOrderScreen(
     var longitude by remember { mutableStateOf(35.911896) }
     var deviceType by remember { mutableStateOf("") }
     var deviceBrand by remember { mutableStateOf("") }
-    var selectedProblem by remember { mutableStateOf("") }
     var problemDescription by remember { mutableStateOf("") }
-    var isCustomProblem by remember { mutableStateOf(false) }
     var desiredDate by remember { mutableStateOf("") }
     var desiredTime by remember { mutableStateOf("") }
     
@@ -45,7 +45,6 @@ fun CreateOrderScreen(
     var deviceTypeExpanded by remember { mutableStateOf(false) }
     var deviceBrandExpanded by remember { mutableStateOf(false) }
     var isOtherBrand by remember { mutableStateOf(false) }
-    var problemExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     
@@ -74,73 +73,6 @@ fun CreateOrderScreen(
         "Кондиционер",
         "Водонагреватель"
     )
-    
-    // Типичные проблемы для каждого типа техники
-    val problemsByDeviceType = mapOf(
-        "Холодильник" to listOf(
-            "Не морозит",
-            "Работает без остановки",
-            "Вода в камере/под ящиками",
-            "Сильный конденсат",
-            "Шум",
-            "Шуба в камере",
-            "Другая проблема..."
-        ),
-        "Стиральная машина" to listOf(
-            "Не включается",
-            "Не греет воду",
-            "Не сливает воду",
-            "Не набирает воду",
-            "Течет",
-            "Сильная вибрация",
-            "Не вращает барабан",
-            "Код ошибки (E01, E10 и т.д.)",
-            "Другая проблема..."
-        ),
-        "Посудомоечная машина" to listOf(
-            "Плохо моет",
-            "Остается накипь/порошок",
-            "Течет",
-            "Не сушит",
-            "Не сливает воду",
-            "Код ошибки",
-            "Другая проблема..."
-        ),
-        "Духовой шкаф" to listOf(
-            "Не нагревается",
-            "Не держит температуру",
-            "Не работает вентилятор",
-            "Не включается конфорка",
-            "Другая проблема..."
-        ),
-        "Варочная панель" to listOf(
-            "Не реагирует на касания",
-            "Греет не все зоны",
-            "Отключается",
-            "Показывает ошибку",
-            "Другая проблема..."
-        ),
-        "Кондиционер" to listOf(
-            "Не охлаждает",
-            "Не греет",
-            "Течет вода в комнату",
-            "Шумит",
-            "Неприятный запах",
-            "Другая проблема..."
-        ),
-        "Кофемашина" to listOf(
-            "Не выдает кофе",
-            "Течет вода",
-            "Не взбивает молоко",
-            "Показывает ошибку очистки/засора",
-            "Другая проблема..."
-        )
-    )
-    
-    // Получаем список проблем для выбранного типа техники
-    val availableProblems = remember(deviceType) {
-        problemsByDeviceType[deviceType] ?: listOf("Другая проблема...")
-    }
     
     val deviceBrands = listOf(
         "Samsung", "LG", "Bosch", "Indesit", "Ariston", 
@@ -361,75 +293,15 @@ fun CreateOrderScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
                     
-                    // Выбор типичной проблемы
-                    if (deviceType.isNotBlank() && availableProblems.isNotEmpty()) {
-                        ExposedDropdownMenuBox(
-                            expanded = problemExpanded,
-                            onExpandedChange = { problemExpanded = !problemExpanded },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = selectedProblem,
-                                onValueChange = { },
-                                readOnly = true,
-                                label = { Text("Выберите проблему *") },
-                                placeholder = { Text("Что случилось с техникой?") },
-                                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
-                                modifier = Modifier.fillMaxWidth().menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = problemExpanded,
-                                onDismissRequest = { problemExpanded = false }
-                            ) {
-                                availableProblems.forEach { problem ->
-                                    DropdownMenuItem(
-                                        text = { Text(problem) },
-                                        onClick = {
-                                            selectedProblem = problem
-                                            if (problem == "Другая проблема...") {
-                                                isCustomProblem = true
-                                                problemDescription = ""
-                                            } else {
-                                                isCustomProblem = false
-                                                problemDescription = problem
-                                            }
-                                            problemExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Поле для ввода своей проблемы
-                    if (isCustomProblem || deviceType.isBlank()) {
-                        OutlinedTextField(
-                            value = problemDescription,
-                            onValueChange = { problemDescription = it },
-                            label = { Text("Опишите проблему подробнее *") },
-                            placeholder = { Text("Например: не включается, не греет воду, шумит при отжиме...") },
-                            minLines = 3,
-                            maxLines = 5,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    
-                    // Дополнительное описание для типичной проблемы
-                    if (!isCustomProblem && selectedProblem.isNotBlank() && deviceType.isNotBlank()) {
-                        OutlinedTextField(
-                            value = problemDescription,
-                            onValueChange = { 
-                                // Сохраняем выбранную проблему и добавляем дополнительное описание
-                                val baseProblem = selectedProblem
-                                problemDescription = if (it.isBlank()) baseProblem else "$baseProblem. $it"
-                            },
-                            label = { Text("Дополнительная информация (опционально)") },
-                            placeholder = { Text("Добавьте детали, если нужно...") },
-                            minLines = 2,
-                            maxLines = 3,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    OutlinedTextField(
+                        value = problemDescription,
+                        onValueChange = { problemDescription = it },
+                        label = { Text("Опишите проблему *") },
+                        placeholder = { Text("Например: не включается, не греет воду, шумит при отжиме...") },
+                        minLines = 3,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
             
