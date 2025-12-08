@@ -29,7 +29,11 @@ data class Order(
     val createdAt: Date = Date(),
     val updatedAt: Date = Date(),
     val completedAt: Date? = null,
-    val notes: String? = null // Внутренние заметки мастера
+    val notes: String? = null, // Внутренние заметки мастера
+    
+    // Информация о назначении (если мастер видит этот заказ через assignment)
+    val assignmentId: Long? = null,
+    val assignmentStatus: String? = null
 ) {
     fun getFormattedCreatedDate(): String {
         val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())

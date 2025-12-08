@@ -99,7 +99,12 @@ data class ApiOrder(
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("updated_at") val updatedAt: String,
     val distance: Double? = null, // Расстояние до заказа в метрах (только для мастеров)
-    val media: List<ApiOrderMedia>? = null
+    val media: List<ApiOrderMedia>? = null,
+    
+    // Информация о назначении (если есть)
+    @SerializedName("assignment_id") val assignmentId: Long? = null,
+    @SerializedName("assignment_status") val assignmentStatus: String? = null,
+    @SerializedName("assignment_expires_at") val assignmentExpiresAt: String? = null
 )
 
 data class ApiOrderMedia(

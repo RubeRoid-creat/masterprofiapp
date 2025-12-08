@@ -317,26 +317,18 @@ class OrdersFragment : Fragment() {
     private fun setupRecyclerView() {
         adapter = OrdersAdapter(
             onOrderClick = { order ->
-                // Если заказ новый и нет активного назначения, запускаем процесс назначения
-                if (order.status == com.example.bestapp.data.RepairStatus.NEW) {
-                    val existingAssignment = com.example.bestapp.data.DataRepository
-                        .getActiveAssignmentForOrder(order.id)
-                    
-                    if (existingAssignment == null) {
-                        // Запускаем процесс назначения мастеров
-                        com.example.bestapp.service.OrderAssignmentService.startOrderAssignment(order.id)
-                        
-                        android.widget.Toast.makeText(
-                            context,
-                            "Ищем мастера для заказа #${order.id}...",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-                
                 // Открываем детали заказа
                 val bundle = Bundle().apply {
                     putLong("orderId", order.id)
+                    // Передаем assignmentId, если есть
+                    order.assignmentId?.let { assignmentId ->
+                        putLong("assignmentId", assignmentId)
+                        android.util.Log.d("OrdersFragment", "Passing assignmentId=$assignmentId to OrderDetailsFragment")
+                    }
+                    order.assignmentStatus?.let { status ->
+                        putString("assignmentStatus", status)
+                        android.util.Log.d("OrdersFragment", "Passing assignmentStatus=$status to OrderDetailsFragment")
+                    }
                 }
                 findNavController().navigate(R.id.action_orders_to_order_details, bundle)
             },

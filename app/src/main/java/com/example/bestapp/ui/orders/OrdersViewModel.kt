@@ -123,22 +123,90 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             // Получаем координаты мастера (если есть)
             val masterLocation = getMasterLocation()
             
-            // Бэкенд автоматически фильтрует заказы для мастера (только новые)
-            val result = apiRepository.getOrders(
-                status = null,
-                deviceType = null,
-                orderType = null,
-                urgency = _urgency.value,
-                maxDistance = _maxDistance.value,
-                minPrice = _minPrice.value,
-                maxPrice = _maxPrice.value,
-                sortBy = _sortBy.value,
-                masterLatitude = masterLocation?.first,
-                masterLongitude = masterLocation?.second
-            )
+            // Загружаем назначения мастера (assignments) вместо заказов
+            // Согласно правилам, мастер должен видеть НАЗНАЧЕНИЯ со статусом "pending"
+            val assignmentsResult = apiRepository.getMyAssignments()
             
-            result.onSuccess { apiOrders ->
-                Log.d(TAG, "Loaded ${apiOrders.size} orders from API")
+            assignmentsResult.onSuccess { assignments ->
+                Log.d(TAG, "Loaded ${assignments.size} assignments from API")
+                
+                // Конвертируем assignments в orders для отображения
+                val apiOrders = assignments
+                    .filter { it.status == "pending" } // Только ожидающие принятия
+                    .map { assignment ->
+                        ApiOrder(
+                            id = assignment.orderId,
+                            clientId = 0, // Не нужно для назначения
+                            clientName = assignment.clientName ?: "Клиент",
+                            clientPhone = assignment.clientPhone ?: "",
+                            address = assignment.address ?: "",
+                            latitude = assignment.latitude ?: 0.0,
+                            longitude = assignment.longitude ?: 0.0,
+                            deviceType = assignment.deviceType ?: "",
+                            deviceBrand = assignment.deviceBrand,
+                            deviceModel = assignment.deviceModel,
+                            problemDescription = assignment.problemDescription ?: "",
+                            repairStatus = "new", // Всегда новый для pending assignments
+                            requestStatus = "new",
+                            paymentStatus = null,
+                            estimatedCost = assignment.estimatedCost,
+                            orderNumber = null,
+                            createdAt = assignment.assignedAt,
+                            assignedMasterId = assignment.masterId,
+                            distance = null, // Будет рассчитано если нужно
+                            urgency = assignment.orderType,
+                            arrivalTime = assignment.arrivalTime,
+                            // Остальные поля не нужны для назначения
+                            deviceCategory = null,
+                            deviceSerialNumber = null,
+                            deviceYear = null,
+                            warrantyStatus = null,
+                            problemShortDescription = null,
+                            problemWhenStarted = null,
+                            problemConditions = null,
+                            problemErrorCodes = null,
+                            problemAttemptedFixes = null,
+                            addressStreet = null,
+                            addressBuilding = null,
+                            addressApartment = null,
+                            addressFloor = null,
+                            addressEntranceCode = null,
+                            addressLandmark = null,
+                            desiredRepairDate = null,
+                            priority = null,
+                            orderSource = null,
+                            orderType = assignment.orderType ?: "regular",
+                            clientBudget = null,
+                            paymentType = null,
+                            intercomWorking = null,
+                            parkingAvailable = null,
+                            hasPets = null,
+                            hasSmallChildren = null,
+                            preferredContactMethod = null,
+                            masterGenderPreference = null,
+                            masterMinExperience = null,
+                            preferredMasterId = null,
+                            problemTags = null,
+                            problemCategory = null,
+                            problemSeasonality = null,
+                            preliminaryDiagnosis = null,
+                            requiredParts = null,
+                            specialEquipment = null,
+                            repairComplexity = null,
+                            estimatedRepairTime = null,
+                            assignmentDate = assignment.assignedAt,
+                            updatedAt = assignment.assignedAt,
+                            finalCost = null,
+                            clientEmail = null,
+                            media = null,
+                            // Важно! Сохраняем assignmentId и expiresAt
+                            assignmentId = assignment.id,
+                            assignmentExpiresAt = assignment.expiresAt,
+                            assignmentStatus = assignment.status
+                        )
+                    }
+                    
+                Log.d(TAG, "Converted ${apiOrders.size} assignments to orders for display")
                 
                 // Если мастер не верифицирован, не показываем заказы
                 if (_isVerified.value == false) {
@@ -226,6 +294,21 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     
     // Конвертер ApiOrder -> Order
     private fun ApiOrder.toOrder(): Order {
+        // Парсим expiresAt если есть
+        val expiresAtDate = this.assignmentExpiresAt?.let {
+            try {
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
+                dateFormat.parse(it)
+            } catch (e: Exception) {
+                try {
+                    val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                    dateFormat.parse(it)
+                } catch (e2: Exception) {
+                    null
+                }
+            }
+        }
+        
         return Order(
             id = this.id,
             clientId = this.clientId,
@@ -248,8 +331,11 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             estimatedCost = this.estimatedCost,
             distance = this.distance,
             urgency = this.urgency,
-            expiresAt = null, // Будет обновлено асинхронно из назначения
-            createdAt = java.util.Date() // Можно парсить из createdAt если нужно
+            expiresAt = expiresAtDate,
+            createdAt = java.util.Date(), // Можно парсить из createdAt если нужно
+            // Сохраняем информацию о назначении
+            assignmentId = this.assignmentId,
+            assignmentStatus = this.assignmentStatus
         )
     }
     

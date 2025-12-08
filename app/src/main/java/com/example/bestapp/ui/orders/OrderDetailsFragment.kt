@@ -251,6 +251,8 @@ class OrderDetailsFragment : Fragment() {
 
     private fun loadOrderData() {
         val orderId = arguments?.getLong("orderId")
+        val assignmentIdFromArgs = arguments?.getLong("assignmentId")
+        val assignmentStatusFromArgs = arguments?.getString("assignmentStatus")
         
         if (orderId == null || orderId == 0L) {
             Toast.makeText(
@@ -267,6 +269,13 @@ class OrderDetailsFragment : Fragment() {
         currentAssignmentId = null
         currentAssignmentStatus = null
         clearUI()
+        
+        // Если assignmentId передан через аргументы, используем его
+        if (assignmentIdFromArgs != null && assignmentIdFromArgs != 0L) {
+            currentAssignmentId = assignmentIdFromArgs
+            currentAssignmentStatus = assignmentStatusFromArgs
+            Log.d(TAG, "Using assignmentId from arguments: $assignmentIdFromArgs, status: $assignmentStatusFromArgs")
+        }
         
         Log.d(TAG, "Loading order data for orderId: $orderId")
         lastLoadedOrderId = orderId
