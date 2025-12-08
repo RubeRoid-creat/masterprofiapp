@@ -313,7 +313,7 @@ export function handleAssignmentExpiration(assignmentId, orderId) {
         ['expired', assignmentId]
       );
       
-      console.log(`⏱️ Время ответа истекло для назначения #${assignmentId}`);
+      console.log(`⏱️ Время ответа истекло для назначения #${assignmentId} заказа #${orderId}`);
       
       // Ищем следующего мастера
       findNextMaster(orderId);
@@ -323,6 +323,83 @@ export function handleAssignmentExpiration(assignmentId, orderId) {
     assignmentTimers.delete(assignmentId);
   } catch (error) {
     console.error('Ошибка обработки истечения назначения:', error);
+  }
+}
+
+// Проверка и обработка всех истекших назначений (для фоновой задачи)
+export function checkAndProcessExpiredAssignments() {
+  try {
+    const now = new Date().toISOString();
+    
+    // Находим все pending назначения, которые истекли
+    const expiredAssignments = query.all(`
+      SELECT 
+        oa.id as assignment_id,
+        oa.order_id,
+        oa.master_id,
+        oa.expires_at,
+        o.repair_status
+      FROM order_assignments oa
+      JOIN orders o ON oa.order_id = o.id
+      WHERE oa.status = 'pending' 
+        AND oa.expires_at < ?
+        AND o.repair_status = 'new'
+    `, [now]);
+    
+    if (expiredAssignments.length === 0) {
+      return 0; // Нет истекших назначений
+    }
+    
+    console.log(`\n⏰ Обнаружено ${expiredAssignments.length} истекших назначений`);
+    
+    // Обрабатываем каждое истекшее назначение
+    let processedCount = 0;
+    const processedOrderIds = new Set();
+    
+    expiredAssignments.forEach(expired => {
+      try {
+        // Проверяем, что заказ еще новый
+        if (expired.repair_status !== 'new') {
+          console.log(`⚠️ Заказ #${expired.order_id} уже обработан, пропускаем назначение #${expired.assignment_id}`);
+          // Просто обновляем статус на expired
+          query.run(
+            'UPDATE order_assignments SET status = ? WHERE id = ?',
+            ['expired', expired.assignment_id]
+          );
+          return;
+        }
+        
+        // Обновляем статус назначения на expired
+        query.run(
+          'UPDATE order_assignments SET status = ? WHERE id = ?',
+          ['expired', expired.assignment_id]
+        );
+        
+        // Удаляем таймер, если он есть
+        const timer = assignmentTimers.get(expired.assignment_id);
+        if (timer) {
+          clearTimeout(timer);
+          assignmentTimers.delete(expired.assignment_id);
+        }
+        
+        console.log(`⏱️ Обрабатываем истекшее назначение #${expired.assignment_id} для заказа #${expired.order_id}`);
+        
+        // Перераспределяем заказ следующему мастеру (если еще не обрабатывали этот заказ в этом цикле)
+        if (!processedOrderIds.has(expired.order_id)) {
+          processedOrderIds.add(expired.order_id);
+          findNextMaster(expired.order_id);
+          processedCount++;
+        }
+      } catch (error) {
+        console.error(`Ошибка обработки истекшего назначения #${expired.assignment_id}:`, error);
+      }
+    });
+    
+    console.log(`✅ Обработано ${processedCount} заказов с истекшими назначениями\n`);
+    return processedCount;
+  } catch (error) {
+    console.error('Ошибка проверки истекших назначений:', error);
+    return 0;
   }
 }
 
@@ -451,7 +528,8 @@ export default {
   findNextMaster,
   notifyMasters,
   cancelAssignments,
-  filterAssignmentData
+  filterAssignmentData,
+  checkAndProcessExpiredAssignments
 };
 
 

@@ -299,6 +299,32 @@ app.use((req, res, next) => {
       const intervalHours = config.backupInterval / (60 * 60 * 1000);
       console.log(`💾 Автоматическое резервное копирование включено (каждые ${intervalHours} часов)`);
     }
+    
+    // Инициализация фоновой задачи для обработки истекших назначений
+    const { checkAndProcessExpiredAssignments } = await import('./services/assignment-service.js');
+    
+    // Проверяем истекшие назначения при запуске сервера
+    try {
+      console.log('🔄 Проверка истекших назначений при запуске...');
+      const processedCount = checkAndProcessExpiredAssignments();
+      if (processedCount > 0) {
+        console.log(`✅ Обработано ${processedCount} заказов с истекшими назначениями при запуске`);
+      }
+    } catch (error) {
+      console.error('⚠️ Ошибка проверки истекших назначений при запуске:', error.message);
+    }
+    
+    // Настраиваем периодическую проверку истекших назначений (каждую минуту)
+    const EXPIRED_CHECK_INTERVAL = 60 * 1000; // 1 минута
+    setInterval(() => {
+      try {
+        checkAndProcessExpiredAssignments();
+      } catch (error) {
+        console.error('⚠️ Ошибка проверки истекших назначений:', error.message);
+      }
+    }, EXPIRED_CHECK_INTERVAL);
+    
+    console.log(`⏰ Автоматическая проверка истекших назначений включена (каждую минуту)`);
   } catch (error) {
     console.error('❌ Ошибка инициализации БД:', error);
     process.exit(1);
