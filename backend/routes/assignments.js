@@ -89,13 +89,83 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
     // Верификация НЕ требуется для просмотра назначений, только для принятия
     // Это позволяет мастерам видеть заявки и понимать, что им нужно пройти верификацию
     
+    // Выбираем все поля заказа, чтобы мастер видел полную информацию, как клиент
+    // Явно перечисляем все поля из orders, чтобы избежать конфликтов с oa.*
     let sql = `
       SELECT 
-        oa.*,
-        o.device_type, o.device_brand, o.device_model,
-        o.problem_description, o.address, o.latitude, o.longitude,
-        o.arrival_time, o.order_type, o.estimated_cost,
-        u.name as client_name, u.phone as client_phone
+        oa.id as assignment_id,
+        oa.order_id,
+        oa.master_id,
+        oa.status as assignment_status,
+        oa.created_at as assignment_created_at,
+        oa.expires_at,
+        oa.responded_at,
+        oa.rejection_reason,
+        oa.attempt_number,
+        -- Все поля заказа
+        o.id,
+        o.order_number,
+        o.client_id,
+        o.device_type,
+        o.device_category,
+        o.device_brand,
+        o.device_model,
+        o.device_serial_number,
+        o.device_year,
+        o.warranty_status,
+        o.problem_short_description,
+        o.problem_description,
+        o.problem_when_started,
+        o.problem_conditions,
+        o.problem_error_codes,
+        o.problem_attempted_fixes,
+        o.problem_tags,
+        o.problem_category,
+        o.problem_seasonality,
+        o.address,
+        o.address_street,
+        o.address_building,
+        o.address_apartment,
+        o.address_floor,
+        o.address_entrance_code,
+        o.address_landmark,
+        o.latitude,
+        o.longitude,
+        o.arrival_time,
+        o.desired_repair_date,
+        o.urgency,
+        o.estimated_cost,
+        o.final_cost,
+        o.client_budget,
+        o.payment_type,
+        o.payment_status,
+        o.intercom_working,
+        o.parking_available,
+        o.has_pets,
+        o.has_small_children,
+        o.preferred_contact_method,
+        o.master_gender_preference,
+        o.master_min_experience,
+        o.preferred_master_id,
+        o.assigned_master_id,
+        o.assignment_date,
+        o.preliminary_diagnosis,
+        o.required_parts,
+        o.special_equipment,
+        o.repair_complexity,
+        o.estimated_repair_time,
+        o.request_status,
+        o.priority,
+        o.order_source,
+        o.order_type,
+        o.repair_status,
+        o.related_order_id,
+        o.created_at,
+        o.updated_at,
+        -- Информация о клиенте
+        u.name as client_name, 
+        u.phone as client_phone,
+        u.email as client_email
       FROM order_assignments oa
       JOIN orders o ON oa.order_id = o.id
       JOIN clients c ON o.client_id = c.id
@@ -129,24 +199,19 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
         return true;
       })
       .map(assignment => {
-        // Для pending назначений скрываем детали (brand, model, client info, cost)
-        if (assignment.status === 'pending') {
-          const filtered = filterAssignmentData(assignment, false);
-          // Убеждаемся, что expires_at в правильном формате ISO-8601
-          if (filtered && filtered.expires_at) {
-            // Преобразуем в ISO-8601, если еще не в этом формате
-            try {
-              const date = new Date(filtered.expires_at);
-              if (!isNaN(date.getTime())) {
-                filtered.expires_at = date.toISOString();
-              }
-            } catch (e) {
-              console.warn(`Ошибка преобразования expires_at для назначения #${filtered.id}:`, e.message);
+        // Убеждаемся, что expires_at в правильном формате ISO-8601 для всех назначений
+        if (assignment.expires_at) {
+          try {
+            const date = new Date(assignment.expires_at);
+            if (!isNaN(date.getTime())) {
+              assignment.expires_at = date.toISOString();
             }
+          } catch (e) {
+            console.warn(`Ошибка преобразования expires_at для назначения #${assignment.id}:`, e.message);
           }
-          return filtered;
         }
-        // Для принятых/отклоненных - показываем всё
+        // Возвращаем все данные назначения без фильтрации
+        // Мастер должен видеть полную информацию о заявке, как и клиент
         return assignment;
       });
     

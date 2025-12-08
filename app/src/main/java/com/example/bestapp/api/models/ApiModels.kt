@@ -190,28 +190,79 @@ data class VersionCheckResponse(
 // ============= Assignment Models =============
 
 data class ApiAssignment(
-    val id: Long,
+    @SerializedName("assignment_id") val id: Long,
     @SerializedName("order_id") val orderId: Long,
     @SerializedName("master_id") val masterId: Long,
-    val status: String,
-    @SerializedName("assigned_at") val assignedAt: String?, // Может быть null если API не вернул поле
+    @SerializedName("assignment_status") val status: String,
+    @SerializedName("assignment_created_at") val assignedAt: String?, // Может быть null если API не вернул поле
     @SerializedName("expires_at") val expiresAt: String?, // Может быть null для старых назначений
     @SerializedName("responded_at") val respondedAt: String?,
     @SerializedName("rejection_reason") val rejectionReason: String?,
+    @SerializedName("attempt_number") val attemptNumber: Int?,
     
-    // Данные заказа (если включены)
+    // Все поля заказа (полная информация, как для клиента)
+    @SerializedName("id") val orderDbId: Long?, // id заказа из таблицы orders (может конфликтовать с assignment_id)
+    @SerializedName("order_number") val orderNumber: String?,
+    @SerializedName("client_id") val clientId: Long?,
     @SerializedName("device_type") val deviceType: String?,
+    @SerializedName("device_category") val deviceCategory: String?,
     @SerializedName("device_brand") val deviceBrand: String?,
     @SerializedName("device_model") val deviceModel: String?,
+    @SerializedName("device_serial_number") val deviceSerialNumber: String?,
+    @SerializedName("device_year") val deviceYear: Int?,
+    @SerializedName("warranty_status") val warrantyStatus: String?,
+    @SerializedName("problem_short_description") val problemShortDescription: String?,
     @SerializedName("problem_description") val problemDescription: String?,
+    @SerializedName("problem_when_started") val problemWhenStarted: String?,
+    @SerializedName("problem_conditions") val problemConditions: String?,
+    @SerializedName("problem_error_codes") val problemErrorCodes: String?,
+    @SerializedName("problem_attempted_fixes") val problemAttemptedFixes: String?,
+    @SerializedName("problem_tags") val problemTags: String?, // JSON строка или список
+    @SerializedName("problem_category") val problemCategory: String?,
+    @SerializedName("problem_seasonality") val problemSeasonality: String?,
     val address: String?,
+    @SerializedName("address_street") val addressStreet: String?,
+    @SerializedName("address_building") val addressBuilding: String?,
+    @SerializedName("address_apartment") val addressApartment: String?,
+    @SerializedName("address_floor") val addressFloor: Int?,
+    @SerializedName("address_entrance_code") val addressEntranceCode: String?,
+    @SerializedName("address_landmark") val addressLandmark: String?,
     val latitude: Double?,
     val longitude: Double?,
     @SerializedName("arrival_time") val arrivalTime: String?,
-    @SerializedName("order_type") val orderType: String?,
+    @SerializedName("desired_repair_date") val desiredRepairDate: String?,
+    val urgency: String?,
     @SerializedName("estimated_cost") val estimatedCost: Double?,
+    @SerializedName("final_cost") val finalCost: Double?,
+    @SerializedName("client_budget") val clientBudget: Double?,
+    @SerializedName("payment_type") val paymentType: String?,
+    @SerializedName("intercom_working") val intercomWorking: Int?,
+    @SerializedName("parking_available") val parkingAvailable: Int?,
+    @SerializedName("has_pets") val hasPets: Int?,
+    @SerializedName("has_small_children") val hasSmallChildren: Int?,
+    @SerializedName("preferred_contact_method") val preferredContactMethod: String?,
+    @SerializedName("master_gender_preference") val masterGenderPreference: String?,
+    @SerializedName("master_min_experience") val masterMinExperience: Int?,
+    @SerializedName("preferred_master_id") val preferredMasterId: Long?,
+    @SerializedName("assigned_master_id") val assignedMasterId: Long?,
+    @SerializedName("assignment_date") val assignmentDate: String?,
+    @SerializedName("preliminary_diagnosis") val preliminaryDiagnosis: String?,
+    @SerializedName("required_parts") val requiredParts: String?,
+    @SerializedName("special_equipment") val specialEquipment: String?,
+    @SerializedName("repair_complexity") val repairComplexity: String?,
+    @SerializedName("estimated_repair_time") val estimatedRepairTime: Int?,
+    @SerializedName("request_status") val requestStatus: String?,
+    val priority: String?,
+    @SerializedName("order_source") val orderSource: String?,
+    @SerializedName("order_type") val orderType: String?,
+    @SerializedName("repair_status") val repairStatus: String?,
+    @SerializedName("related_order_id") val relatedOrderId: Long?,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?,
+    // Информация о клиенте
     @SerializedName("client_name") val clientName: String?,
-    @SerializedName("client_phone") val clientPhone: String?
+    @SerializedName("client_phone") val clientPhone: String?,
+    @SerializedName("client_email") val clientEmail: String?
 )
 
 data class RejectReasonRequest(

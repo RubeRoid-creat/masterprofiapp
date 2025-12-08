@@ -273,71 +273,88 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                         // assignedAt может быть null, если API вернул неполные данные, используем текущее время как fallback
                         val assignedAt = assignment.assignedAt?.takeIf { it.isNotBlank() } ?: currentTime
                         
+                        // Парсим problemTags если это JSON строка
+                        val problemTagsList = assignment.problemTags?.let { tagsStr ->
+                            try {
+                                if (tagsStr.startsWith("[") || tagsStr.startsWith("{")) {
+                                    // JSON массив или объект
+                                    val gson = com.google.gson.Gson()
+                                    val listType = object : com.google.gson.reflect.TypeToken<List<String>>() {}.type
+                                    gson.fromJson<List<String>>(tagsStr, listType) ?: emptyList()
+                                } else {
+                                    // Простая строка, разделенная запятыми
+                                    tagsStr.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Ошибка парсинга problemTags: ${e.message}")
+                                emptyList()
+                            }
+                        } ?: emptyList()
+                        
                         ApiOrder(
                             id = assignment.orderId,
-                            clientId = 0, // Не нужно для назначения
+                            clientId = assignment.clientId ?: 0,
                             clientName = assignment.clientName ?: "Клиент",
                             clientPhone = assignment.clientPhone ?: "",
+                            clientEmail = assignment.clientEmail,
                             address = assignment.address ?: "",
                             latitude = assignment.latitude ?: 0.0,
                             longitude = assignment.longitude ?: 0.0,
                             deviceType = assignment.deviceType ?: "",
                             deviceBrand = assignment.deviceBrand,
                             deviceModel = assignment.deviceModel,
+                            deviceCategory = assignment.deviceCategory,
+                            deviceSerialNumber = assignment.deviceSerialNumber,
+                            deviceYear = assignment.deviceYear,
+                            warrantyStatus = assignment.warrantyStatus,
                             problemDescription = assignment.problemDescription ?: "",
-                            repairStatus = "new", // Всегда новый для pending assignments
-                            requestStatus = "new",
-                            paymentStatus = null,
+                            problemShortDescription = assignment.problemShortDescription,
+                            problemWhenStarted = assignment.problemWhenStarted,
+                            problemConditions = assignment.problemConditions,
+                            problemErrorCodes = assignment.problemErrorCodes,
+                            problemAttemptedFixes = assignment.problemAttemptedFixes,
+                            problemTags = if (problemTagsList.isNotEmpty()) problemTagsList else null,
+                            problemCategory = assignment.problemCategory,
+                            problemSeasonality = assignment.problemSeasonality,
+                            addressStreet = assignment.addressStreet,
+                            addressBuilding = assignment.addressBuilding,
+                            addressApartment = assignment.addressApartment,
+                            addressFloor = assignment.addressFloor,
+                            addressEntranceCode = assignment.addressEntranceCode,
+                            addressLandmark = assignment.addressLandmark,
+                            repairStatus = assignment.repairStatus ?: "new",
+                            requestStatus = assignment.requestStatus ?: "new",
+                            paymentStatus = null, // ApiAssignment не содержит paymentStatus
                             estimatedCost = assignment.estimatedCost,
-                            orderNumber = null,
-                            createdAt = assignedAt, // Используем assignedAt или текущее время
-                            assignedMasterId = assignment.masterId,
+                            finalCost = assignment.finalCost,
+                            clientBudget = assignment.clientBudget,
+                            paymentType = assignment.paymentType,
+                            orderNumber = assignment.orderNumber,
+                            createdAt = assignment.createdAt ?: assignedAt,
+                            updatedAt = assignment.updatedAt ?: assignedAt,
+                            assignedMasterId = assignment.assignedMasterId ?: assignment.masterId,
                             distance = null, // Будет рассчитано если нужно
-                            urgency = assignment.orderType,
-                            arrivalTime = assignment.arrivalTime,
-                            // Остальные поля не нужны для назначения
-                            deviceCategory = null,
-                            deviceSerialNumber = null,
-                            deviceYear = null,
-                            warrantyStatus = null,
-                            problemShortDescription = null,
-                            problemWhenStarted = null,
-                            problemConditions = null,
-                            problemErrorCodes = null,
-                            problemAttemptedFixes = null,
-                            addressStreet = null,
-                            addressBuilding = null,
-                            addressApartment = null,
-                            addressFloor = null,
-                            addressEntranceCode = null,
-                            addressLandmark = null,
-                            desiredRepairDate = null,
-                            priority = null,
-                            orderSource = null,
+                            urgency = assignment.urgency ?: assignment.orderType,
+                            priority = assignment.priority,
+                            orderSource = assignment.orderSource,
                             orderType = assignment.orderType ?: "regular",
-                            clientBudget = null,
-                            paymentType = null,
-                            intercomWorking = null,
-                            parkingAvailable = null,
-                            hasPets = null,
-                            hasSmallChildren = null,
-                            preferredContactMethod = null,
-                            masterGenderPreference = null,
-                            masterMinExperience = null,
-                            preferredMasterId = null,
-                            problemTags = null,
-                            problemCategory = null,
-                            problemSeasonality = null,
-                            preliminaryDiagnosis = null,
-                            requiredParts = null,
-                            specialEquipment = null,
-                            repairComplexity = null,
-                            estimatedRepairTime = null,
-                            assignmentDate = assignedAt,
-                            updatedAt = assignedAt,
-                            finalCost = null,
-                            clientEmail = null,
-                            media = null,
+                            arrivalTime = assignment.arrivalTime,
+                            desiredRepairDate = assignment.desiredRepairDate,
+                            intercomWorking = assignment.intercomWorking,
+                            parkingAvailable = assignment.parkingAvailable,
+                            hasPets = assignment.hasPets,
+                            hasSmallChildren = assignment.hasSmallChildren,
+                            preferredContactMethod = assignment.preferredContactMethod,
+                            masterGenderPreference = assignment.masterGenderPreference,
+                            masterMinExperience = assignment.masterMinExperience,
+                            preferredMasterId = assignment.preferredMasterId,
+                            preliminaryDiagnosis = assignment.preliminaryDiagnosis,
+                            requiredParts = assignment.requiredParts,
+                            specialEquipment = assignment.specialEquipment,
+                            repairComplexity = assignment.repairComplexity,
+                            estimatedRepairTime = assignment.estimatedRepairTime,
+                            assignmentDate = assignment.assignmentDate ?: assignedAt,
+                            media = null, // Медиа загружаются отдельно
                             // Важно! Сохраняем assignmentId и expiresAt
                             assignmentId = assignment.id,
                             assignmentExpiresAt = assignment.expiresAt,
@@ -435,31 +452,157 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
         
+        // Парсим createdAt и updatedAt
+        val createdAtDate = this.createdAt?.let { dateStr ->
+            try {
+                val formats = listOf(
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    },
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    },
+                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                )
+                formats.firstNotNullOfOrNull { format ->
+                    try {
+                        format.parse(dateStr)
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: java.util.Date()
+            } catch (e: Exception) {
+                java.util.Date()
+            }
+        } ?: java.util.Date()
+        
+        val updatedAtDate = this.updatedAt?.let { dateStr ->
+            try {
+                val formats = listOf(
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    },
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    },
+                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                )
+                formats.firstNotNullOfOrNull { format ->
+                    try {
+                        format.parse(dateStr)
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: java.util.Date()
+            } catch (e: Exception) {
+                java.util.Date()
+            }
+        } ?: java.util.Date()
+        
+        // Конвертируем медиа файлы
+        val orderMedia = this.media?.map { apiMedia ->
+            com.example.bestapp.data.OrderMedia(
+                id = apiMedia.id,
+                orderId = apiMedia.orderId,
+                mediaType = apiMedia.mediaType,
+                fileUrl = apiMedia.fileUrl,
+                fileName = apiMedia.fileName,
+                fileSize = apiMedia.fileSize,
+                mimeType = apiMedia.mimeType,
+                description = apiMedia.description,
+                thumbnailUrl = apiMedia.thumbnailUrl,
+                duration = apiMedia.duration,
+                createdAt = apiMedia.createdAt
+            )
+        }
+        
+        // Определяем requestStatus
+        val requestStatus = when(this.requestStatus) {
+            "new" -> com.example.bestapp.data.OrderRequestStatus.NEW
+            "repeat" -> com.example.bestapp.data.OrderRequestStatus.REPEAT
+            "warranty" -> com.example.bestapp.data.OrderRequestStatus.WARRANTY
+            else -> com.example.bestapp.data.OrderRequestStatus.NEW
+        }
+        
+        // Определяем orderType
+        val orderType = when {
+            this.orderType == "urgent" || this.priority == "urgent" -> com.example.bestapp.data.OrderType.URGENT
+            else -> com.example.bestapp.data.OrderType.REGULAR
+        }
+        
         return Order(
             id = this.id,
+            orderNumber = this.orderNumber,
             clientId = this.clientId,
             clientName = this.clientName,
             clientPhone = this.clientPhone,
+            clientEmail = this.clientEmail,
             clientAddress = this.address,
             latitude = this.latitude,
             longitude = this.longitude,
+            addressStreet = this.addressStreet,
+            addressBuilding = this.addressBuilding,
+            addressApartment = this.addressApartment,
+            addressFloor = this.addressFloor,
+            addressEntranceCode = this.addressEntranceCode,
+            addressLandmark = this.addressLandmark,
             deviceType = this.deviceType,
+            deviceCategory = this.deviceCategory,
             deviceBrand = this.deviceBrand ?: "",
             deviceModel = this.deviceModel ?: "",
+            deviceSerialNumber = this.deviceSerialNumber,
+            deviceYear = this.deviceYear,
+            warrantyStatus = this.warrantyStatus,
+            problemShortDescription = this.problemShortDescription,
             problemDescription = this.problemDescription,
+            problemWhenStarted = this.problemWhenStarted,
+            problemConditions = this.problemConditions,
+            problemErrorCodes = this.problemErrorCodes,
+            problemAttemptedFixes = this.problemAttemptedFixes,
+            problemTags = this.problemTags,
+            problemCategory = this.problemCategory,
+            problemSeasonality = this.problemSeasonality,
+            requestStatus = requestStatus,
+            orderType = orderType,
+            orderSource = this.orderSource,
+            priority = this.priority,
+            arrivalTime = this.arrivalTime,
+            desiredRepairDate = this.desiredRepairDate,
             status = when(this.repairStatus) {
-                "new" -> RepairStatus.NEW
-                "in_progress" -> RepairStatus.IN_PROGRESS
-                "completed" -> RepairStatus.COMPLETED
-                "cancelled" -> RepairStatus.CANCELLED
-                else -> RepairStatus.NEW
+                "new" -> com.example.bestapp.data.RepairStatus.NEW
+                "assigned" -> com.example.bestapp.data.RepairStatus.DIAGNOSTICS
+                "in_progress" -> com.example.bestapp.data.RepairStatus.IN_PROGRESS
+                "completed" -> com.example.bestapp.data.RepairStatus.COMPLETED
+                "cancelled" -> com.example.bestapp.data.RepairStatus.CANCELLED
+                else -> com.example.bestapp.data.RepairStatus.NEW
             },
-            estimatedCost = this.estimatedCost,
-            distance = this.distance,
             urgency = this.urgency,
+            estimatedCost = this.estimatedCost,
+            finalCost = this.finalCost,
+            clientBudget = this.clientBudget,
+            paymentType = this.paymentType,
+            paymentStatus = this.paymentStatus,
+            intercomWorking = this.intercomWorking?.let { it == 1 },
+            parkingAvailable = this.parkingAvailable?.let { it == 1 },
+            hasPets = this.hasPets?.let { it == 1 } ?: false,
+            hasSmallChildren = this.hasSmallChildren?.let { it == 1 } ?: false,
+            preferredContactMethod = this.preferredContactMethod,
+            assignedMasterId = this.assignedMasterId,
+            masterName = null, // Можно добавить если API возвращает
+            preliminaryDiagnosis = this.preliminaryDiagnosis,
+            requiredParts = this.requiredParts,
+            specialEquipment = this.specialEquipment,
+            repairComplexity = this.repairComplexity,
+            estimatedRepairTime = this.estimatedRepairTime,
+            media = orderMedia,
+            mediaCount = this.media?.size,
+            distance = this.distance,
             expiresAt = expiresAtDate,
-            createdAt = java.util.Date(), // Можно парсить из createdAt если нужно
-            // Сохраняем информацию о назначении
+            createdAt = createdAtDate,
+            updatedAt = updatedAtDate,
+            completedAt = null, // Можно парсить если API возвращает
+            assignmentDate = this.assignmentDate,
+            notes = null, // Внутренние заметки мастера
             assignmentId = this.assignmentId,
             assignmentStatus = this.assignmentStatus
         )
