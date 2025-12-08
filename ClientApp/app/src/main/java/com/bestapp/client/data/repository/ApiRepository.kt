@@ -14,6 +14,54 @@ class ApiRepository(
     private val apiService: ApiService,
     private val prefsManager: PreferencesManager
 ) {
+    
+    // Общий метод для обработки HTTP ошибок
+    private suspend fun <T> handleErrorResponse(response: retrofit2.Response<T>, defaultMessage: String): ApiResult.Error {
+        return when (response.code()) {
+            401 -> {
+                // Токен истек - очищаем данные
+                prefsManager.clearAuthData()
+                ApiResult.Error("Сессия истекла. Пожалуйста, войдите снова.")
+            }
+            403 -> {
+                // Доступ запрещен - парсим сообщение об ошибке
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null && errorBody.isNotBlank()) {
+                    try {
+                        if (errorBody.startsWith("{") && errorBody.contains("error")) {
+                            val errorJson = org.json.JSONObject(errorBody)
+                            errorJson.optString("error", errorJson.optString("message", "Доступ запрещен"))
+                        } else {
+                            errorBody
+                        }
+                    } catch (e: Exception) {
+                        "Доступ запрещен. Проверьте права доступа."
+                    }
+                } else {
+                    "Доступ запрещен. Проверьте права доступа."
+                }
+                ApiResult.Error(errorMessage)
+            }
+            else -> {
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null && errorBody.isNotBlank()) {
+                    try {
+                        if (errorBody.startsWith("{") && errorBody.contains("error")) {
+                            val errorJson = org.json.JSONObject(errorBody)
+                            errorJson.optString("error", errorJson.optString("message", defaultMessage))
+                        } else {
+                            errorBody
+                        }
+                    } catch (e: Exception) {
+                        "$defaultMessage (${response.code()})"
+                    }
+                } else {
+                    "$defaultMessage (${response.code()})"
+                }
+                ApiResult.Error(errorMessage)
+            }
+        }
+    }
 
     // Auth methods
     suspend fun register(
@@ -81,8 +129,7 @@ class ApiRepository(
             if (response.isSuccessful && response.body() != null) {
                 ApiResult.Success(response.body()!!)
             } else {
-                val errorBody = response.errorBody()?.string() ?: "Ошибка создания заказа"
-                ApiResult.Error("${response.code()}: $errorBody")
+                handleErrorResponse(response, "Ошибка создания заказа")
             }
         } catch (e: Exception) {
             ApiResult.Error(e.message ?: "Неизвестная ошибка: ${e.javaClass.simpleName}")
@@ -110,7 +157,7 @@ class ApiRepository(
             if (response.isSuccessful && response.body() != null) {
                 ApiResult.Success(response.body()!!)
             } else {
-                ApiResult.Error(response.message() ?: "Ошибка получения заказа")
+                handleErrorResponse(response, "Ошибка получения заказа")
             }
         } catch (e: Exception) {
             ApiResult.Error(e.message ?: "Неизвестная ошибка")
@@ -429,7 +476,7 @@ class ApiRepository(
             if (response.isSuccessful && response.body() != null) {
                 ApiResult.Success(response.body()!!)
             } else {
-                ApiResult.Error(response.message() ?: "Ошибка получения сообщений")
+                handleErrorResponse(response, "Ошибка получения сообщений")
             }
         } catch (e: Exception) {
             ApiResult.Error(e.message ?: "Неизвестная ошибка")
