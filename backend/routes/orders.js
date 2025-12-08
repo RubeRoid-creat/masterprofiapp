@@ -766,6 +766,7 @@ router.get('/:id', authenticate, (req, res) => {
 router.post('/', authenticate, authorize('client'), async (req, res) => {
   try {
     console.log('📦 Создание заказа. Тело запроса:', JSON.stringify(req.body, null, 2));
+    console.log(`[POST /api/orders] Пользователь: id=${req.user.id}, role=${req.user.role}, email=${req.user.email}`);
     
     // Читаем поля в snake_case (как приходит из клиента)
     const {
