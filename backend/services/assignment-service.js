@@ -86,28 +86,56 @@ function calculateMasterScore(master, orderLat, orderLon) {
 export function findAvailableMasters(deviceType, orderLat = null, orderLon = null) {
   try {
     // Получаем мастеров с информацией о загрузке, опыте, подписках и продвижениях
-    const masters = query.all(`
+    // Проверяем существование таблицы master_promotions
+    let hasPromotionsTable = false;
+    try {
+      query.all(`SELECT 1 FROM master_promotions LIMIT 1`);
+      hasPromotionsTable = true;
+    } catch (e) {
+      // Таблица не существует, работаем без продвижений
+      hasPromotionsTable = false;
+    }
+    
+    // Упрощенный запрос без необязательных колонок
+    let sql = `
       SELECT 
         m.id, m.user_id, m.specialization, m.latitude, m.longitude, m.rating, m.completed_orders,
-        m.subscription_type,
         u.name, u.phone,
         COUNT(DISTINCT CASE 
           WHEN o.repair_status IN ('new', 'in_progress', 'diagnostics', 'waiting_parts') 
           THEN o.id 
-        END) as active_orders_count,
-        -- Проверяем активные продвижения
+        END) as active_orders_count`;
+    
+    if (hasPromotionsTable) {
+      sql += `,
         MAX(CASE WHEN mp1.promotion_type = 'top_listing' AND mp1.status = 'active' AND mp1.expires_at > datetime('now') THEN 1 ELSE 0 END) as has_top_listing,
         MAX(CASE WHEN mp2.promotion_type = 'highlighted_profile' AND mp2.status = 'active' AND mp2.expires_at > datetime('now') THEN 1 ELSE 0 END) as has_highlighted,
-        MAX(CASE WHEN mp3.promotion_type = 'featured' AND mp3.status = 'active' AND mp3.expires_at > datetime('now') THEN 1 ELSE 0 END) as has_featured
+        MAX(CASE WHEN mp3.promotion_type = 'featured' AND mp3.status = 'active' AND mp3.expires_at > datetime('now') THEN 1 ELSE 0 END) as has_featured`;
+    } else {
+      sql += `,
+        0 as has_top_listing,
+        0 as has_highlighted,
+        0 as has_featured`;
+    }
+    
+    sql += `,
+        NULL as subscription_type
       FROM masters m
       JOIN users u ON m.user_id = u.id
-      LEFT JOIN orders o ON o.assigned_master_id = m.id
+      LEFT JOIN orders o ON o.assigned_master_id = m.id`;
+    
+    if (hasPromotionsTable) {
+      sql += `
       LEFT JOIN master_promotions mp1 ON mp1.master_id = m.id AND mp1.promotion_type = 'top_listing'
       LEFT JOIN master_promotions mp2 ON mp2.master_id = m.id AND mp2.promotion_type = 'highlighted_profile'
-      LEFT JOIN master_promotions mp3 ON mp3.master_id = m.id AND mp3.promotion_type = 'featured'
+      LEFT JOIN master_promotions mp3 ON mp3.master_id = m.id AND mp3.promotion_type = 'featured'`;
+    }
+    
+    sql += `
       WHERE m.is_on_shift = 1 AND m.status = 'available'
-      GROUP BY m.id, m.user_id, m.specialization, m.latitude, m.longitude, m.rating, m.completed_orders, m.subscription_type, u.name, u.phone
-    `);
+      GROUP BY m.id, m.user_id, m.specialization, m.latitude, m.longitude, m.rating, m.completed_orders, u.name, u.phone`;
+    
+    const masters = query.all(sql);
     
     // Фильтруем по специализации
     const filteredMasters = masters.filter(master => {
