@@ -8,22 +8,34 @@ cd "$(dirname "$0")"
 
 # Останавливаем сервер
 echo "⏸️  Останавливаем сервер..."
-pm2 stop all
+pm2 stop all || pm2 stop bestapp-backend || true
 
 # Получаем последние изменения
 echo "📥 Загружаем изменения из GitHub..."
 git pull origin main
 
 # Устанавливаем зависимости (если есть новые)
-echo "📦 Проверяем зависимости..."
+echo "📦 Проверяем зависимости backend..."
 npm install --production
+
+# Обновляем админ-панель (если нужно)
+if [ -d "admin-panel" ]; then
+    echo "📦 Обновляем админ-панель..."
+    cd admin-panel
+    npm install
+    npm run build
+    cd ..
+    echo "✅ Админ-панель собрана"
+fi
 
 # Запускаем сервер
 echo "▶️  Запускаем сервер..."
-if pm2 list | grep -q "server"; then
+if pm2 list | grep -q "bestapp-backend"; then
+    pm2 restart bestapp-backend
+elif pm2 list | grep -q "server"; then
     pm2 restart server
 else
-    pm2 start server.js --name "server"
+    pm2 start server.js --name "bestapp-backend"
 fi
 
 # Сохраняем конфигурацию PM2
@@ -36,4 +48,4 @@ pm2 list
 
 echo ""
 echo "📝 Последние логи (нажмите Ctrl+C для выхода):"
-pm2 logs server --lines 20
+pm2 logs bestapp-backend --lines 20 || pm2 logs server --lines 20
