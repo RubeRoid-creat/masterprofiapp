@@ -460,33 +460,42 @@ class ApiRepository {
     suspend fun getMyAssignments(status: String? = null): Result<List<ApiAssignment>> {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "🔄 Запрос назначений: status=$status")
                 val response = api.getMyAssignments(status)
+                Log.d(TAG, "📥 Ответ API: code=${response.code()}, isSuccessful=${response.isSuccessful}")
+                
                 if (response.isSuccessful && response.body() != null) {
-                    Log.d(TAG, "Got ${response.body()!!.size} assignments")
-                    Result.success(response.body()!!)
-                } else {
-                    // Проверяем, требуется ли верификация
-                    if (response.code() == 403) {
-                        val errorBody = response.errorBody()?.string()
-                        Log.w(TAG, "Verification required: $errorBody")
-                        val errorMessage = try {
-                            val errorJson = errorBody?.let { com.google.gson.Gson().fromJson(it, Map::class.java) } as? Map<*, *>
-                            errorJson?.get("message") as? String ?: "Требуется верификация для просмотра заказов"
-                        } catch (e: Exception) {
-                            "Требуется верификация для просмотра заказов"
-                        }
-                        Result.failure(Exception(errorMessage).apply {
-                            // Добавляем специальный флаг для проверки верификации
-                            (this as? java.lang.Exception)?.apply {
-                                // Сохраняем информацию о необходимости верификации
-                            }
-                        })
-                    } else {
-                        Result.failure(Exception("Ошибка получения назначений: ${response.code()}"))
+                    val assignments = response.body()!!
+                    Log.d(TAG, "✅ Получено ${assignments.size} назначений")
+                    
+                    // Логируем каждое назначение для отладки
+                    assignments.forEachIndexed { index, assignment ->
+                        Log.d(TAG, "   Назначение #${index + 1}: id=${assignment.id}, orderId=${assignment.orderId}, status=${assignment.status}, expiresAt=${assignment.expiresAt}")
                     }
+                    
+                    Result.success(assignments)
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "❌ Ошибка получения назначений: code=${response.code()}, body=$errorBody")
+                    
+                    // Верификация больше не блокирует - просто возвращаем ошибку
+                    val errorMessage = if (response.code() == 403) {
+                        errorBody?.let {
+                            try {
+                                val errorJson = com.google.gson.Gson().fromJson(it, Map::class.java) as? Map<*, *>
+                                errorJson?.get("message") as? String ?: "Ошибка получения назначений: ${response.code()}"
+                            } catch (e: Exception) {
+                                "Ошибка получения назначений: ${response.code()}"
+                            }
+                        } ?: "Ошибка получения назначений: ${response.code()}"
+                    } else {
+                        "Ошибка получения назначений: ${response.code()}"
+                    }
+                    Result.failure(Exception(errorMessage))
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Get assignments error", e)
+                Log.e(TAG, "❌ Исключение при получении назначений: ${e.javaClass.simpleName} - ${e.message}", e)
+                e.printStackTrace()
                 Result.failure(e)
             }
         }

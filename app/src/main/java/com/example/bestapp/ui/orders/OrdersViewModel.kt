@@ -182,11 +182,19 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             val assignmentsResult = apiRepository.getMyAssignments()
             
             assignmentsResult.onSuccess { assignments ->
-                Log.d(TAG, "Loaded ${assignments.size} assignments from API")
+                Log.d(TAG, "✅ Загружено ${assignments.size} назначений с API")
+                
+                // Логируем все назначения для отладки
+                assignments.forEach { assignment ->
+                    Log.d(TAG, "   Назначение: id=${assignment.id}, orderId=${assignment.orderId}, status=${assignment.status}, expiresAt=${assignment.expiresAt}")
+                }
+                
+                // Фильтруем только pending назначения
+                val pendingAssignments = assignments.filter { it.status == "pending" }
+                Log.d(TAG, "📋 Pending назначений: ${pendingAssignments.size} из ${assignments.size}")
                 
                 // Конвертируем assignments в orders для отображения
-                val apiOrders = assignments
-                    .filter { it.status == "pending" } // Только ожидающие принятия
+                val apiOrders = pendingAssignments
                     .map { assignment ->
                         ApiOrder(
                             id = assignment.orderId,
