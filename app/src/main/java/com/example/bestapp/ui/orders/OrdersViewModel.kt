@@ -184,9 +184,18 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
             assignmentsResult.onSuccess { assignments ->
                 Log.d(TAG, "✅ Загружено ${assignments.size} назначений с API")
                 
-                // Логируем все назначения для отладки
-                assignments.forEach { assignment ->
-                    Log.d(TAG, "   Назначение: id=${assignment.id}, orderId=${assignment.orderId}, status=${assignment.status}, expiresAt=${assignment.expiresAt}")
+                if (assignments.isEmpty()) {
+                    Log.w(TAG, "⚠️ API вернул пустой список назначений!")
+                    Log.w(TAG, "   Проверьте:")
+                    Log.w(TAG, "   1. Мастер авторизован? (токен есть?)")
+                    Log.w(TAG, "   2. Есть ли активные назначения в БД?")
+                    Log.w(TAG, "   3. Мастер на смене?")
+                } else {
+                    Log.d(TAG, "📋 Детали назначений:")
+                    // Логируем все назначения для отладки
+                    assignments.forEach { assignment ->
+                        Log.d(TAG, "   Назначение: id=${assignment.id}, orderId=${assignment.orderId}, status=${assignment.status}, expiresAt=${assignment.expiresAt}")
+                    }
                 }
                 
                 // Фильтруем только pending назначения

@@ -37,7 +37,8 @@ const paddedId = nextId.toString().padStart(4, '0');
 const orderNumber = `#${paddedId}-КЛ`;
 
 // Создаем тестовый заказ
-const deviceTypes = ['Холодильник', 'Стиральная машина', 'Посудомоечная машина', 'Духовой шкаф', 'Микроволновая печь'];
+// Только типы, которые есть у мастеров в специализации
+const deviceTypes = ['Холодильник', 'Стиральная машина', 'Посудомоечная машина', 'Духовой шкаф'];
 const randomDeviceType = deviceTypes[Math.floor(Math.random() * deviceTypes.length)];
 
 console.log(`Создаем заказ на устройство: ${randomDeviceType}\n`);

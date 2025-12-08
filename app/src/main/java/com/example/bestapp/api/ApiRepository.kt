@@ -461,8 +461,21 @@ class ApiRepository {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "🔄 Запрос назначений: status=$status")
+                Log.d(TAG, "   URL: ${api.getMyAssignments(status).request().url}")
+                
                 val response = api.getMyAssignments(status)
                 Log.d(TAG, "📥 Ответ API: code=${response.code()}, isSuccessful=${response.isSuccessful}")
+                
+                if (!response.isSuccessful) {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "❌ API вернул ошибку: ${response.code()}")
+                    Log.e(TAG, "   Сообщение: ${response.message()}")
+                    Log.e(TAG, "   Тело ответа: $errorBody")
+                    
+                    if (response.code() == 401 || response.code() == 403) {
+                        Log.e(TAG, "   ⚠️ Проблема с авторизацией! Проверьте токен.")
+                    }
+                }
                 
                 if (response.isSuccessful && response.body() != null) {
                     val assignments = response.body()!!
