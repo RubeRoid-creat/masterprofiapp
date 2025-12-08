@@ -332,6 +332,34 @@
                     tools:text="18.11.2025 14:30" />
             </LinearLayout>
 
+            <!-- Кнопки Принять/Отклонить (только для pending заявок) -->
+            <LinearLayout
+                android:id="@+id/action_buttons_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                android:layout_marginTop="12dp"
+                android:gravity="center">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_reject_order"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Отклонить"
+                    android:layout_marginEnd="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_accept_order"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Принять" />
+            </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>

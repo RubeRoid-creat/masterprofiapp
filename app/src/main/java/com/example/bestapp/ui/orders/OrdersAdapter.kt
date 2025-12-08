@@ -17,7 +17,9 @@ import com.google.android.material.chip.Chip
 
 class OrdersAdapter(
     private val onOrderClick: (Order) -> Unit,
-    private val onOrderSelected: ((Order, Boolean) -> Unit)? = null
+    private val onOrderSelected: ((Order, Boolean) -> Unit)? = null,
+    private val onAcceptOrder: ((Order) -> Unit)? = null,
+    private val onRejectOrder: ((Order) -> Unit)? = null
 ) : ListAdapter<Order, OrdersAdapter.OrderViewHolder>(OrderDiffCallback()) {
     
     private val selectedOrders = mutableSetOf<Long>()
@@ -49,7 +51,7 @@ class OrdersAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_order_preview, parent, false)
-        return OrderViewHolder(view, onOrderClick, onOrderSelected) { orderId ->
+        return OrderViewHolder(view, onOrderClick, onOrderSelected, onAcceptOrder, onRejectOrder) { orderId ->
             toggleSelection(orderId)
         }
     }
@@ -64,6 +66,8 @@ class OrdersAdapter(
         itemView: View,
         private val onOrderClick: (Order) -> Unit,
         private val onOrderSelected: ((Order, Boolean) -> Unit)?,
+        private val onAcceptOrder: ((Order) -> Unit)?,
+        private val onRejectOrder: ((Order) -> Unit)?,
         private val onToggleSelection: (Long) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
         
@@ -85,6 +89,9 @@ class OrdersAdapter(
         private val distanceSeparator: View = itemView.findViewById(R.id.distance_separator)
         private val timeContainer: View = itemView.findViewById(R.id.time_container)
         private val orderCheckbox: androidx.appcompat.widget.AppCompatCheckBox = itemView.findViewById(R.id.order_checkbox)
+        private val actionButtonsContainer: View = itemView.findViewById(R.id.action_buttons_container)
+        private val btnAcceptOrder: com.google.android.material.button.MaterialButton = itemView.findViewById(R.id.btn_accept_order)
+        private val btnRejectOrder: com.google.android.material.button.MaterialButton = itemView.findViewById(R.id.btn_reject_order)
         
         private var currentTimer: com.example.bestapp.ui.common.CountdownTimerView? = null
         private var currentOrder: Order? = null
@@ -196,6 +203,22 @@ class OrdersAdapter(
             orderDate.text = order.getFormattedCreatedDate()
             orderCost.text = order.getFormattedCost()
             
+            // Показываем кнопки Принять/Отклонить только для pending заявок
+            val isPendingAssignment = order.assignmentStatus == "pending" && order.assignmentId != null
+            if (isPendingAssignment && !selectionMode) {
+                actionButtonsContainer.visibility = View.VISIBLE
+                btnAcceptOrder.setOnClickListener {
+                    onAcceptOrder?.invoke(order)
+                }
+                btnRejectOrder.setOnClickListener {
+                    onRejectOrder?.invoke(order)
+                }
+            } else {
+                actionButtonsContainer.visibility = View.GONE
+                btnAcceptOrder.setOnClickListener(null)
+                btnRejectOrder.setOnClickListener(null)
+            }
+            
             // Режим выбора
             if (selectionMode && order.status == com.example.bestapp.data.RepairStatus.NEW) {
                 orderCheckbox.visibility = View.VISIBLE
@@ -220,6 +243,9 @@ class OrdersAdapter(
                     orderCheckbox.isChecked = newChecked
                     onToggleSelection(order.id)
                     onOrderSelected?.invoke(order, newChecked)
+                } else if (isPendingAssignment) {
+                    // Для pending заявок не открываем детали - можно только принять/отклонить через кнопки
+                    // Ничего не делаем при клике на карточку
                 } else {
                     // Обычный режим - открываем детали
                     onOrderClick(order)

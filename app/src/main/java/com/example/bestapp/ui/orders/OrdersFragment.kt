@@ -355,6 +355,12 @@ class OrdersFragment : Fragment() {
                         android.util.Log.e("OrdersFragment", "Ошибка в onOrderSelected", e)
                     }
                 }
+            },
+            onAcceptOrder = { order ->
+                acceptOrder(order)
+            },
+            onRejectOrder = { order ->
+                rejectOrder(order)
             }
         )
         
@@ -403,6 +409,111 @@ class OrdersFragment : Fragment() {
         } catch (e: Exception) {
             android.util.Log.e("OrdersFragment", "Ошибка при входе в режим выбора", e)
         }
+    }
+    
+    private fun acceptOrder(order: com.example.bestapp.data.Order) {
+        val assignmentId = order.assignmentId
+        if (assignmentId == null) {
+            android.widget.Toast.makeText(
+                context,
+                "Не найдено назначение для этой заявки",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        
+        // Проверяем статус верификации
+        if (viewModel.isVerified.value == false) {
+            showVerificationDialog("Для принятия заказов необходимо пройти верификацию. Пожалуйста, перейдите в профиль и пройдите верификацию.")
+            return
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val result = viewModel.apiRepository.acceptAssignment(assignmentId)
+                result.onSuccess {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Заявка принята",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    // Обновляем список заявок
+                    viewModel.refreshOrders()
+                }.onFailure { error ->
+                    android.widget.Toast.makeText(
+                        context,
+                        "Ошибка при принятии заявки: ${error.message}",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                    android.util.Log.e("OrdersFragment", "Failed to accept order", error)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("OrdersFragment", "Exception accepting order", e)
+                android.widget.Toast.makeText(
+                    context,
+                    "Ошибка: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+    
+    private fun rejectOrder(order: com.example.bestapp.data.Order) {
+        val assignmentId = order.assignmentId
+        if (assignmentId == null) {
+            android.widget.Toast.makeText(
+                context,
+                "Не найдено назначение для этой заявки",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        
+        // Показываем диалог для указания причины отклонения
+        val inputEditText = android.widget.EditText(requireContext()).apply {
+            hint = "Причина отклонения (необязательно)"
+            setPadding(32, 16, 32, 16)
+        }
+        
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Отклонить заявку")
+            .setMessage("Укажите причину отклонения (необязательно)")
+            .setView(inputEditText)
+            .setPositiveButton("Отклонить") { _, _ ->
+                val reason = inputEditText.text?.toString()?.takeIf { it.isNotBlank() }
+                    ?: "Мастер отклонил заявку"
+                
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val result = viewModel.apiRepository.rejectAssignment(assignmentId, reason)
+                        result.onSuccess {
+                            android.widget.Toast.makeText(
+                                context,
+                                "Заявка отклонена",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                            // Обновляем список заявок
+                            viewModel.refreshOrders()
+                        }.onFailure { error ->
+                            android.widget.Toast.makeText(
+                                context,
+                                "Ошибка при отклонении заявки: ${error.message}",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                            android.util.Log.e("OrdersFragment", "Failed to reject order", error)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("OrdersFragment", "Exception rejecting order", e)
+                        android.widget.Toast.makeText(
+                            context,
+                            "Ошибка: ${e.message}",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
     }
     
     private fun acceptSelectedOrders() {
@@ -746,7 +857,9 @@ class OrdersFragment : Fragment() {
                 }
                 findNavController().navigate(R.id.action_orders_to_order_details, bundle)
             },
-            onOrderSelected = null // Для завершенных заказов не нужен режим выбора
+            onOrderSelected = null, // Для завершенных заказов не нужен режим выбора
+            onAcceptOrder = null, // Для завершенных заказов не нужны кнопки принятия
+            onRejectOrder = null // Для завершенных заказов не нужны кнопки отклонения
         )
         
         recyclerCompletedOrders?.apply {
