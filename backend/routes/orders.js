@@ -852,9 +852,21 @@ router.post('/', authenticate, authorize('client'), async (req, res) => {
     const finalLongitude = coordinates.longitude;
     
     // Получаем ID клиента
-    const client = query.get('SELECT id FROM clients WHERE user_id = ?', [req.user.id]);
+    let client = query.get('SELECT id FROM clients WHERE user_id = ?', [req.user.id]);
     if (!client) {
-      return res.status(400).json({ error: 'Клиент не найден' });
+      // Если пользователь имеет роль 'client', но записи в таблице clients нет, создаем её
+      if (req.user.role === 'client') {
+        console.log(`[POST /api/orders] Создаем запись клиента для user_id=${req.user.id}`);
+        const result = query.run('INSERT INTO clients (user_id) VALUES (?)', [req.user.id]);
+        client = { id: result.lastInsertRowid };
+        console.log(`[POST /api/orders] Запись клиента создана: id=${client.id}`);
+      } else {
+        console.error(`[POST /api/orders] Пользователь ${req.user.id} имеет роль '${req.user.role}', но пытается создать заказ`);
+        return res.status(403).json({ 
+          error: 'Недостаточно прав доступа. Для создания заказа требуется роль клиента.',
+          userRole: req.user.role
+        });
+      }
     }
     
     // Генерируем уникальный номер заявки
