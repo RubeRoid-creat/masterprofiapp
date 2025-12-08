@@ -763,7 +763,7 @@ router.get('/:id', authenticate, (req, res) => {
 });
 
 // Создать новый заказ (только клиенты)
-router.post('/', authenticate, authorize('client'), async (req, res) => {
+router.post('/', authenticate, authorize('client', 'admin'), async (req, res) => {
   try {
     console.log('📦 Создание заказа. Тело запроса:', JSON.stringify(req.body, null, 2));
     console.log(`[POST /api/orders] Пользователь: id=${req.user.id}, role=${req.user.role}, email=${req.user.email}`);
@@ -855,9 +855,9 @@ router.post('/', authenticate, authorize('client'), async (req, res) => {
     // Получаем ID клиента
     let client = query.get('SELECT id FROM clients WHERE user_id = ?', [req.user.id]);
     if (!client) {
-      // Если пользователь имеет роль 'client', но записи в таблице clients нет, создаем её
-      if (req.user.role === 'client') {
-        console.log(`[POST /api/orders] Создаем запись клиента для user_id=${req.user.id}`);
+      // Если пользователь имеет роль 'client' или 'admin', но записи в таблице clients нет, создаем её
+      if (req.user.role === 'client' || req.user.role === 'admin') {
+        console.log(`[POST /api/orders] Создаем запись клиента для user_id=${req.user.id} (role=${req.user.role})`);
         const result = query.run('INSERT INTO clients (user_id) VALUES (?)', [req.user.id]);
         client = { id: result.lastInsertRowid };
         console.log(`[POST /api/orders] Запись клиента создана: id=${client.id}`);
