@@ -356,55 +356,22 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                 // Конвертируем ApiOrder в Order
                 val convertedOrders = apiOrders.map { it.toOrder() }
                 Log.d(TAG, "Converted ${convertedOrders.size} orders")
-                _newOrders.value = convertedOrders
                 
-                // Асинхронно загружаем expiresAt для каждого заказа из активных назначений
+                // Выводим детальную информацию о каждом заказе
                 convertedOrders.forEach { order ->
-                    viewModelScope.launch {
-                        val assignmentResult = apiRepository.getActiveAssignmentForOrder(order.id)
-                        assignmentResult.onSuccess { assignment ->
-                            if (assignment != null && assignment.status == "pending" && assignment.expiresAt != null) {
-                                val expiresAt = try {
-                                    // Пробуем парсить ISO-8601 с UTC
-                                    val formats = listOf(
-                                        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
-                                            timeZone = java.util.TimeZone.getTimeZone("UTC")
-                                        },
-                                        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
-                                            timeZone = java.util.TimeZone.getTimeZone("UTC")
-                                        },
-                                        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
-                                    )
-                                    formats.firstNotNullOfOrNull { format ->
-                                        try {
-                                            format.parse(assignment.expiresAt!!)
-                                        } catch (e: Exception) {
-                                            null
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    null
-                                }
-                                
-                                if (expiresAt != null) {
-                                    // Обновляем заказ в списке с expiresAt
-                                    val updatedOrders = _newOrders.value.toMutableList()
-                                    val orderIndex = updatedOrders.indexOfFirst { it.id == order.id }
-                                    if (orderIndex >= 0) {
-                                        val existingOrder = updatedOrders[orderIndex]
-                                        updatedOrders[orderIndex] = existingOrder.copy(expiresAt = expiresAt)
-                                        _newOrders.value = updatedOrders
-                                        applyLocalFilters()
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    Log.d(TAG, "   Заказ #${order.id}: deviceType=${order.deviceType}, expiresAt=${order.expiresAt}, assignmentId=${order.assignmentId}")
                 }
+                
+                _newOrders.value = convertedOrders
+                Log.d(TAG, "✅ Установлено ${_newOrders.value.size} заказов в _newOrders")
                 
                 // Фильтры уже применены на backend, но можем применить локальные фильтры (поиск, тип устройства)
                 applyLocalFilters()
-                Log.d(TAG, "Applied filters, filtered orders count: ${_filteredOrders.value.size}")
+                Log.d(TAG, "✅ Применены локальные фильтры:")
+                Log.d(TAG, "   - _newOrders.value.size = ${_newOrders.value.size}")
+                Log.d(TAG, "   - _filteredOrders.value.size = ${_filteredOrders.value.size}")
+                Log.d(TAG, "   - _selectedDeviceTypes.value = ${_selectedDeviceTypes.value}")
+                Log.d(TAG, "   - _searchQuery.value = '${_searchQuery.value}'")
             }.onFailure { error ->
                 Log.e(TAG, "Failed to load orders from API: ${error.message}", error)
                 error.printStackTrace()
@@ -567,29 +534,49 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     // Локальные фильтры (применяются после получения данных с backend)
     private fun applyLocalFilters() {
         var filtered = _newOrders.value
+        val initialCount = filtered.size
+        
+        Log.d(TAG, "🔍 applyLocalFilters: начальное количество заказов = $initialCount")
         
         // Фильтр по типу устройства (локальный, так как может быть несколько типов)
         if (_selectedDeviceTypes.value.isNotEmpty()) {
+            val beforeDeviceFilter = filtered.size
             filtered = filtered.filter { order ->
-                _selectedDeviceTypes.value.contains(order.deviceType)
+                val matches = _selectedDeviceTypes.value.contains(order.deviceType)
+                if (!matches) {
+                    Log.v(TAG, "   ❌ Заказ #${order.id} отфильтрован: deviceType=${order.deviceType} не в списке ${_selectedDeviceTypes.value}")
+                }
+                matches
             }
+            Log.d(TAG, "   После фильтра по типу устройства: $beforeDeviceFilter -> ${filtered.size}")
         }
         
         // Поиск (локальный)
         if (_searchQuery.value.isNotEmpty()) {
+            val beforeSearchFilter = filtered.size
             val query = _searchQuery.value.lowercase()
             filtered = filtered.filter { order ->
-                order.clientName.lowercase().contains(query) ||
+                val matches = order.clientName.lowercase().contains(query) ||
                 order.deviceBrand.lowercase().contains(query) ||
                 order.deviceModel.lowercase().contains(query) ||
                 order.problemDescription.lowercase().contains(query) ||
                 order.clientAddress.lowercase().contains(query) ||
                 order.clientPhone.contains(query) ||
                 order.id.toString().contains(query)
+                if (!matches) {
+                    Log.v(TAG, "   ❌ Заказ #${order.id} отфильтрован поиском: '$query'")
+                }
+                matches
             }
+            Log.d(TAG, "   После фильтра поиска: $beforeSearchFilter -> ${filtered.size}")
         }
         
         _filteredOrders.value = filtered
+        Log.d(TAG, "✅ applyLocalFilters завершен: $initialCount -> ${filtered.size} заказов")
+        
+        if (filtered.isEmpty() && initialCount > 0) {
+            Log.w(TAG, "⚠️ ВНИМАНИЕ: Все $initialCount заказов отфильтрованы!")
+        }
     }
     
     // Устаревший метод - оставлен для совместимости
