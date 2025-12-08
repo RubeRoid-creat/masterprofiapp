@@ -195,7 +195,7 @@ data class ApiAssignment(
     @SerializedName("master_id") val masterId: Long,
     val status: String,
     @SerializedName("assigned_at") val assignedAt: String,
-    @SerializedName("expires_at") val expiresAt: String,
+    @SerializedName("expires_at") val expiresAt: String?, // Может быть null для старых назначений
     @SerializedName("responded_at") val respondedAt: String?,
     @SerializedName("rejection_reason") val rejectionReason: String?,
     
