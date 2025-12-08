@@ -210,9 +210,6 @@
             android:id="@+id/action_profile_to_mlm"
             app:destination="@id/mlmFragment" />
         <action
-            android:id="@+id/action_profile_to_rejected_orders"
-            app:destination="@id/rejectedOrdersFragment" />
-        <action
             android:id="@+id/action_profile_to_login"
             app:destination="@id/loginFragment"
             app:popUpTo="@id/nav_graph"
@@ -258,12 +255,6 @@
         android:name="com.example.bestapp.ui.reports.ReportsListFragment"
         android:label="Мои отчеты"
         tools:layout="@layout/fragment_reports_list" />
-
-    <fragment
-        android:id="@+id/rejectedOrdersFragment"
-        android:name="com.example.bestapp.ui.orders.RejectedOrdersFragment"
-        android:label="История отклонений"
-        tools:layout="@layout/fragment_rejected_orders" />
 
     <fragment
         android:id="@+id/subscriptionFragment"

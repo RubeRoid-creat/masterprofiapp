@@ -82,3 +82,4 @@ https://github.com/RubeRoid-creat/masterprofiapp
 4. `app/src/main/java/com/example/bestapp/ui/mlm/MLMFragment.kt` - добавлена обработка пустой статистики
 5. `app/src/main/java/com/example/bestapp/api/ApiRepository.kt` - улучшена обработка ошибок 404
 
+

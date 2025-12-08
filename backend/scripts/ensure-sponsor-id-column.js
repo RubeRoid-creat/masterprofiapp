@@ -102,3 +102,4 @@ async function ensureSponsorIdColumn() {
 // Запускаем проверку
 ensureSponsorIdColumn();
 
+

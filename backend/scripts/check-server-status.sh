@@ -107,3 +107,4 @@ echo ""
 echo "💡 Если файрвол блокирует:"
 echo "   1. UFW: sudo ufw allow 3000/tcp && sudo ufw reload"
 echo "   2. firewalld: sudo firewall-cmd --permanent --add-port=3000/tcp && sudo firewall-cmd --reload"
+

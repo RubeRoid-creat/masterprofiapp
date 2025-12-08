@@ -39,3 +39,4 @@ if ($LASTEXITCODE -eq 0) {
 Write-Host "`n=== Финальный статус ===" -ForegroundColor Cyan
 git status
 
+

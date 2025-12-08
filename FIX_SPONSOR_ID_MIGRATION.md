@@ -94,3 +94,4 @@ node scripts/ensure-sponsor-id-column.js
 pm2 restart bestapp-backend
 ```
 
+
