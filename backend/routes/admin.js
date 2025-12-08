@@ -319,6 +319,73 @@ router.get('/users', (req, res) => {
   }
 });
 
+// Удалить аккаунт мастера
+router.delete('/masters/:masterId', (req, res) => {
+  try {
+    const { masterId } = req.params;
+    
+    // Проверяем существование мастера
+    const master = query.get('SELECT id, user_id FROM masters WHERE id = ?', [masterId]);
+    if (!master) {
+      return res.status(404).json({ error: 'Мастер не найден' });
+    }
+    
+    // Проверяем, нет ли активных заказов у мастера
+    const activeOrders = query.all(`
+      SELECT COUNT(*) as count 
+      FROM orders 
+      WHERE assigned_master_id = ? 
+        AND repair_status IN ('new', 'in_progress', 'diagnostics', 'waiting_parts')
+    `, [masterId]);
+    
+    if (activeOrders.length > 0 && activeOrders[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Невозможно удалить мастера с активными заказами',
+        activeOrdersCount: activeOrders[0].count
+      });
+    }
+    
+    // Получаем информацию о мастере для логирования
+    const masterInfo = query.get(`
+      SELECT m.*, u.name, u.email 
+      FROM masters m 
+      JOIN users u ON m.user_id = u.id 
+      WHERE m.id = ?
+    `, [masterId]);
+    
+    // Удаляем мастера (CASCADE удалит связанные записи)
+    // Сначала удаляем мастера, потом пользователя
+    // Это безопаснее, так как многие таблицы ссылаются на masters.id
+    
+    // Удаляем назначения мастера
+    query.run('DELETE FROM order_assignments WHERE master_id = ?', [masterId]);
+    
+    // Обнуляем назначения в заказах
+    query.run('UPDATE orders SET assigned_master_id = NULL WHERE assigned_master_id = ?', [masterId]);
+    query.run('UPDATE orders SET preferred_master_id = NULL WHERE preferred_master_id = ?', [masterId]);
+    
+    // Удаляем мастера
+    query.run('DELETE FROM masters WHERE id = ?', [masterId]);
+    
+    // Удаляем пользователя (CASCADE удалит связанные записи)
+    query.run('DELETE FROM users WHERE id = ?', [master.user_id]);
+    
+    console.log(`🗑️ Администратор ${req.user.id} удалил мастера #${masterId} (${masterInfo.name}, ${masterInfo.email})`);
+    
+    res.json({ 
+      message: 'Аккаунт мастера успешно удален',
+      deletedMaster: {
+        id: masterId,
+        name: masterInfo.name,
+        email: masterInfo.email
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка удаления мастера:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
 // ============= Резервное копирование =============
 
 // Создать бэкап

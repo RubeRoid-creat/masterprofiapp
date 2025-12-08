@@ -82,6 +82,11 @@ export const usersAPI = {
   block: (userId, blocked, reason) => api.post(`/admin/users/${userId}/block`, { blocked, reason }),
 };
 
+// Мастера
+export const mastersAPI = {
+  delete: (masterId) => api.delete(`/admin/masters/${masterId}`),
+};
+
 // Верификация
 export const verificationAPI = {
   getDocuments: (status, groupByMaster) => api.get('/verification/admin/documents', { 
