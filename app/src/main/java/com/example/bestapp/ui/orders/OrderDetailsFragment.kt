@@ -266,15 +266,18 @@ class OrderDetailsFragment : Fragment() {
         
         // Очищаем предыдущие данные перед загрузкой новых
         currentOrder = null
-        currentAssignmentId = null
-        currentAssignmentStatus = null
         clearUI()
         
-        // Если assignmentId передан через аргументы, используем его
+        // Если assignmentId передан через аргументы, используем его сразу
+        // Это позволяет показывать кнопки до загрузки назначения через API
         if (assignmentIdFromArgs != null && assignmentIdFromArgs != 0L) {
             currentAssignmentId = assignmentIdFromArgs
             currentAssignmentStatus = assignmentStatusFromArgs
             Log.d(TAG, "Using assignmentId from arguments: $assignmentIdFromArgs, status: $assignmentStatusFromArgs")
+        } else {
+            // Сбрасываем только если не было передано через аргументы
+            currentAssignmentId = null
+            currentAssignmentStatus = null
         }
         
         Log.d(TAG, "Loading order data for orderId: $orderId")
@@ -317,77 +320,93 @@ class OrderDetailsFragment : Fragment() {
                 updateUI()
                 
                 // Загружаем активное назначение для этого заказа
-                val activeAssignmentResult = apiRepository.getActiveAssignmentForOrder(orderId)
-                activeAssignmentResult.onSuccess { assignment ->
-                    if (assignment != null) {
-                        currentAssignmentId = assignment.id
-                        currentAssignmentStatus = assignment.status
-                        Log.d(TAG, "Found active assignment: $currentAssignmentId for order: $orderId, status: ${assignment.status}")
+                // Но только если оно не было передано через аргументы
+                if (currentAssignmentId == null) {
+                    val activeAssignmentResult = apiRepository.getActiveAssignmentForOrder(orderId)
+                    activeAssignmentResult.onSuccess { assignment ->
+                        if (assignment != null) {
+                            currentAssignmentId = assignment.id
+                            currentAssignmentStatus = assignment.status
+                            Log.d(TAG, "Found active assignment: $currentAssignmentId for order: $orderId, status: ${assignment.status}")
                         
-                        // Запускаем таймер обратного отсчета, если назначение pending
-                        if (assignment.status == "pending" && assignment.expiresAt != null) {
-                            try {
-                                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
-                                val expiresAt = dateFormat.parse(assignment.expiresAt) ?: try {
-                                    val dateFormat2 = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
-                                    dateFormat2.parse(assignment.expiresAt)
-                                } catch (e2: Exception) {
-                                    null
-                                }
-                                
-                                if (expiresAt != null && expiresAt.after(java.util.Date())) {
-                                    // Останавливаем предыдущий таймер
-                                    countdownTimer?.stop()
+                            // Запускаем таймер обратного отсчета, если назначение pending
+                            if (assignment.status == "pending" && assignment.expiresAt != null) {
+                                try {
+                                    val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
+                                    val expiresAt = dateFormat.parse(assignment.expiresAt) ?: try {
+                                        val dateFormat2 = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                                        dateFormat2.parse(assignment.expiresAt)
+                                    } catch (e2: Exception) {
+                                        null
+                                    }
                                     
-                                    // Запускаем новый таймер
-                                    orderTimer?.visibility = View.VISIBLE
-                                    countdownTimer = com.example.bestapp.ui.common.CountdownTimerView(
-                                        orderTimer!!,
-                                        expiresAt,
-                                        onExpired = {
-                                            orderTimer?.text = "⏱️ Время истекло"
-                                            orderTimer?.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark))
-                                        }
-                                    )
-                                } else {
+                                    if (expiresAt != null && expiresAt.after(java.util.Date())) {
+                                        // Останавливаем предыдущий таймер
+                                        countdownTimer?.stop()
+                                        
+                                        // Запускаем новый таймер
+                                        orderTimer?.visibility = View.VISIBLE
+                                        countdownTimer = com.example.bestapp.ui.common.CountdownTimerView(
+                                            orderTimer!!,
+                                            expiresAt,
+                                            onExpired = {
+                                                orderTimer?.text = "⏱️ Время истекло"
+                                                orderTimer?.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark))
+                                            }
+                                        )
+                                    } else {
+                                        orderTimer?.visibility = View.GONE
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error parsing expiresAt: ${assignment.expiresAt}", e)
                                     orderTimer?.visibility = View.GONE
                                 }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error parsing expiresAt: ${assignment.expiresAt}", e)
+                            } else {
                                 orderTimer?.visibility = View.GONE
+                                countdownTimer?.stop()
+                                countdownTimer = null
                             }
+                            // Обновляем UI после загрузки назначения, чтобы показать кнопки
+                            updateUI()
                         } else {
-                            orderTimer?.visibility = View.GONE
-                            countdownTimer?.stop()
-                            countdownTimer = null
+                            Log.d(TAG, "No active assignment found for order: $orderId")
+                            // Fallback: загружаем все назначения мастера
+                            val assignmentsResult = apiRepository.getMyAssignments()
+                            assignmentsResult.onSuccess { assignments ->
+                                Log.d(TAG, "Loaded ${assignments.size} assignments")
+                                val assignment = assignments.find { it.orderId == orderId && (it.status == "pending" || it.status == "new") }
+                                currentAssignmentId = assignment?.id
+                                currentAssignmentStatus = assignment?.status
+                                Log.d(TAG, "Found assignment: $currentAssignmentId for order: $orderId, status: $currentAssignmentStatus")
+                                updateUI()
+                            }.onFailure { error2 ->
+                                Log.e(TAG, "Failed to load assignments", error2)
+                                currentAssignmentId = null
+                                currentAssignmentStatus = null
+                                updateUI()
+                            }
                         }
-                    } else {
-                        currentAssignmentId = null
-                        currentAssignmentStatus = null
-                        orderTimer?.visibility = View.GONE
-                        countdownTimer?.stop()
-                        countdownTimer = null
-                        Log.d(TAG, "No active assignment found for order: $orderId")
+                    }.onFailure { error ->
+                        Log.e(TAG, "Failed to load active assignment, trying getMyAssignments", error)
+                        // Fallback: загружаем все назначения мастера
+                        val assignmentsResult = apiRepository.getMyAssignments()
+                        assignmentsResult.onSuccess { assignments ->
+                            Log.d(TAG, "Loaded ${assignments.size} assignments")
+                            val assignment = assignments.find { it.orderId == orderId && (it.status == "pending" || it.status == "new") }
+                            currentAssignmentId = assignment?.id
+                            currentAssignmentStatus = assignment?.status
+                            Log.d(TAG, "Found assignment: $currentAssignmentId for order: $orderId, status: $currentAssignmentStatus")
+                            updateUI()
+                        }.onFailure { error2 ->
+                            Log.e(TAG, "Failed to load assignments", error2)
+                            currentAssignmentId = null
+                            currentAssignmentStatus = null
+                            updateUI()
+                        }
                     }
-                    // Обновляем UI после загрузки назначения, чтобы показать кнопки
-                    updateUI()
-                }.onFailure { error ->
-                    Log.e(TAG, "Failed to load active assignment, trying getMyAssignments", error)
-                    // Fallback: загружаем все назначения мастера
-                    val assignmentsResult = apiRepository.getMyAssignments()
-                    assignmentsResult.onSuccess { assignments ->
-                        Log.d(TAG, "Loaded ${assignments.size} assignments")
-                        val assignment = assignments.find { it.orderId == orderId && (it.status == "pending" || it.status == "new") }
-                        currentAssignmentId = assignment?.id
-                        currentAssignmentStatus = assignment?.status
-                        Log.d(TAG, "Found assignment: $currentAssignmentId for order: $orderId, status: $currentAssignmentStatus")
-                        updateUI()
-                    }.onFailure { error2 ->
-                        Log.e(TAG, "Failed to load assignments", error2)
-                        currentAssignmentId = null
-                        currentAssignmentStatus = null
-                        updateUI()
-                    }
+                } else {
+                    Log.d(TAG, "AssignmentId already set from arguments ($currentAssignmentId), skipping API load")
+                    // UI уже обновлен выше, кнопки должны быть видны
                 }
             }.onFailure { error ->
                 Log.e(TAG, "Failed to load order", error)
