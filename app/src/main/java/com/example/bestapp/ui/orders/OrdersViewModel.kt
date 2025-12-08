@@ -193,8 +193,40 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                 val pendingAssignments = assignments.filter { it.status == "pending" }
                 Log.d(TAG, "📋 Pending назначений: ${pendingAssignments.size} из ${assignments.size}")
                 
-                // Конвертируем assignments в orders для отображения
-                val apiOrders = pendingAssignments
+                // Фильтруем истекшие назначения
+                val now = System.currentTimeMillis()
+                val activeAssignments = pendingAssignments.filter { assignment ->
+                    val expiresAt = assignment.expiresAt?.let { expiresStr ->
+                        try {
+                            // Пробуем разные форматы даты
+                            val formats = listOf(
+                                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault()),
+                                java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()),
+                                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault())
+                            )
+                            formats.firstNotNullOfOrNull { format ->
+                                try {
+                                    format.parse(expiresStr)?.time
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    
+                    val isActive = expiresAt != null && expiresAt > now
+                    if (expiresAt != null && expiresAt <= now) {
+                        Log.d(TAG, "⏰ Назначение #${assignment.id} истекло: ${assignment.expiresAt}")
+                    }
+                    isActive
+                }
+                
+                Log.d(TAG, "✅ Активных назначений: ${activeAssignments.size} из ${pendingAssignments.size} pending")
+                
+                // Конвертируем assignments в orders для отображения (только активные, не истекшие)
+                val apiOrders = activeAssignments
                     .map { assignment ->
                         ApiOrder(
                             id = assignment.orderId,

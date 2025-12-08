@@ -114,15 +114,30 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
     const assignments = query.all(sql, params);
     
     // Фильтруем данные назначений: для pending показываем только базовую информацию
-    const filteredAssignments = assignments.map(assignment => {
-      // Для pending назначений скрываем детали (brand, model, client info, cost)
-      if (assignment.status === 'pending') {
-        return filterAssignmentData(assignment, false);
-      }
-      // Для принятых/отклоненных - показываем всё
-      return assignment;
-    });
+    // И ВАЖНО: фильтруем истекшие pending назначения на сервере
+    const now = new Date();
+    const filteredAssignments = assignments
+      .filter(assignment => {
+        // Для pending назначений проверяем срок действия
+        if (assignment.status === 'pending' && assignment.expires_at) {
+          const expiresAt = new Date(assignment.expires_at);
+          if (expiresAt < now) {
+            console.log(`⚠️ Пропускаем истекшее назначение #${assignment.id} (истекло: ${expiresAt.toISOString()})`);
+            return false; // Пропускаем истекшие
+          }
+        }
+        return true;
+      })
+      .map(assignment => {
+        // Для pending назначений скрываем детали (brand, model, client info, cost)
+        if (assignment.status === 'pending') {
+          return filterAssignmentData(assignment, false);
+        }
+        // Для принятых/отклоненных - показываем всё
+        return assignment;
+      });
     
+    console.log(`📤 Возвращаем ${filteredAssignments.length} назначений (было ${assignments.length}, отфильтровано истекших: ${assignments.length - filteredAssignments.length})`);
     res.json(filteredAssignments);
   } catch (error) {
     console.error('Ошибка получения назначений:', error);
