@@ -400,23 +400,35 @@ class ApiRepository {
     ): Result<MessageResponse> {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "🔧 updateMasterProfile called")
+                Log.d(TAG, "   name=$name, phone=$phone, email=$email")
+                Log.d(TAG, "   specialization=$specialization (size=${specialization?.size})")
+                
                 val request = com.example.bestapp.api.models.UpdateMasterProfileRequest(
                     name = name,
                     phone = phone,
                     email = email,
                     specialization = specialization
                 )
+                
+                Log.d(TAG, "🚀 Sending PUT request to ${RetrofitClient.BASE_URL}api/masters/profile")
+                Log.d(TAG, "   Request: $request")
+                
                 val response = api.updateMasterProfile(request)
+                
+                Log.d(TAG, "📥 Response received: code=${response.code()}, isSuccessful=${response.isSuccessful}")
+                
                 if (response.isSuccessful && response.body() != null) {
-                    Log.d(TAG, "Master profile updated")
+                    Log.d(TAG, "✅ Master profile updated successfully")
                     Result.success(response.body()!!)
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Log.e(TAG, "Update master profile failed: code=${response.code()}, body=$errorBody")
+                    Log.e(TAG, "❌ Update master profile failed: code=${response.code()}, body=$errorBody")
                     Result.failure(Exception("Ошибка обновления профиля: ${response.code()}"))
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Update master profile error", e)
+                Log.e(TAG, "❌ Update master profile error: ${e.javaClass.simpleName} - ${e.message}", e)
+                e.printStackTrace()
                 Result.failure(e)
             }
         }
