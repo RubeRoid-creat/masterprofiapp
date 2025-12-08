@@ -138,7 +138,6 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
         o.final_cost,
         o.client_budget,
         o.payment_type,
-        o.payment_status,
         o.intercom_working,
         o.parking_available,
         o.has_pets,
