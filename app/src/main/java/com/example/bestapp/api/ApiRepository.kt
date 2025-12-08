@@ -461,7 +461,6 @@ class ApiRepository {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d(TAG, "🔄 Запрос назначений: status=$status")
-                Log.d(TAG, "   URL: ${api.getMyAssignments(status).request().url}")
                 
                 val response = api.getMyAssignments(status)
                 Log.d(TAG, "📥 Ответ API: code=${response.code()}, isSuccessful=${response.isSuccessful}")

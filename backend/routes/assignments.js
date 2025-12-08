@@ -131,7 +131,20 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
       .map(assignment => {
         // Для pending назначений скрываем детали (brand, model, client info, cost)
         if (assignment.status === 'pending') {
-          return filterAssignmentData(assignment, false);
+          const filtered = filterAssignmentData(assignment, false);
+          // Убеждаемся, что expires_at в правильном формате ISO-8601
+          if (filtered && filtered.expires_at) {
+            // Преобразуем в ISO-8601, если еще не в этом формате
+            try {
+              const date = new Date(filtered.expires_at);
+              if (!isNaN(date.getTime())) {
+                filtered.expires_at = date.toISOString();
+              }
+            } catch (e) {
+              console.warn(`Ошибка преобразования expires_at для назначения #${filtered.id}:`, e.message);
+            }
+          }
+          return filtered;
         }
         // Для принятых/отклоненных - показываем всё
         return assignment;

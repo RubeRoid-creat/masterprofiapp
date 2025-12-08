@@ -207,27 +207,56 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                 val activeAssignments = pendingAssignments.filter { assignment ->
                     val expiresAt = assignment.expiresAt?.let { expiresStr ->
                         try {
-                            // Пробуем разные форматы даты
+                            // Пробуем разные форматы даты с учетом UTC
                             val formats = listOf(
-                                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault()),
-                                java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()),
-                                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.getDefault())
+                                // ISO 8601 с миллисекундами и UTC (Z)
+                                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                },
+                                // ISO 8601 без миллисекунд и UTC (Z)
+                                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                },
+                                // Стандартный формат БД без часового пояса
+                                java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
                             )
+                            
                             formats.firstNotNullOfOrNull { format ->
                                 try {
-                                    format.parse(expiresStr)?.time
+                                    val parsed = format.parse(expiresStr)
+                                    if (parsed != null) {
+                                        // Если формат был с 'Z' (UTC), время уже в UTC, иначе считаем локальным
+                                        val time = parsed.time
+                                        Log.d(TAG, "   Парсинг expiresAt: '$expiresStr' -> ${java.util.Date(time).toString()}, timestamp=$time")
+                                        time
+                                    } else null
                                 } catch (e: Exception) {
+                                    Log.w(TAG, "   Ошибка парсинга '$expiresStr' с форматом: ${e.message}")
                                     null
                                 }
+                            } ?: run {
+                                Log.e(TAG, "   ❌ Не удалось распарсить expiresAt: '$expiresStr'")
+                                null
                             }
                         } catch (e: Exception) {
+                            Log.e(TAG, "   ❌ Исключение при парсинге expiresAt '$expiresStr': ${e.message}")
                             null
                         }
                     }
                     
-                    val isActive = expiresAt != null && expiresAt > now
-                    if (expiresAt != null && expiresAt <= now) {
-                        Log.d(TAG, "⏰ Назначение #${assignment.id} истекло: ${assignment.expiresAt}")
+                    if (expiresAt == null) {
+                        // Если expiresAt не указан, считаем назначение активным
+                        Log.w(TAG, "⚠️ Назначение #${assignment.id} без expiresAt - считаем активным")
+                        return@filter true
+                    }
+                    
+                    val isActive = expiresAt > now
+                    if (!isActive) {
+                        val expiredMinutesAgo = (now - expiresAt) / (1000 * 60)
+                        Log.d(TAG, "⏰ Назначение #${assignment.id} истекло ${expiredMinutesAgo} минут назад: ${assignment.expiresAt}")
+                    } else {
+                        val minutesLeft = (expiresAt - now) / (1000 * 60)
+                        Log.d(TAG, "✅ Назначение #${assignment.id} активно, осталось ${minutesLeft} минут")
                     }
                     isActive
                 }

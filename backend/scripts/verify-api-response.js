@@ -31,7 +31,8 @@ let sql = `
 
 const assignments = query.all(sql, [master.id]);
 
-console.log(`📋 Всего назначений в БД: ${assignments.length}\n`);
+console.log(`📋 Всего назначений в БД: ${assignments.length}`);
+console.log(`📅 Текущее время: ${new Date().toISOString()}\n`);
 
 // Фильтруем истекшие pending назначения (как в API)
 const now = new Date();
