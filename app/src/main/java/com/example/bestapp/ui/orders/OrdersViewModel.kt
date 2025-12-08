@@ -363,17 +363,27 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                     viewModelScope.launch {
                         val assignmentResult = apiRepository.getActiveAssignmentForOrder(order.id)
                         assignmentResult.onSuccess { assignment ->
-                            if (assignment != null && assignment.status == "pending") {
+                            if (assignment != null && assignment.status == "pending" && assignment.expiresAt != null) {
                                 val expiresAt = try {
-                                    val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
-                                    dateFormat.parse(assignment.expiresAt)
-                                } catch (e: Exception) {
-                                    try {
-                                        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
-                                        dateFormat.parse(assignment.expiresAt)
-                                    } catch (e2: Exception) {
-                                        null
+                                    // Пробуем парсить ISO-8601 с UTC
+                                    val formats = listOf(
+                                        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                                            timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                        },
+                                        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                                            timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                        },
+                                        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                                    )
+                                    formats.firstNotNullOfOrNull { format ->
+                                        try {
+                                            format.parse(assignment.expiresAt!!)
+                                        } catch (e: Exception) {
+                                            null
+                                        }
                                     }
+                                } catch (e: Exception) {
+                                    null
                                 }
                                 
                                 if (expiresAt != null) {
@@ -427,18 +437,27 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     
     // Конвертер ApiOrder -> Order
     private fun ApiOrder.toOrder(): Order {
-        // Парсим expiresAt если есть
-        val expiresAtDate = this.assignmentExpiresAt?.let {
+        // Парсим expiresAt если есть (с учетом UTC)
+        val expiresAtDate = this.assignmentExpiresAt?.let { expiresStr ->
             try {
-                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
-                dateFormat.parse(it)
-            } catch (e: Exception) {
-                try {
-                    val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
-                    dateFormat.parse(it)
-                } catch (e2: Exception) {
-                    null
+                val formats = listOf(
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    },
+                    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    },
+                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                )
+                formats.firstNotNullOfOrNull { format ->
+                    try {
+                        format.parse(expiresStr)
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
+            } catch (e: Exception) {
+                null
             }
         }
         
