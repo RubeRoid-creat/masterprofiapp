@@ -86,15 +86,8 @@ router.get('/my', authenticate, authorize('master'), (req, res) => {
       return res.status(404).json({ error: 'Профиль мастера не найден' });
     }
     
-    // Проверяем верификацию мастера
-    if (master.verification_status !== 'verified') {
-      return res.status(403).json({ 
-        error: 'Требуется верификация',
-        message: 'Для просмотра и принятия заказов необходимо пройти верификацию',
-        verificationRequired: true,
-        verificationStatus: master.verification_status
-      });
-    }
+    // Верификация НЕ требуется для просмотра назначений, только для принятия
+    // Это позволяет мастерам видеть заявки и понимать, что им нужно пройти верификацию
     
     let sql = `
       SELECT 

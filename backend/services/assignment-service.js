@@ -256,10 +256,23 @@ export function createAssignment(orderId, masterId, attemptNumber = 1) {
     if (master && fullAssignment) {
       // Фильтруем данные - показываем только базовую информацию до принятия
       const filteredAssignment = filterAssignmentData(fullAssignment, false);
-      broadcastToMaster(master.user_id, {
+      
+      console.log(`📤 Отправка WebSocket уведомления мастеру user_id=${master.user_id} о назначении #${assignmentId}`);
+      console.log(`   Данные назначения:`, JSON.stringify(filteredAssignment, null, 2));
+      
+      const sent = broadcastToMaster(master.user_id, {
         type: 'new_assignment',
         assignment: filteredAssignment
       });
+      
+      if (sent) {
+        console.log(`✅ WebSocket уведомление отправлено мастеру user_id=${master.user_id}`);
+      } else {
+        console.log(`⚠️ WebSocket уведомление НЕ отправлено - мастер user_id=${master.user_id} не подключен к WebSocket`);
+        console.log(`   Мастер получит заявку при следующем запросе через API /api/assignments`);
+      }
+    } else {
+      console.error(`❌ Не удалось отправить уведомление: master=${master ? 'found' : 'NOT FOUND'}, assignment=${fullAssignment ? 'found' : 'NOT FOUND'}`);
     }
     
     // Возвращаем полную информацию для внутреннего использования

@@ -145,15 +145,8 @@ router.get('/', authenticate, (req, res) => {
         return res.status(404).json({ error: 'Профиль мастера не найден' });
       }
       
-      // Для новых заказов (status === 'new' или не указан) требуется верификация
-      if ((!status || status === 'new') && master.verification_status !== 'verified') {
-        return res.status(403).json({ 
-          error: 'Требуется верификация',
-          message: 'Для просмотра и принятия заказов необходимо пройти верификацию',
-          verificationRequired: true,
-          verificationStatus: master.verification_status
-        });
-      }
+      // Верификация НЕ требуется для просмотра заказов, только для принятия
+      // Позволяем мастерам видеть заявки даже без верификации, чтобы они понимали систему
       
       if (status && (status === 'in_progress' || status === 'completed')) {
         // Для принятых заказов показываем только заказы мастера
