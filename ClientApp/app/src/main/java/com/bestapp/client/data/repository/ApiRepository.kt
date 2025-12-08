@@ -124,14 +124,20 @@ class ApiRepository(
     // Order methods
     suspend fun createOrder(request: CreateOrderRequest): ApiResult<OrderDto> {
         return try {
+            android.util.Log.d("ApiRepository", "Creating order: deviceType=${request.deviceType}, address=${request.address}")
             val response = apiService.createOrder(request)
             
             if (response.isSuccessful && response.body() != null) {
+                android.util.Log.d("ApiRepository", "Order created successfully: id=${response.body()!!.id}")
                 ApiResult.Success(response.body()!!)
             } else {
+                android.util.Log.e("ApiRepository", "Failed to create order: code=${response.code()}, message=${response.message()}")
+                val errorBody = response.errorBody()?.string()
+                android.util.Log.e("ApiRepository", "Error body: $errorBody")
                 handleErrorResponse(response, "Ошибка создания заказа")
             }
         } catch (e: Exception) {
+            android.util.Log.e("ApiRepository", "Exception creating order", e)
             ApiResult.Error(e.message ?: "Неизвестная ошибка: ${e.javaClass.simpleName}")
         }
     }
