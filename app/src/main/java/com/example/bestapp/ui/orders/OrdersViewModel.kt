@@ -270,8 +270,8 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                 
                 val apiOrders = activeAssignments
                     .map { assignment ->
-                        // assignedAt не может быть null в модели ApiAssignment, используем его или текущее время
-                        val assignedAt = if (assignment.assignedAt.isNotBlank()) assignment.assignedAt else currentTime
+                        // assignedAt может быть null, если API вернул неполные данные, используем текущее время как fallback
+                        val assignedAt = assignment.assignedAt?.takeIf { it.isNotBlank() } ?: currentTime
                         
                         ApiOrder(
                             id = assignment.orderId,
