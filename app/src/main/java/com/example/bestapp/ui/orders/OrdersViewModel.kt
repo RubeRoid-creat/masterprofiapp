@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 class OrdersViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = DataRepository
@@ -62,6 +65,9 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
     private val _sortBy = MutableStateFlow<String?>(null) // distance, price, urgency, created_at
     private val _searchQuery = MutableStateFlow("")
     
+    // Job для автоматического обновления заявок
+    private var pollingJob: Job? = null
+    
     init {
         // Инициализируем RetrofitClient для загрузки сохраненного токена
         RetrofitClient.initialize(application)
@@ -79,6 +85,54 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
         // Проверяем статус верификации при инициализации
         checkVerificationStatus()
         loadNewOrders()
+        
+        // Запускаем автоматическое обновление заявок, если мастер на смене
+        observeShiftStatusAndStartPolling()
+    }
+    
+    /**
+     * Наблюдает за статусом смены и запускает/останавливает автоматическое обновление заявок
+     */
+    private fun observeShiftStatusAndStartPolling() {
+        viewModelScope.launch {
+            _isShiftActive.collect { isActive ->
+                if (isActive) {
+                    // Мастер на смене - запускаем периодическое обновление
+                    startPollingAssignments()
+                } else {
+                    // Мастер не на смене - останавливаем обновление
+                    stopPollingAssignments()
+                }
+            }
+        }
+    }
+    
+    /**
+     * Запускает периодическое обновление заявок (каждые 30 секунд)
+     */
+    private fun startPollingAssignments() {
+        // Останавливаем предыдущий polling, если он есть
+        stopPollingAssignments()
+        
+        pollingJob = viewModelScope.launch {
+            while (isActive && _isShiftActive.value) {
+                delay(30000) // 30 секунд
+                if (_isShiftActive.value) {
+                    Log.d(TAG, "🔄 Автоматическое обновление заявок (polling)")
+                    loadNewOrders()
+                }
+            }
+        }
+        Log.d(TAG, "✅ Автоматическое обновление заявок запущено (каждые 30 сек)")
+    }
+    
+    /**
+     * Останавливает периодическое обновление заявок
+     */
+    private fun stopPollingAssignments() {
+        pollingJob?.cancel()
+        pollingJob = null
+        Log.d(TAG, "⏹️ Автоматическое обновление заявок остановлено")
     }
     
     /**
@@ -208,13 +262,8 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                     
                 Log.d(TAG, "Converted ${apiOrders.size} assignments to orders for display")
                 
-                // Если мастер не верифицирован, не показываем заказы
-                if (_isVerified.value == false) {
-                    Log.d(TAG, "Master not verified, clearing orders list")
-                    _newOrders.value = emptyList()
-                    applyLocalFilters()
-                    return@launch
-                }
+                // Верификация больше не блокирует просмотр заявок (исправлено на сервере)
+                // Мастера могут видеть заявки даже без верификации, но не могут их принимать
                 
                 // Проверяем автоприем для новых заказов
                 if (_isShiftActive.value && _autoAcceptSettings.value.isEnabled && _isVerified.value == true) {
@@ -272,15 +321,21 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                 Log.e(TAG, "Failed to load orders from API: ${error.message}", error)
                 error.printStackTrace()
                 
-                // Проверяем, не связана ли ошибка с верификацией
+                // Верификация больше не блокирует загрузку заявок
+                // Показываем ошибку, но не очищаем список полностью
                 val errorMessage = error.message ?: ""
                 if (errorMessage.contains("верификац", ignoreCase = true) || 
                     errorMessage.contains("verification", ignoreCase = true)) {
-                    _isVerified.value = false
-                    _verificationMessage.value = errorMessage
+                    // Просто записываем, что верификация требуется для принятия
+                    _verificationMessage.value = "Для принятия заказов требуется верификация. Заявки доступны для просмотра."
+                    Log.w(TAG, "Верификация требуется, но заявки доступны для просмотра")
                 }
                 
-                _newOrders.value = emptyList()
+                // Не очищаем заявки полностью - оставляем предыдущий список, если он есть
+                // Это позволяет видеть заявки даже при временных ошибках сети
+                if (_newOrders.value.isEmpty()) {
+                    _newOrders.value = emptyList()
+                }
                 applyLocalFilters()
             }
         }

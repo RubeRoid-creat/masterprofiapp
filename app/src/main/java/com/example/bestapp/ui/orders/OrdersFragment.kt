@@ -105,6 +105,15 @@ class OrdersFragment : Fragment() {
         // Обновляем список заказов при возврате на экран (например, после принятия заказа)
         android.util.Log.d("OrdersFragment", "onResume: refreshing orders...")
         viewModel.refreshOrders()
+        
+        // Если мастер на смене, автоматическое обновление уже работает через ViewModel
+        // Здесь просто убеждаемся, что заявки актуальны
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // ViewModel сам управляет polling, не нужно останавливать здесь
+        // Автоматическое обновление продолжится, если мастер на смене
     }
     
     private fun setupMapButton() {
