@@ -709,6 +709,9 @@ router.put('/profile', authenticate, authorize('master'), (req, res) => {
   try {
     const { specialization, latitude, longitude, bio, experience_years, photo_url } = req.body;
     
+    console.log(`[PUT /api/masters/profile] user_id=${req.user.id}`);
+    console.log(`[PUT /api/masters/profile] specialization=`, specialization);
+    
     // Получаем ID мастера
     const master = query.get('SELECT id FROM masters WHERE user_id = ?', [req.user.id]);
     if (!master) {
@@ -719,8 +722,10 @@ router.put('/profile', authenticate, authorize('master'), (req, res) => {
     const updateValues = [];
     
     if (specialization !== undefined) {
+      const specsJson = JSON.stringify(specialization);
       updateFields.push('specialization = ?');
-      updateValues.push(JSON.stringify(specialization));
+      updateValues.push(specsJson);
+      console.log(`[PUT /api/masters/profile] Saving specialization for master #${master.id}:`, specsJson);
     }
     
     if (latitude !== undefined) {
