@@ -40,12 +40,22 @@ class MyOrdersFragment : Fragment() {
         setupRecyclerView()
         setupSearchBar()
         observeData()
+        setupNavigationResultListener()
     }
     
     override fun onResume() {
         super.onResume()
         // Обновляем заказы при возврате на экран
+        // Это гарантирует, что завершенные заказы исчезнут из списка
         viewModel.refreshOrders()
+    }
+    
+    private fun setupNavigationResultListener() {
+        // Слушаем результат навигации от OrderDetailsFragment
+        // Если заказ был завершен, обновляем список
+        parentFragmentManager.setFragmentResultListener("order_completed", this) { _, _ ->
+            viewModel.refreshOrders()
+        }
     }
     
     private fun initViews(view: View) {

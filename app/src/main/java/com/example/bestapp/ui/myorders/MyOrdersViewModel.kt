@@ -64,22 +64,18 @@ class MyOrdersViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                Log.d(TAG, "Loading my orders (in_progress and completed)")
+                Log.d(TAG, "Loading my active orders (in_progress only)")
                 
-                // Загружаем заказы in_progress
+                // Загружаем только активные заказы (in_progress)
+                // Завершенные заказы не показываются в "Мои заявки"
                 val inProgressResult = apiRepository.getOrders(status = "in_progress")
                 val inProgressOrders = inProgressResult.getOrElse { emptyList() }
                 
-                // Загружаем заказы completed
-                val completedResult = apiRepository.getOrders(status = "completed")
-                val completedOrders = completedResult.getOrElse { emptyList() }
-                
-                // Объединяем и конвертируем в Order
-                val allApiOrders = inProgressOrders + completedOrders
-                val orders = allApiOrders.map { it.toOrder() }
+                // Конвертируем в Order
+                val orders = inProgressOrders.map { it.toOrder() }
                 
                 _myOrders.value = orders
-                Log.d(TAG, "Loaded ${orders.size} my orders (${inProgressOrders.size} in_progress, ${completedOrders.size} completed)")
+                Log.d(TAG, "Loaded ${orders.size} active orders (in_progress only)")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading my orders", e)
                 _myOrders.value = emptyList()

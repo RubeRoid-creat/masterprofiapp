@@ -895,6 +895,10 @@ class OrderDetailsFragment : Fragment() {
                     Toast.makeText(context, "Заказ успешно завершен", Toast.LENGTH_SHORT).show()
                     // Обновляем данные заказа
                     loadOrderData()
+                    // Отправляем результат навигации для обновления списка "Мои заявки"
+                    parentFragmentManager.setFragmentResult("order_completed", Bundle().apply {
+                        putLong("orderId", orderId)
+                    })
                     // Возвращаемся назад через небольшую задержку
                     viewLifecycleOwner.lifecycleScope.launch {
                         kotlinx.coroutines.delay(1000)
