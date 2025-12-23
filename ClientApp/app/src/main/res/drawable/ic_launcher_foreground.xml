@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Безопасная зона начинается с 18dp, центр 54x54 -->
+    <group
+        android:translateX="54"
+        android:translateY="54">
+        
+        <!-- Значок "дом" для клиента -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M-15,5 L0,-10 L15,5 L15,20 L5,20 L5,10 L-5,10 L-5,20 L-15,20 Z" />
+        
+        <!-- Галочка "все исправно" -->
+        <path
+            android:fillColor="#00C853"
+            android:strokeColor="#00C853"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M-3,13 L1,17 L8,10" />
+            
+        <!-- Декоративные элементы - звездочки -->
+        <path
+            android:fillColor="#2196F3"
+            android:pathData="M18,-12 L19,-14 L20,-12 L22,-11 L20,-10 L19,-8 L18,-10 L16,-11 Z" />
+        <path
+            android:fillColor="#2196F3"
+            android:pathData="M-18,-12 L-17,-14 L-16,-12 L-14,-11 L-16,-10 L-17,-8 L-18,-10 L-20,-11 Z" />
+    </group>
+</vector>
