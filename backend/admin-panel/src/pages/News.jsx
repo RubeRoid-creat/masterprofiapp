@@ -90,16 +90,40 @@ export default function News() {
   };
 
   const handleSubmit = async () => {
+    // Валидация на клиенте
+    if (!form.title || form.title.trim().length === 0) {
+      setError('Заголовок обязателен');
+      return;
+    }
+    
+    if (!form.content || form.content.trim().length === 0) {
+      setError('Содержание обязательно');
+      return;
+    }
+
     try {
+      // Подготовка данных для отправки
+      const dataToSend = {
+        title: form.title.trim(),
+        summary: form.summary?.trim() || null,
+        content: form.content.trim(),
+        image_url: form.image_url?.trim() || null,
+        category: form.category || 'general',
+        is_active: form.is_active === 1 || form.is_active === true ? 1 : 0
+      };
+
       if (dialog.mode === 'create') {
-        await newsAPI.create(form);
+        await newsAPI.create(dataToSend);
       } else {
-        await newsAPI.update(dialog.data.id, form);
+        await newsAPI.update(dialog.data.id, dataToSend);
       }
       handleCloseDialog();
       loadNews();
+      setError(''); // Очищаем ошибки при успехе
     } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка при сохранении новости');
+      console.error('Ошибка при сохранении новости:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Ошибка при сохранении новости';
+      setError(errorMessage);
     }
   };
 

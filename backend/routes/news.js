@@ -52,23 +52,35 @@ router.get('/:id', async (req, res) => {
  *     tags: [News]
  */
 router.post('/', authenticateToken, isAdmin, async (req, res) => {
-  const { title, summary, content, image_url, category } = req.body;
-  
-  if (!title || !content) {
-    return res.status(400).json({ error: 'Заголовок и содержание обязательны' });
-  }
-
   try {
+    const { title, summary, content, image_url, category, is_active } = req.body;
+    
+    // Валидация обязательных полей
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return res.status(400).json({ error: 'Заголовок обязателен и не может быть пустым' });
+    }
+    
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({ error: 'Содержание обязательно и не может быть пустым' });
+    }
+
+    // Подготовка данных для вставки
+    const newsCategory = category || 'general';
+    const newsImageUrl = image_url || null;
+    const newsSummary = summary || null;
+    const activeStatus = is_active !== undefined ? (is_active ? 1 : 0) : 1;
+
     const result = query.run(
-      'INSERT INTO news (title, summary, content, image_url, category) VALUES (?, ?, ?, ?, ?)',
-      [title, summary, content, image_url, category || 'general']
+      'INSERT INTO news (title, summary, content, image_url, category, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      [title.trim(), newsSummary, content.trim(), newsImageUrl, newsCategory, activeStatus]
     );
     
     const newItem = query.get('SELECT * FROM news WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json(newItem);
   } catch (error) {
     console.error('Ошибка при создании новости:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('Request body:', req.body);
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
   }
 });
 
@@ -80,13 +92,21 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
  *     tags: [News]
  */
 router.put('/:id', authenticateToken, isAdmin, async (req, res) => {
-  const { title, summary, content, image_url, category, is_active } = req.body;
-  
   try {
+    const { title, summary, content, image_url, category, is_active } = req.body;
+    
     const existing = query.get('SELECT id FROM news WHERE id = ?', [req.params.id]);
     if (!existing) {
       return res.status(404).json({ error: 'Новость не найдена' });
     }
+
+    // Подготовка данных для обновления
+    const updateTitle = title !== undefined ? title.trim() : null;
+    const updateContent = content !== undefined ? content.trim() : null;
+    const updateSummary = summary !== undefined ? (summary.trim() || null) : null;
+    const updateImageUrl = image_url !== undefined ? (image_url.trim() || null) : null;
+    const updateCategory = category !== undefined ? category : null;
+    const updateIsActive = is_active !== undefined ? (is_active ? 1 : 0) : null;
 
     query.run(
       `UPDATE news SET 
@@ -98,14 +118,15 @@ router.put('/:id', authenticateToken, isAdmin, async (req, res) => {
         is_active = COALESCE(?, is_active),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
-      [title, summary, content, image_url, category, is_active, req.params.id]
+      [updateTitle, updateSummary, updateContent, updateImageUrl, updateCategory, updateIsActive, req.params.id]
     );
     
     const updated = query.get('SELECT * FROM news WHERE id = ?', [req.params.id]);
     res.json(updated);
   } catch (error) {
     console.error('Ошибка при обновлении новости:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('Request body:', req.body);
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
   }
 });
 
