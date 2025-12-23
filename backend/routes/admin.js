@@ -3,6 +3,8 @@ import { query } from '../database/db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { createBackup, listBackups, restoreBackup } from '../services/backup-service.js';
 import { notifyMasters } from '../services/assignment-service.js';
+import { verifySMSService, checkSMSRuBalance } from '../services/sms-service.js';
+import { verifyEmailService } from '../services/email-service.js';
 
 const router = express.Router();
 
@@ -430,6 +432,89 @@ router.post('/backup/restore', (req, res) => {
   } catch (error) {
     console.error('Ошибка восстановления бэкапа:', error);
     res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// ============= Проверка сервисов =============
+
+// Проверка SMS сервиса
+router.get('/services/sms/status', async (req, res) => {
+  try {
+    const status = await verifySMSService();
+    res.json(status);
+  } catch (error) {
+    console.error('Ошибка проверки SMS сервиса:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Ошибка сервера', 
+      details: error.message 
+    });
+  }
+});
+
+// Проверка баланса SMS.ru
+router.get('/services/sms/balance', async (req, res) => {
+  try {
+    const balance = await checkSMSRuBalance();
+    res.json(balance);
+  } catch (error) {
+    console.error('Ошибка проверки баланса SMS:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Ошибка сервера', 
+      details: error.message 
+    });
+  }
+});
+
+// Проверка Email сервиса
+router.get('/services/email/status', async (req, res) => {
+  try {
+    const status = await verifyEmailService();
+    res.json(status);
+  } catch (error) {
+    console.error('Ошибка проверки Email сервиса:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Ошибка сервера', 
+      details: error.message 
+    });
+  }
+});
+
+// Проверка всех сервисов сразу
+router.get('/services/health', async (req, res) => {
+  try {
+    const [smsStatus, emailStatus] = await Promise.all([
+      verifySMSService().catch(e => ({ success: false, error: e.message })),
+      verifyEmailService().catch(e => ({ success: false, error: e.message }))
+    ]);
+    
+    let smsBalance = null;
+    if (smsStatus.success && smsStatus.provider === 'smsru') {
+      try {
+        smsBalance = await checkSMSRuBalance();
+      } catch (e) {
+        console.warn('Не удалось получить баланс SMS:', e.message);
+      }
+    }
+    
+    res.json({
+      services: {
+        sms: {
+          ...smsStatus,
+          balance: smsBalance
+        },
+        email: emailStatus
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Ошибка проверки сервисов:', error);
+    res.status(500).json({ 
+      error: 'Ошибка сервера', 
+      details: error.message 
+    });
   }
 });
 
