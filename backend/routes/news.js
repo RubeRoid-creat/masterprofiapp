@@ -16,6 +16,10 @@ router.get('/', async (req, res) => {
     const news = query.all(
       'SELECT * FROM news WHERE is_active = 1 ORDER BY published_at DESC'
     );
+    console.log(`[NEWS] Получено ${news.length} активных новостей`);
+    if (news.length > 0) {
+      console.log(`[NEWS] Первая новость: id=${news[0].id}, title=${news[0].title}, is_active=${news[0].is_active}`);
+    }
     res.json(news);
   } catch (error) {
     console.error('Ошибка при получении новостей:', error);
@@ -76,6 +80,7 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
     );
     
     const newItem = query.get('SELECT * FROM news WHERE id = ?', [result.lastInsertRowid]);
+    console.log(`[NEWS] Создана новость: id=${newItem.id}, title=${newItem.title}, is_active=${newItem.is_active}`);
     res.status(201).json(newItem);
   } catch (error) {
     console.error('Ошибка при создании новости:', error);

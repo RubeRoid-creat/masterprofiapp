@@ -56,6 +56,12 @@ class HomeFragment : Fragment() {
         observeData()
     }
     
+    override fun onResume() {
+        super.onResume()
+        // Обновляем новости при возвращении на экран
+        viewModel.refreshNews()
+    }
+    
     private fun setupViews() {
         // Настройка RecyclerView для новостей
         recyclerNews = view?.findViewById(R.id.recycler_news)

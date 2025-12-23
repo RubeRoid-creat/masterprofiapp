@@ -63,8 +63,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    fun refreshNews() {
+        viewModelScope.launch {
+            loadNewsFromApi()
+        }
+    }
+    
     private suspend fun loadNewsFromApi() {
         try {
+            Log.d(TAG, "🔄 Загрузка новостей из API...")
             val result = apiRepository.getNews()
             result.onSuccess { apiNewsList ->
                 val newsList = apiNewsList.map { apiNews ->
