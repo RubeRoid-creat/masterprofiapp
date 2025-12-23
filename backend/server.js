@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swagger.js';
 import { config } from './config.js';
 import { initDatabase, query } from './database/db.js';
 import { initWebSocket } from './websocket.js';
@@ -370,6 +372,18 @@ app.get('/', (req, res) => {
       websocket: '/ws'
     }
   });
+});
+
+// Swagger документация
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'МастерПрофи API Documentation'
+}));
+
+// JSON спецификация для автоматизированных инструментов
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // Маршруты API (с rate limiting для критичных эндпоинтов)

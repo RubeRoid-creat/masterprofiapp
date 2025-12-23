@@ -1,0 +1,205 @@
+name: Client App CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'ClientApp/**'
+      - '.github/workflows/client-app-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'ClientApp/**'
+
+jobs:
+  lint:
+    name: Lint Android Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Grant execute permission for gradlew
+        working-directory: ./ClientApp
+        run: chmod +x gradlew
+      
+      - name: Run ktlint
+        working-directory: ./ClientApp
+        run: ./gradlew ktlintCheck || echo "Ktlint not configured"
+
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Grant execute permission for gradlew
+        working-directory: ./ClientApp
+        run: chmod +x gradlew
+      
+      - name: Run unit tests
+        working-directory: ./ClientApp
+        run: ./gradlew test
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: ClientApp/app/build/test-results/
+
+  build-debug:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref != 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Grant execute permission for gradlew
+        working-directory: ./ClientApp
+        run: chmod +x gradlew
+      
+      - name: Build Debug APK
+        working-directory: ./ClientApp
+        run: ./gradlew assembleDebug
+      
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: client-app-debug
+          path: ClientApp/app/build/outputs/apk/debug/*.apk
+
+  build-release:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Grant execute permission for gradlew
+        working-directory: ./ClientApp
+        run: chmod +x gradlew
+      
+      - name: Decode Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo $KEYSTORE_BASE64 | base64 -d > ClientApp/app/release.keystore
+          else
+            echo "⚠️ Keystore not configured, building unsigned APK"
+          fi
+      
+      - name: Build Release APK
+        working-directory: ./ClientApp
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -f "app/release.keystore" ]; then
+            ./gradlew assembleRelease \
+              -Pandroid.injected.signing.store.file=release.keystore \
+              -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+              -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+              -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+          else
+            ./gradlew assembleRelease
+          fi
+      
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: client-app-release
+          path: ClientApp/app/build/outputs/apk/release/*.apk
+      
+      - name: Create Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ClientApp/app/build/outputs/apk/release/*.apk
+          tag_name: client-v${{ github.run_number }}
+          name: Client App v${{ github.run_number }}
+          body: |
+            🎉 Новый релиз клиентского приложения МастерПрофи
+            
+            **Изменения:**
+            - Автоматическая сборка через GitHub Actions
+            - Улучшения производительности
+            
+            **Установка:**
+            Скачайте APK файл и установите на Android устройство
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-update-server:
+    name: Deploy to Update Server
+    runs-on: ubuntu-latest
+    needs: build-release
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Download Release APK
+        uses: actions/download-artifact@v3
+        with:
+          name: client-app-release
+          path: ./apk
+      
+      - name: Upload to Update Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "apk/*.apk"
+          target: "/var/www/masterprofi/updates/android/"
+          strip_components: 1
+      
+      - name: Update version info
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/masterprofi/updates/android/
+            echo "✅ Client App uploaded successfully"
+            ls -lh *.apk

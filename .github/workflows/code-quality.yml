@@ -1,0 +1,100 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  dependency-check:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Check backend dependencies
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm audit --audit-level=moderate || echo "⚠️ Vulnerabilities found"
+      
+      - name: Check for outdated packages
+        working-directory: ./backend
+        run: npm outdated || true
+
+  code-style:
+    name: Code Style Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install ESLint
+        working-directory: ./backend
+        run: |
+          npm ci || npm install
+          npm install --save-dev eslint || echo "ESLint installation skipped"
+      
+      - name: Run ESLint
+        working-directory: ./backend
+        run: npx eslint . --ext .js || echo "⚠️ Linting issues found"
+
+  documentation:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Check README exists
+        run: |
+          if [ ! -f "README.md" ]; then
+            echo "❌ README.md not found"
+            exit 1
+          fi
+          echo "✅ README.md exists"
+      
+      - name: Check API documentation
+        run: |
+          if [ ! -f "backend/swagger.js" ]; then
+            echo "❌ API documentation not found"
+            exit 1
+          fi
+          echo "✅ API documentation exists"

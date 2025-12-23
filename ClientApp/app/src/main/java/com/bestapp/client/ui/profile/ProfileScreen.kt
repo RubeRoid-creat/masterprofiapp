@@ -94,6 +94,18 @@ fun ProfileScreen(
             )
             
             ProfileActionItem(
+                icon = Icons.Default.LocationOn,
+                title = "Мои адреса",
+                onClick = { navController.navigate("addresses") }
+            )
+            
+            ProfileActionItem(
+                icon = Icons.Default.Devices,
+                title = "Моя техника",
+                onClick = { navController.navigate("my_devices") }
+            )
+            
+            ProfileActionItem(
                 icon = Icons.Default.Notifications,
                 title = "Уведомления",
                 onClick = { navController.navigate(Screen.Notifications.route) }
