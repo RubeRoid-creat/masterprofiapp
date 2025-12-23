@@ -120,7 +120,7 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
      * Подключение к WebSocket для real-time обновлений
      */
     private fun connectWebSocket() {
-        val token = RetrofitClient.getToken()
+        val token = RetrofitClient.getAuthToken()
         if (token.isNullOrEmpty()) {
             Log.w(TAG, "⚠️ Нет токена для WebSocket подключения")
             startFallbackPolling() // Запускаем fallback polling
@@ -216,7 +216,7 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
      */
     private fun removeExpiredAssignment(assignmentId: Int) {
         val currentOrders = _newOrders.value.toMutableList()
-        val orderToRemove = currentOrders.find { it.assignmentId == assignmentId }
+        val orderToRemove = currentOrders.find { it.assignmentId?.toInt() == assignmentId }
         if (orderToRemove != null) {
             currentOrders.remove(orderToRemove)
             _newOrders.value = currentOrders

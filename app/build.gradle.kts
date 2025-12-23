@@ -43,6 +43,7 @@ android {
     buildFeatures {
         viewBinding = false
         dataBinding = false
+        buildConfig = true
     }
     
     packaging {

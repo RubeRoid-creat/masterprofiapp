@@ -65,15 +65,17 @@ class UpdateManager(
 
                 val result = apiRepository.checkAppVersion(
                     platform = "android_master",
-                    appVersion = currentVersion
+                    appVersion = currentVersion,
+                    buildVersion = BuildConfig.VERSION_CODE,
+                    osVersion = Build.VERSION.SDK_INT.toString()
                 )
 
                 result.onSuccess { response ->
-                    val updateRequired = response["update_required"] as? Boolean ?: false
-                    val forceUpdate = response["force_update"] as? Boolean ?: false
-                    val newVersion = response["current_version"] as? String
-                    val releaseNotes = response["release_notes"] as? String
-                    val downloadUrl = response["download_url"] as? String
+                    val updateRequired = response.updateRequired
+                    val forceUpdate = response.forceUpdate
+                    val newVersion = response.currentVersion
+                    val releaseNotes = response.releaseNotes
+                    val downloadUrl = response.downloadUrl
 
                     Log.d(TAG, "Update required: $updateRequired, force: $forceUpdate")
                     Log.d(TAG, "New version: $newVersion, URL: $downloadUrl")
