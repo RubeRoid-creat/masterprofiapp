@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Путь к кэшу приложения для временных APK файлов -->
+    <cache-path name="apk_cache" path="." />
+    
+    <!-- Путь к внутреннему хранилищу -->
+    <files-path name="app_files" path="." />
+    
+    <!-- Путь к внешнему хранилищу -->
+    <external-path name="external_files" path="." />
+</paths>
