@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/splashFragment">
+    
+    <fragment
+        android:id="@+id/splashFragment"
+        android:name="com.example.bestapp.ui.auth.SplashFragment"
+        android:label="Splash"
+        tools:layout="@layout/fragment_splash">
+        <action
+            android:id="@+id/action_splash_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_splash_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_splash_to_onboarding"
+            app:destination="@id/onboardingFragment"
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.bestapp.ui.auth.LoginFragment"
+        android:label="@string/auth_login_title"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_login_to_registration"
+            app:destination="@id/registrationFragment" />
+        <action
+            android:id="@+id/action_login_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/onboardingFragment"
+        android:name="com.example.bestapp.ui.onboarding.OnboardingFragment"
+        android:label="Onboarding"
+        tools:layout="@layout/fragment_onboarding">
+        <action
+            android:id="@+id/action_onboarding_to_citySelection"
+            app:destination="@id/citySelectionFragment"
+            app:popUpTo="@id/onboardingFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/citySelectionFragment"
+        android:name="com.example.bestapp.ui.onboarding.CitySelectionFragment"
+        android:label="Выбор города"
+        tools:layout="@layout/fragment_city_selection">
+        <action
+            android:id="@+id/action_citySelection_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/citySelectionFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/registrationFragment"
+        android:name="com.example.bestapp.ui.auth.RegistrationFragment"
+        android:label="@string/auth_registration_title"
+        tools:layout="@layout/fragment_registration">
+        <action
+            android:id="@+id/action_registration_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.bestapp.ui.home.HomeFragment"
+        android:label="@string/nav_home"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_home_to_create_order"
+            app:destination="@id/createOrderFragment" />
+        <action
+            android:id="@+id/action_home_to_auto_accept_settings"
+            app:destination="@id/autoAcceptSettingsFragment" />
+        <action
+            android:id="@+id/action_home_to_work_zones"
+            app:destination="@id/workZonesFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/createOrderFragment"
+        android:name="com.example.bestapp.ui.client.CreateOrderFragment"
+        android:label="Создать заказ"
+        tools:layout="@layout/fragment_create_order" />
+
+    <fragment
+        android:id="@+id/nav_orders"
+        android:name="com.example.bestapp.ui.orders.OrdersFragment"
+        android:label="@string/nav_orders"
+        tools:layout="@layout/fragment_orders">
+        <action
+            android:id="@+id/action_orders_to_order_details"
+            app:destination="@id/orderDetailsFragment" />
+        <action
+            android:id="@+id/action_orders_to_orders_map"
+            app:destination="@id/ordersMapFragment" />
+        <action
+            android:id="@+id/action_orders_to_optimized_route"
+            app:destination="@id/optimizedRouteFragment" />
+        <action
+            android:id="@+id/action_orders_to_profile"
+            app:destination="@id/nav_profile" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ordersMapFragment"
+        android:name="com.example.bestapp.ui.orders.OrdersMapFragment"
+        android:label="Карта заказов"
+        tools:layout="@layout/fragment_orders_map">
+        <action
+            android:id="@+id/action_orders_map_to_order_details"
+            app:destination="@id/orderDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/optimizedRouteFragment"
+        android:name="com.example.bestapp.ui.orders.OptimizedRouteFragment"
+        android:label="Оптимизированный маршрут"
+        tools:layout="@layout/fragment_optimized_route">
+        <action
+            android:id="@+id/action_optimized_route_to_order_details"
+            app:destination="@id/orderDetailsFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/orderDetailsFragment"
+        android:name="com.example.bestapp.ui.orders.OrderDetailsFragment"
+        android:label="Детали заказа"
+        tools:layout="@layout/fragment_order_details">
+        <argument
+            android:name="orderId"
+            app:argType="long"
+            android:defaultValue="0L" />
+        <action
+            android:id="@+id/action_order_details_to_orders_map"
+            app:destination="@id/ordersMapFragment" />
+        <action
+            android:id="@+id/action_order_details_to_chat"
+            app:destination="@id/chatFragment">
+            <argument
+                android:name="orderId"
+                app:argType="long" />
+        </action>
+        <action
+            android:id="@+id/action_order_details_to_work_report"
+            app:destination="@id/workReportFragment">
+            <argument
+                android:name="orderId"
+                app:argType="long" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.example.bestapp.ui.chat.ChatFragment"
+        android:label="Чат"
+        tools:layout="@layout/fragment_chat" />
+
+    <fragment
+        android:id="@+id/nav_my_orders"
+        android:name="com.example.bestapp.ui.myorders.MyOrdersFragment"
+        android:label="@string/nav_my_orders"
+        tools:layout="@layout/fragment_my_orders">
+        <action
+            android:id="@+id/action_my_orders_to_order_details"
+            app:destination="@id/orderDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.example.bestapp.ui.profile.ProfileFragment"
+        android:label="@string/nav_profile"
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profile_to_verification"
+            app:destination="@id/verificationFragment" />
+        <action
+            android:id="@+id/action_profile_to_wallet"
+            app:destination="@id/walletFragment" />
+        <action
+            android:id="@+id/action_profile_to_statistics"
+            app:destination="@id/statisticsFragment" />
+        <action
+            android:id="@+id/action_profile_to_reports"
+            app:destination="@id/reportsListFragment" />
+        <action
+            android:id="@+id/action_profile_to_subscription"
+            app:destination="@id/subscriptionFragment" />
+        <action
+            android:id="@+id/action_profile_to_promotion"
+            app:destination="@id/promotionFragment" />
+        <action
+            android:id="@+id/action_profile_to_mlm"
+            app:destination="@id/mlmFragment" />
+        <action
+            android:id="@+id/action_profile_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/nav_mlm"
+        android:name="com.example.bestapp.ui.mlm.MLMFragment"
+        android:label="@string/nav_mlm"
+        tools:layout="@layout/fragment_mlm" />
+    
+    <fragment
+        android:id="@+id/verificationFragment"
+        android:name="com.example.bestapp.ui.profile.VerificationFragment"
+        android:label="@string/verification_title"
+        tools:layout="@layout/fragment_verification" />
+    
+    <fragment
+        android:id="@+id/walletFragment"
+        android:name="com.example.bestapp.ui.wallet.WalletFragment"
+        android:label="Кошелек"
+        tools:layout="@layout/fragment_wallet" />
+    
+    <fragment
+        android:id="@+id/statisticsFragment"
+        android:name="com.example.bestapp.ui.statistics.StatisticsFragment"
+        android:label="Статистика"
+        tools:layout="@layout/fragment_statistics" />
+    
+    <fragment
+        android:id="@+id/workReportFragment"
+        android:name="com.example.bestapp.ui.reports.WorkReportFragment"
+        android:label="Создать отчет"
+        tools:layout="@layout/fragment_work_report">
+        <argument
+            android:name="orderId"
+            app:argType="long" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/reportsListFragment"
+        android:name="com.example.bestapp.ui.reports.ReportsListFragment"
+        android:label="Мои отчеты"
+        tools:layout="@layout/fragment_reports_list" />
+
+    <fragment
+        android:id="@+id/subscriptionFragment"
+        android:name="com.example.bestapp.ui.subscription.SubscriptionFragment"
+        android:label="Подписки"
+        tools:layout="@layout/fragment_subscription" />
+
+    <fragment
+        android:id="@+id/promotionFragment"
+        android:name="com.example.bestapp.ui.promotion.PromotionFragment"
+        android:label="Продвижения"
+        tools:layout="@layout/fragment_promotion" />
+
+    <fragment
+        android:id="@+id/mlmFragment"
+        android:name="com.example.bestapp.ui.mlm.MLMFragment"
+        android:label="Моя MLM структура"
+        tools:layout="@layout/fragment_mlm" />
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="com.example.bestapp.ui.settings.SettingsFragment"
+        android:label="@string/nav_settings"
+        tools:layout="@layout/fragment_settings">
+        
+        <action
+            android:id="@+id/action_settings_to_autoAcceptSettingsFragment"
+            app:destination="@id/autoAcceptSettingsFragment" />
+        
+        <action
+            android:id="@+id/action_settings_to_mlm"
+            app:destination="@id/mlmFragment" />
+        
+        <action
+            android:id="@+id/action_settings_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/autoAcceptSettingsFragment"
+        android:name="com.example.bestapp.ui.settings.AutoAcceptSettingsFragment"
+        android:label="Настройки автоприема"
+        tools:layout="@layout/fragment_auto_accept_settings" />
+
+    <fragment
+        android:id="@+id/workZonesFragment"
+        android:name="com.example.bestapp.ui.zones.WorkZonesFragment"
+        android:label="Зоны работы"
+        tools:layout="@layout/fragment_work_zones" />
+
+</navigation>
+
+

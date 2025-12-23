@@ -1,0 +1,38 @@
+# Конфигурация BestApp Backend
+# Скопируйте этот файл в .env и заполните значения
+
+PORT=3000
+NODE_ENV=production
+JWT_SECRET=your-very-secret-key-change-this-in-production
+DATABASE_PATH=./database.sqlite
+DATABASE_TYPE=sqlite
+
+# PostgreSQL (если используется)
+# POSTGRES_HOST=localhost
+# POSTGRES_PORT=5432
+# POSTGRES_DB=bestapp
+# POSTGRES_USER=bestapp_user
+# POSTGRES_PASSWORD=your_password
+
+# Firebase
+FIREBASE_SERVICE_ACCOUNT=./firebase-service-account.json
+
+# Бэкапы
+BACKUP_ENABLED=true
+BACKUP_INTERVAL=86400000
+MAX_BACKUPS=30
+
+# ЮKassa (прием платежей от клиентов)
+# Получите в личном кабинете: https://yookassa.ru/my
+YOOKASSA_SHOP_ID=your_shop_id
+YOOKASSA_SECRET_KEY=your_secret_key
+
+# ЮMoney (выплаты мастерам)
+# Получите OAuth токен: https://yoomoney.ru/oauth/authorize
+YOOMONEY_ACCESS_TOKEN=your_access_token
+YOOMONEY_CLIENT_ID=your_client_id
+YOOMONEY_CLIENT_SECRET=your_client_secret
+
+# Базовый URL приложения (для redirect после оплаты)
+APP_URL=http://localhost:3000
+

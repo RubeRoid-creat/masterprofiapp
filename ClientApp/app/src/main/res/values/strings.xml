@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BestApp Client</string>
+    <string name="welcome_title">Добро пожаловать!</string>
+    <string name="welcome_subtitle">Закажите ремонт вашей техники</string>
+    <string name="login">Войти</string>
+    <string name="register">Регистрация</string>
+    <string name="email">Email</string>
+    <string name="password">Пароль</string>
+    <string name="name">Имя</string>
+    <string name="phone">Телефон</string>
+    <string name="create_order">Создать заказ</string>
+    <string name="my_orders">Мои заказы</string>
+    <string name="profile">Профиль</string>
+</resources>
+
+
+
+
+
+
+

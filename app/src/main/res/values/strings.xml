@@ -1,0 +1,141 @@
+<resources>
+    <string name="app_name">Ремонт Техники</string>
+    <string name="nav_home">Главная</string>
+    <string name="nav_orders">Заказы</string>
+    <string name="nav_my_orders">Мои заказы</string>
+    <string name="nav_profile">Профиль</string>
+    <string name="nav_mlm">Моя команда</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="home_title">Главная</string>
+    <string name="orders_title">Заказы</string>
+    <string name="my_orders_title">Мои заказы</string>
+    <string name="profile_title">Профиль</string>
+    <string name="settings_title">Настройки</string>
+    
+    <!-- Home screen -->
+    <string name="home_statistics">Статистика</string>
+    <string name="home_active_orders">Активных заказов</string>
+    <string name="home_new_orders">Новых заявок</string>
+    <string name="home_clients">Клиентов</string>
+    <string name="home_monthly_revenue">Доход за месяц</string>
+    <string name="home_recent_orders">Последние заявки</string>
+    <string name="home_quick_actions">Новые заявки требуют внимания</string>
+    <string name="home_view_new_orders">Смотреть новые</string>
+    <string name="home_view_all_orders">Все заказы</string>
+    <string name="order_status">Статус: %s</string>
+    <string name="order_cost">Стоимость: %s</string>
+    <string name="order_device">Устройство</string>
+    <string name="order_problem">Проблема</string>
+    
+    <!-- Orders screen -->
+    <string name="orders_search_hint">Поиск по заказам...</string>
+    <string name="orders_filter">Фильтр</string>
+    <string name="orders_empty">Нет заказов</string>
+    <string name="orders_empty_filter">Нет заказов по выбранному фильтру</string>
+    <string name="orders_accept">Принять заявку</string>
+    <string name="orders_reject">Отклонить</string>
+    
+    <!-- My Orders screen -->
+    <string name="my_orders_search_hint">Поиск по моим заказам...</string>
+    <string name="my_orders_empty">У вас пока нет принятых заказов</string>
+    <string name="my_orders_empty_filter">Нет заказов по выбранному фильтру</string>
+    
+    <!-- Profile screen -->
+    <string name="profile_verification_status">Статус верификации</string>
+    <string name="profile_go_to_verification">Пройти верификацию</string>
+    <string name="profile_verification_pending">Документы на проверке</string>
+    <string name="profile_verification_verified">Вы верифицированы</string>
+    <string name="profile_logout">Выйти</string>
+    <string name="profile_master_info">Информация о мастере</string>
+    <string name="profile_settings">Настройки профиля</string>
+    <string name="profile_edit_settings">Настроить профиль</string>
+    
+    <!-- Profile Settings screen -->
+    <string name="profile_settings_title">Настройка профиля</string>
+    <string name="profile_settings_skills">Навыки и специализации</string>
+    <string name="profile_settings_zones">Зоны работы</string>
+    <string name="profile_settings_schedule">График работы</string>
+    <string name="profile_settings_rates">Тарифы на услуги</string>
+    <string name="profile_settings_additional">Дополнительно</string>
+    <string name="profile_settings_add_skill">Добавить навык</string>
+    <string name="profile_settings_add_zone">Добавить зону</string>
+    <string name="profile_settings_add_rate">Добавить услугу</string>
+    <string name="profile_settings_description">Описание</string>
+    <string name="profile_settings_min_order">Минимальная стоимость заказа</string>
+    <string name="profile_settings_callout">Выезд на дом</string>
+    <string name="profile_settings_remote">Удаленная работа</string>
+    <string name="profile_settings_save">Сохранить изменения</string>
+    <string name="profile_settings_skill_name">Название навыка</string>
+    <string name="profile_settings_skill_experience">Опыт (лет)</string>
+    <string name="profile_settings_zone_name">Название района/города</string>
+    <string name="profile_settings_service_name">Название услуги</string>
+    <string name="profile_settings_service_price">Цена</string>
+    <string name="profile_settings_service_duration">Длительность (мин)</string>
+    <string name="profile_settings_success">Профиль обновлен</string>
+    
+    <!-- Verification screen -->
+    <string name="verification_title">Верификация мастера</string>
+    <string name="verification_subtitle">Загрузите документы для подтверждения квалификации</string>
+    <string name="verification_documents">Документы</string>
+    <string name="verification_certificates">Сертификаты</string>
+    <string name="verification_portfolio">Портфолио</string>
+    <string name="verification_add_document">Добавить документ</string>
+    <string name="verification_add_certificate">Добавить сертификат</string>
+    <string name="verification_add_portfolio">Добавить фото работ</string>
+    <string name="verification_submit">Отправить на проверку</string>
+    <string name="verification_document_required">Загрузите хотя бы один документ</string>
+    <string name="verification_success">Документы отправлены на проверку</string>
+    
+    <!-- Auth screens -->
+    <string name="auth_login_title">Вход</string>
+    <string name="auth_registration_title">Регистрация</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Пароль</string>
+    <string name="auth_password_confirm">Подтвердите пароль</string>
+    <string name="auth_full_name">ФИО</string>
+    <string name="auth_phone">Телефон</string>
+    <string name="auth_specialization">Специализация</string>
+    <string name="auth_login_button">Войти</string>
+    <string name="auth_register_button">Зарегистрироваться</string>
+    <string name="auth_go_to_registration">Нет аккаунта? Зарегистрируйтесь</string>
+    <string name="auth_go_to_login">Уже есть аккаунт? Войдите</string>
+    <string name="auth_error_empty_field">Заполните это поле</string>
+    <string name="auth_error_invalid_email">Неверный формат email</string>
+    <string name="auth_error_short_password">Минимум 6 символов</string>
+    <string name="auth_error_passwords_mismatch">Пароли не совпадают</string>
+    <string name="auth_error_invalid_phone">Неверный формат телефона</string>
+    <string name="auth_error_login_failed">Неверный email или пароль</string>
+    <string name="auth_error_email_exists">Пользователь с таким email уже существует</string>
+    <string name="auth_success_registration">Регистрация успешна!</string>
+    <string name="auth_loading">Загрузка...</string>
+    
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Сервис «МастерПрофи» для ремонта техники</string>
+    <string name="onboarding_desc_1">Кухня, стирка, климат, развлечения и компьютеры — получайте заявки на ремонт бытовой техники рядом с вами.</string>
+    <string name="onboarding_title_2">Умные заказы и сценарии ремонта</string>
+    <string name="onboarding_desc_2">Лента заказов, умные уведомления, карта заказов и статусы помогают вести заявки от создания до завершения.</string>
+    <string name="onboarding_title_3">Доход, уровни и команда мастеров</string>
+    <string name="onboarding_desc_3">Следите за доходом, завершёнными заказами, рейтингом и развивайте свою MLM‑структуру и команду мастеров.</string>
+    <string name="onboarding_skip">Пропустить</string>
+    <string name="onboarding_next">Далее</string>
+    <string name="onboarding_finish">Продолжить</string>
+    
+    <!-- City selection -->
+    <string name="city_select_title">Выберите город</string>
+    <string name="city_select_subtitle">Это поможет показывать вам только актуальные заявки в вашем регионе.</string>
+    <string name="city_select_continue">Продолжить</string>
+    <string name="city_select_error">Выберите город</string>
+    
+    <!-- Orders Map screen -->
+    <string name="orders_map_pickup">Откуда</string>
+    <string name="orders_map_destination">Куда</string>
+    <string name="orders_map_current_location">Текущее местоположение</string>
+    <string name="orders_map_edit_pickup">Изменить</string>
+    <string name="orders_map_recommended_price">Рекомендуемая цена: %s</string>
+    <string name="orders_map_accept_order">Принять заказ</string>
+    <string name="orders_map_order_accepted">Заказ принят</string>
+    <string name="orders_map_no_assignment">Нет активного назначения для этого заказа</string>
+    
+    <!-- Material Design behavior -->
+    <string name="appbar_scrolling_view_behavior">com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior</string>
+</resources>

@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id            Int      @id @default(autoincrement())
+  address       String
+  equipmentType String
+  problemType   String
+  brand         String
+  date          DateTime
+  time          String
+  description   String?
+  name          String
+  phone         String
+  email         String?
+  status        String   @default("new")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Price {
+  id       Int    @id @default(autoincrement())
+  category String
+  name     String
+  price    Float
+  type     String // 'service' or 'part'
+}
+
+model ForumTopic {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  author      String
+  category    String
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  replies     ForumReply[]
+}
+
+model ForumReply {
+  id        Int      @id @default(autoincrement())
+  topicId   Int
+  content   String
+  author    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  topic     ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  createdAt DateTime @default(now())
+}
+

@@ -1,0 +1,47 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android build files
+app/build/
+app/.gradle/
+app/local.properties
+ClientApp/app/build/
+ClientApp/.gradle/
+ClientApp/local.properties
+
+# Backend
+backend/node_modules/
+backend/backups/
+backend/uploads/
+backend/*.sqlite
+backend/*.sqlite3
+backend/*.db
+backend/*.log
+backend/logs/
+backend/.env
+backend/firebase-service-account.json
+backend/*-firebase-adminsdk-*.json
+backend/package-lock.json
+backend/server_error.log
+backend/server_output.log
+backend/backend-deploy.zip
+
+# Admin panel
+backend/admin-panel/node_modules/
+backend/admin-panel/dist/
+backend/admin-panel/build/
+
+backend/public/updates/*.apk

@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Модели для веб-сайта
+// Заказы создаются через backend API, поэтому здесь только модели для контента сайта
+
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  imageUrl  String?  @map("image_url") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("news")
+}
+
+model Price {
+  id        Int      @id @default(autoincrement())
+  category  String   @db.VarChar(100)
+  name      String   @db.VarChar(255)
+  price     Decimal  @db.Decimal(10, 2)
+  type      String   @db.VarChar(20) // 'service' or 'part'
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prices")
+  @@index([category])
+  @@index([type])
+}
+
+model ForumTopic {
+  id          Int          @id @default(autoincrement())
+  title       String       @db.VarChar(255)
+  content     String       @db.Text
+  author      String       @db.VarChar(255)
+  category    String       @db.VarChar(100)
+  views       Int          @default(0)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  replies     ForumReply[]
+
+  @@map("forum_topics")
+  @@index([category])
+  @@index([createdAt(sort: Desc)])
+}
+
+model ForumReply {
+  id        Int        @id @default(autoincrement())
+  topicId   Int        @map("topic_id")
+  content   String     @db.Text
+  author    String     @db.VarChar(255)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  topic     ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@map("forum_replies")
+  @@index([topicId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  email     String   @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("contact_messages")
+  @@index([createdAt(sort: Desc)])
+}
+
+

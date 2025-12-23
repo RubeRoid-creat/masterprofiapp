@@ -1,0 +1,500 @@
+---
+alwaysApply: true
+---
+# СТРАТЕГИЯ АВТООБНОВЛЕНИЯ ПРИЛОЖЕНИЙ "МАСТЕРПРОФИ"
+
+## 1. АРХИТЕКТУРА СИСТЕМЫ ОБНОВЛЕНИЙ
+
+### **1.1. Многоуровневая система**
+```typescript
+interface UpdateStrategy {
+  storeUpdates: "App Store/Google Play",
+  codePush: "Microsoft CodePush",
+  configUpdates: "Remote Config",
+  contentUpdates: "CDN для статики"
+}
+```
+
+## 2. MICROSOFT CODEPUSH (ОСНОВНОЙ СПОСОБ)
+
+### **2.1. Настройка CodePush**
+```typescript
+// installation
+const codePushOptions = {
+  checkFrequency: CodePush.CheckFrequency.ON_APP_START,
+  installMode: CodePush.InstallMode.IMMEDIATE,
+  mandatoryInstallMode: CodePush.InstallMode.IMMEDIATE,
+  updateDialog: {
+    appendReleaseDescription: true,
+    title: "Доступно обновление",
+    optionalUpdateMessage: "Доступно новое обновление приложения. Хотите установить?",
+    optionalIgnoreButtonLabel: "Позже",
+    optionalInstallButtonLabel: "Установить",
+    mandatoryUpdateMessage: "Требуется обязательное обновление для продолжения работы.",
+    mandatoryContinueButtonLabel: "Перезапустить"
+  }
+};
+
+// App.js wrapper
+class MasterProfiApp extends Component {
+  render() {
+    return (
+      <Provider store={store}>
+        <NavigationContainer>
+          <AppContent />
+        </NavigationContainer>
+      </Provider>
+    );
+  }
+}
+
+export default CodePush(codePushOptions)(MasterProfiApp);
+```
+
+### **2.2. Управление обновлениями**
+```typescript
+// services/CodePushService.ts
+class CodePushService {
+  // Проверка обновлений при старте
+  async checkUpdateOnStart() {
+    try {
+      const update = await CodePush.checkForUpdate();
+      if (update) {
+        if (update.isMandatory) {
+          this.showMandatoryUpdateDialog(update);
+        } else {
+          this.showOptionalUpdateDialog(update);
+        }
+      }
+    } catch (error) {
+      console.log('Ошибка проверки обновления:', error);
+    }
+  }
+
+  // Фоновая проверка
+  async syncWithCodePush() {
+    await CodePush.sync({
+      installMode: CodePush.InstallMode.ON_NEXT_RESTART,
+      updateDialog: {
+        appendReleaseDescription: true,
+        title: "Новое обновление"
+      }
+    });
+  }
+
+  // Принудительное обновление
+  async forceUpdate() {
+    try {
+      const update = await CodePush.checkForUpdate();
+      if (update) {
+        await CodePush.installUpdate(update);
+        CodePush.restartApp();
+      }
+    } catch (error) {
+      console.log('Ошибка принудительного обновления:', error);
+    }
+  }
+}
+```
+
+## 3. УДАЛЕННАЯ КОНФИГУРАЦИЯ (REMOTE CONFIG)
+
+### **3.1. Firebase Remote Config**
+```typescript
+// config/RemoteConfig.ts
+class RemoteConfigService {
+  private remoteConfig: RemoteConfig;
+
+  constructor() {
+    this.remoteConfig = remoteConfig();
+    this.remoteConfig.setDefaults({
+      min_app_version: '1.0.0',
+      force_update_required: false,
+      maintenance_mode: false,
+      new_features: '[]',
+      app_config: '{}'
+    });
+  }
+
+  async initialize() {
+    await this.remoteConfig.setConfigSettings({
+      minimumFetchIntervalMillis: 300000, // 5 минут
+      fetchTimeMillis: 60000 // 1 минута таймаут
+    });
+
+    await this.remoteConfig.fetchAndActivate();
+  }
+
+  // Проверка необходимости обновления
+  isUpdateRequired(): boolean {
+    const minVersion = this.remoteConfig.getValue('min_app_version').asString();
+    const currentVersion = DeviceInfo.getVersion();
+    return semver.lt(currentVersion, minVersion);
+  }
+
+  // Режим техобслуживания
+  isMaintenanceMode(): boolean {
+    return this.remoteConfig.getValue('maintenance_mode').asBoolean();
+  }
+
+  // Получение конфигурации функций
+  getFeatureFlags(): any {
+    return JSON.parse(this.remoteConfig.getValue('app_config').asString());
+  }
+}
+```
+
+## 4. API-УПРАВЛЕНИЕ ВЕРСИЯМИ
+
+### **4.1. Серверная часть версионирования**
+```typescript
+// models/AppVersion.ts
+interface AppVersion {
+  platform: 'ios' | 'android';
+  current_version: string;
+  min_required_version: string;
+  force_update: boolean;
+  release_notes: string;
+  download_url: string;
+  released_at: Date;
+  supported_os_versions: string[];
+}
+
+// controllers/VersionController.ts
+class VersionController {
+  async checkVersion(req: Request, res: Response) {
+    const { platform, app_version, os_version } = req.body;
+
+    const versionConfig = await AppVersion.findOne({
+      where: { platform },
+      order: [['released_at', 'DESC']]
+    });
+
+    const response = {
+      update_required: semver.lt(app_version, versionConfig.min_required_version),
+      force_update: versionConfig.force_update,
+      current_version: versionConfig.current_version,
+      release_notes: versionConfig.release_notes,
+      download_url: versionConfig.download_url,
+      supported: versionConfig.supported_os_versions.includes(os_version)
+    };
+
+    res.json(response);
+  }
+}
+```
+
+## 5. РЕАЛИЗАЦИЯ НА КЛИЕНТЕ
+
+### **5.1. Сервис проверки версий**
+```typescript
+// services/VersionCheckService.ts
+class VersionCheckService {
+  async checkAppVersion() {
+    try {
+      const deviceInfo = {
+        platform: Platform.OS,
+        app_version: DeviceInfo.getVersion(),
+        build_version: DeviceInfo.getBuildNumber(),
+        os_version: Platform.Version
+      };
+
+      const response = await api.post('/version/check', deviceInfo);
+      const versionData = response.data;
+
+      if (versionData.update_required) {
+        this.handleUpdateRequired(versionData);
+      }
+
+      if (versionData.force_update) {
+        this.handleForceUpdate(versionData);
+      }
+
+      return versionData;
+    } catch (error) {
+      console.log('Ошибка проверки версии:', error);
+    }
+  }
+
+  private handleUpdateRequired(versionData: any) {
+    Alert.alert(
+      "Доступно обновление",
+      `Новая версия ${versionData.current_version}\n\n${versionData.release_notes}`,
+      [
+        { text: "Позже", style: "cancel" },
+        { 
+          text: "Обновить", 
+          onPress: () => this.openStore(versionData.download_url)
+        }
+      ]
+    );
+  }
+
+  private handleForceUpdate(versionData: any) {
+    Alert.alert(
+      "Требуется обновление",
+      `Для продолжения работы необходимо обновить приложение до версии ${versionData.current_version}`,
+      [
+        { 
+          text: "Обновить", 
+          onPress: () => this.openStore(versionData.download_url)
+        }
+      ],
+      { cancelable: false }
+    );
+  }
+
+  private openStore(url: string) {
+    if (Platform.OS === 'ios') {
+      Linking.openURL(url || 'itms-apps://itunes.apple.com/app/idYOUR_APP_ID');
+    } else {
+      Linking.openURL(url || 'market://details?id=com.masterprofi.app');
+    }
+  }
+}
+```
+
+### **5.2. Компонент проверки обновлений**
+```typescript
+// components/VersionCheckWrapper.tsx
+const VersionCheckWrapper: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  useEffect(() => {
+    checkAppVersion();
+    setupVersionListeners();
+  }, []);
+
+  const checkAppVersion = async () => {
+    const versionService = new VersionCheckService();
+    await versionService.checkAppVersion();
+  };
+
+  const setupVersionListeners = () => {
+    // Проверка каждые 12 часов
+    const interval = setInterval(checkAppVersion, 12 * 60 * 60 * 1000);
+    
+    // Проверка при возвращении на форграунд
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        checkAppVersion();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+    };
+  };
+
+  if (maintenanceMode) {
+    return <MaintenanceScreen />;
+  }
+
+  return <>{children}</>;
+};
+```
+
+## 6. CI/CD ДЛЯ АВТООБНОВЛЕНИЙ
+
+### **6.1. GitHub Actions Workflow**
+```yaml
+# .github/workflows/codepush.yml
+name: CodePush Deployment
+
+on:
+  push:
+    branches: [ develop, staging ]
+  release:
+    types: [ published ]
+
+jobs:
+  deploy-codepush:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Install CodePush CLI
+        run: npm install -g appcenter-cli
+        
+      - name: Deploy to CodePush
+        run: |
+          appcenter codepush release-react \
+            -a MasterProfi/MasterProfi-Android \
+            -d Staging \
+            --description "${{ github.event.head_commit.message }}"
+        env:
+          APPCENTER_ACCESS_TOKEN: ${{ secrets.APPCENTER_TOKEN }}
+```
+
+### **6.2. Скрипт деплоя**
+```bash
+#!/bin/bash
+# scripts/deploy-codepush.sh
+
+ENV=$1
+DESCRIPTION=$2
+
+if [ "$ENV" = "staging" ]; then
+  DEPLOYMENT="Staging"
+  APP_NAME="MasterProfi/MasterProfi-Android"
+elif [ "$ENV" = "production" ]; then
+  DEPLOYMENT="Production"
+  APP_NAME="MasterProfi/MasterProfi-Android-Prod"
+else
+  echo "Unknown environment: $ENV"
+  exit 1
+fi
+
+echo "Deploying to $DEPLOYMENT..."
+
+appcenter codepush release-react \
+  -a $APP_NAME \
+  -d $DEPLOYMENT \
+  --description "$DESCRIPTION" \
+  --mandatory
+```
+
+## 7. МОНИТОРИНГ И АНАЛИТИКА
+
+### **7.1. Трекинг обновлений**
+```typescript
+// services/AnalyticsService.ts
+class AnalyticsService {
+  trackUpdateEvent(event: string, metadata: any) {
+    analytics().logEvent('app_update', {
+      event,
+      app_version: DeviceInfo.getVersion(),
+      build_number: DeviceInfo.getBuildNumber(),
+      platform: Platform.OS,
+      ...metadata
+    });
+  }
+
+  trackUpdateSuccess(previousVersion: string, newVersion: string) {
+    this.trackUpdateEvent('update_success', {
+      previous_version: previousVersion,
+      new_version: newVersion
+    });
+  }
+
+  trackUpdateFailure(error: string) {
+    this.trackUpdateEvent('update_failed', {
+      error
+    });
+  }
+
+  trackUpdateSkip(reason: string) {
+    this.trackUpdateEvent('update_skipped', {
+      reason
+    });
+  }
+}
+```
+
+### **7.2. Дашборд мониторинга**
+```typescript
+// Аналитика внедрения обновлений
+interface UpdateMetrics {
+  total_users: number;
+  updated_users: number;
+  update_rate: number;
+  average_update_time: number;
+  failed_updates: number;
+  version_distribution: { [version: string]: number };
+}
+```
+
+## 8. ОБРАБОТКА ОШИБОК
+
+### **8.1. Fallback стратегии**
+```typescript
+class UpdateFallback {
+  private maxRetryCount = 3;
+  private retryDelay = 5000; // 5 секунд
+
+  async withRetry(updateFunction: () => Promise<void>, retryCount = 0): Promise<void> {
+    try {
+      await updateFunction();
+    } catch (error) {
+      if (retryCount < this.maxRetryCount) {
+        await this.delay(this.retryDelay);
+        return this.withRetry(updateFunction, retryCount + 1);
+      } else {
+        this.logUpdateError(error);
+        this.notifyAdmin(error);
+      }
+    }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private logUpdateError(error: any) {
+    console.error('Update failed after retries:', error);
+    // Отправка в Sentry/LogRocket
+  }
+}
+```
+
+## 9. ТЕСТИРОВАНИЕ СТРАТЕГИИ
+
+### **9.1. Тестовые сценарии**
+```typescript
+// __tests__/UpdateService.test.ts
+describe('Update Service', () => {
+  it('should detect mandatory update', async () => {
+    const versionService = new VersionCheckService();
+    const result = await versionService.checkAppVersion();
+    
+    expect(result.update_required).toBe(true);
+    expect(result.force_update).toBe(false);
+  });
+
+  it('should handle update failure gracefully', async () => {
+    const fallback = new UpdateFallback();
+    const mockUpdate = jest.fn().mockRejectedValue(new Error('Update failed'));
+    
+    await fallback.withRetry(mockUpdate);
+    
+    expect(mockUpdate).toHaveBeenCalledTimes(4); // 1 первоначальная + 3 ретрая
+  });
+});
+```
+
+## 10. БЕЗОПАСНОСТЬ
+
+### **10.1. Валидация обновлений**
+```typescript
+class SecurityService {
+  async validateUpdateSignature(updatePackage: any, signature: string): Promise<boolean> {
+    const publicKey = await this.getPublicKey();
+    const verifier = crypto.createVerify('SHA256');
+    verifier.update(JSON.stringify(updatePackage));
+    return verifier.verify(publicKey, signature, 'base64');
+  }
+
+  private async getPublicKey(): Promise<string> {
+    // Получение публичного ключа с сервера
+    const response = await api.get('/security/public-key');
+    return response.data.public_key;
+  }
+}
+```
+
+Эта стратегия обеспечивает:
+- ✅ **Бесшовные обновления** через CodePush
+- ✅ **Контроль версий** через Remote Config
+- ✅ **Принудительные обновления** для критических багов
+- ✅ **Мониторинг** процесса внедрения
+- ✅ **Отказоустойчивость** при ошибках
+- ✅ **Безопасность** подписывания обновлений

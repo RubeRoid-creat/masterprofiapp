@@ -1,0 +1,20 @@
+{
+  "android_master": {
+    "current_version": "1.1.9",
+    "min_required_version": "1.0.0",
+    "force_update": false,
+    "release_notes": "Исправлена кликабельность карточки смены. Добавлено подробное логирование для отладки переключения смены.",
+    "download_url": "http://212.74.227.208:3000/updates",
+    "supported_os_versions": ["8.0", "9.0", "10", "11", "12", "13"]
+  },
+  "android_client": {
+    "current_version": "1.0.0",
+    "min_required_version": "1.0.0",
+    "force_update": false,
+    "release_notes": "Первый релиз клиента.",
+    "download_url": null,
+    "supported_os_versions": ["8.0", "9.0", "10", "11", "12", "13"]
+  }
+}
+
+

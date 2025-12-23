@@ -1,0 +1,39 @@
+# Зависимости
+node_modules/
+package-lock.json
+
+# База данных
+*.sqlite
+*.sqlite3
+*.db
+
+# Переменные окружения
+.env
+
+# Firebase сервисные ключи (НЕ КОММИТИТЬ!)
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
+# Логи
+logs/
+*.log
+npm-debug.log*
+
+# Временные файлы
+tmp/
+temp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+
+
