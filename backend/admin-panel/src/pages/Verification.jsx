@@ -172,7 +172,6 @@ export default function Verification() {
     const colors = {
       pending: 'warning',
       approved: 'success',
-      rejected: 'error',
       verified: 'success',
       not_verified: 'default',
       rejected: 'error',

@@ -21,6 +21,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import BackupIcon from '@mui/icons-material/Backup';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 const drawerWidth = 240;
@@ -31,6 +32,7 @@ const menuItems = [
   { text: 'Пользователи', icon: <PeopleIcon />, path: '/users' },
   { text: 'Верификация', icon: <VerifiedUserIcon />, path: '/verification' },
   { text: 'Жалобы', icon: <ReportProblemIcon />, path: '/complaints' },
+  { text: 'Новости', icon: <NewspaperIcon />, path: '/news' },
   { text: 'Бэкапы', icon: <BackupIcon />, path: '/backups' },
 ];
 

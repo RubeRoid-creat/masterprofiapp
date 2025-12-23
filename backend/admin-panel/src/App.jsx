@@ -11,6 +11,7 @@ import Users from './pages/Users';
 import Verification from './pages/Verification';
 import Complaints from './pages/Complaints';
 import Backups from './pages/Backups';
+import News from './pages/News';
 
 const theme = createTheme({
   palette: {
@@ -56,6 +57,7 @@ function AppContent() {
                     <Route path="/verification" element={<Verification />} />
                     <Route path="/complaints" element={<Complaints />} />
                     <Route path="/backups" element={<Backups />} />
+                    <Route path="/news" element={<News />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>
