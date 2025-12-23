@@ -13,16 +13,26 @@ const router = express.Router();
  */
 router.get('/', async (req, res) => {
   try {
+    // Сначала получаем все новости для отладки
+    const allNews = query.all('SELECT id, title, is_active, published_at FROM news ORDER BY id DESC LIMIT 10');
+    console.log(`[NEWS] Всего новостей в БД: ${allNews.length}`);
+    allNews.forEach(n => {
+      console.log(`[NEWS]   - id=${n.id}, title="${n.title}", is_active=${n.is_active}, published_at=${n.published_at}`);
+    });
+    
+    // Теперь получаем только активные
     const news = query.all(
       'SELECT * FROM news WHERE is_active = 1 ORDER BY published_at DESC'
     );
-    console.log(`[NEWS] Получено ${news.length} активных новостей`);
+    console.log(`[NEWS] ✅ Получено ${news.length} активных новостей для API`);
     if (news.length > 0) {
-      console.log(`[NEWS] Первая новость: id=${news[0].id}, title=${news[0].title}, is_active=${news[0].is_active}`);
+      console.log(`[NEWS] Первая активная новость: id=${news[0].id}, title="${news[0].title}"`);
+    } else {
+      console.warn(`[NEWS] ⚠️ Нет активных новостей! Проверьте is_active в базе данных.`);
     }
     res.json(news);
   } catch (error) {
-    console.error('Ошибка при получении новостей:', error);
+    console.error('[NEWS] ❌ Ошибка при получении новостей:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
@@ -74,13 +84,19 @@ router.post('/', authenticateToken, isAdmin, async (req, res) => {
     const newsSummary = summary || null;
     const activeStatus = is_active !== undefined ? (is_active ? 1 : 0) : 1;
 
+    console.log(`[NEWS] Создание новости: title="${title.trim()}", category="${newsCategory}", is_active=${activeStatus}`);
+    
     const result = query.run(
       'INSERT INTO news (title, summary, content, image_url, category, is_active) VALUES (?, ?, ?, ?, ?, ?)',
       [title.trim(), newsSummary, content.trim(), newsImageUrl, newsCategory, activeStatus]
     );
     
     const newItem = query.get('SELECT * FROM news WHERE id = ?', [result.lastInsertRowid]);
-    console.log(`[NEWS] Создана новость: id=${newItem.id}, title=${newItem.title}, is_active=${newItem.is_active}`);
+    if (newItem) {
+      console.log(`[NEWS] ✅ Создана новость: id=${newItem.id}, title="${newItem.title}", is_active=${newItem.is_active}, published_at=${newItem.published_at}`);
+    } else {
+      console.error(`[NEWS] ❌ Ошибка: новость не найдена после создания, lastInsertRowid=${result.lastInsertRowid}`);
+    }
     res.status(201).json(newItem);
   } catch (error) {
     console.error('Ошибка при создании новости:', error);
