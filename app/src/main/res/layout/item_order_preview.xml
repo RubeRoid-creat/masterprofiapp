@@ -56,7 +56,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="💰 Стоимость"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:textColor="?attr/colorOnPrimaryContainer"
                         android:textStyle="bold" />
                         
@@ -64,7 +64,7 @@
                         android:id="@+id/order_cost"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="22sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorPrimary"
                         android:letterSpacing="0.02"
@@ -91,7 +91,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="📍 Расстояние"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:textColor="?attr/colorOnPrimaryContainer"
                         android:textStyle="bold" />
                         
@@ -99,7 +99,7 @@
                         android:id="@+id/order_distance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
+                        android:textSize="19sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnPrimaryContainer"
                         android:layout_marginTop="2dp"
@@ -130,7 +130,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="⏱️ Время"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         android:textColor="?attr/colorOnPrimaryContainer"
                         android:textStyle="bold" />
                         
@@ -138,7 +138,7 @@
                         android:id="@+id/order_time"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="18sp"
+                        android:textSize="19sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnPrimaryContainer"
                         android:layout_marginTop="2dp"
@@ -168,7 +168,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:textSize="18sp"
+                    android:textSize="20sp"
                     android:textColor="?attr/colorPrimary"
                     android:letterSpacing="0.02"
                     android:fontFamily="sans-serif-medium"
@@ -216,7 +216,7 @@
                 android:id="@+id/order_device"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface"
                 android:lineSpacingExtra="4dp"
@@ -238,9 +238,9 @@
                     android:id="@+id/order_client"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="?attr/colorOnSurface"
                     tools:text="👤 Иванов Иван" />
 
                 <TextView
@@ -248,8 +248,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="15sp"
+                    android:textColor="?attr/colorOnSurface"
                     tools:text="📞 +7 (999) 123-45-67" />
 
                 <TextView
@@ -257,8 +257,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="15sp"
+                    android:textColor="?attr/colorOnSurface"
                     android:maxLines="2"
                     android:ellipsize="end"
                     tools:text="📍 ул. Ленина, д. 10, кв. 5" />
@@ -269,8 +269,9 @@
                 android:id="@+id/order_problem"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textColor="?attr/colorOnSurface"
+                android:textStyle="normal"
                 android:lineSpacingExtra="4dp"
                 android:maxLines="2"
                 android:ellipsize="end"
@@ -288,7 +289,7 @@
                     android:id="@+id/order_arrival_time"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="13sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="#00897B"
                     android:visibility="gone"
@@ -300,7 +301,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textSize="13sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="#D32F2F"
                     android:visibility="gone"
@@ -321,14 +322,14 @@
                     android:layout_height="wrap_content"
                     android:text="📅 "
                     android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textColor="?attr/colorOnSurface" />
 
                 <TextView
                     android:id="@+id/order_date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="14sp"
+                    android:textColor="?attr/colorOnSurface"
                     tools:text="18.11.2025 14:30" />
             </LinearLayout>
 
