@@ -205,7 +205,6 @@ export default function Orders() {
                     size="small"
                   />
                 </TableCell>
-                <TableCell>{order.estimated_cost ? `${order.estimated_cost} ₽` : 'N/A'}</TableCell>
                 <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                 <TableCell>
                   {order.repair_status === 'new' && (
