@@ -175,67 +175,6 @@
                         android:contentDescription="Редактировать" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tv_order_info"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="4 • 5 мин"
-                    android:textSize="14sp"
-                    android:textColor="#757575"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- Цена заказа -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_decrease_price"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:text="-"
-                        android:textSize="20sp"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        app:cornerRadius="24dp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:layout_marginHorizontal="16dp">
-
-                        <TextView
-                            android:id="@+id/tv_order_price"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="5000 ₽"
-                            android:textSize="32sp"
-                            android:textStyle="bold"
-                            android:textColor="#212121" />
-
-                        <TextView
-                            android:id="@+id/tv_recommended_price"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Рекомендуемая цена: 5000 ₽"
-                            android:textSize="12sp"
-                            android:textColor="#757575" />
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_increase_price"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:text="+"
-                        android:textSize="20sp"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        app:cornerRadius="24dp" />
-                </LinearLayout>
 
                 <!-- Кнопка принять заказ -->
                 <com.google.android.material.button.MaterialButton

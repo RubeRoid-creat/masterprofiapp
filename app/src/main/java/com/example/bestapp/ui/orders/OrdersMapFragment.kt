@@ -54,7 +54,6 @@ class OrdersMapFragment : Fragment() {
     private var tvPickupAddress: TextView? = null
     private var tvDestinationAddress: TextView? = null
     private var tvOrderDevice: TextView? = null
-    private var tvOrderInfo: TextView? = null
     private var btnAcceptOrder: MaterialButton? = null
     private var btnEditPickup: MaterialButton? = null
     private var btnAddDestination: ImageButton? = null
@@ -148,7 +147,6 @@ class OrdersMapFragment : Fragment() {
         tvPickupAddress = view.findViewById(R.id.tv_pickup_address)
         tvDestinationAddress = view.findViewById(R.id.tv_destination_address)
         tvOrderDevice = view.findViewById(R.id.tv_order_device)
-        tvOrderInfo = view.findViewById(R.id.tv_order_info)
         btnAcceptOrder = view.findViewById(R.id.btn_accept_order)
         btnEditPickup = view.findViewById(R.id.btn_edit_pickup)
         btnAddDestination = view.findViewById(R.id.btn_add_destination)
@@ -727,7 +725,6 @@ class OrdersMapFragment : Fragment() {
         tvPickupAddress = null
         tvDestinationAddress = null
         tvOrderDevice = null
-        tvOrderInfo = null
         btnAcceptOrder = null
         btnEditPickup = null
         btnAddDestination = null
