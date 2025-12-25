@@ -96,11 +96,25 @@ class ProfileFragment : Fragment() {
         
         // Настройка кнопок подтверждения
         btnVerifyEmail?.setOnClickListener {
-            showVerificationCodeDialog("email")
+            if (isAdded && context != null) {
+                try {
+                    showVerificationCodeDialog("email")
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка показа диалога верификации email", e)
+                    Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         btnVerifyPhone?.setOnClickListener {
-            showVerificationCodeDialog("phone")
+            if (isAdded && context != null) {
+                try {
+                    showVerificationCodeDialog("phone")
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка показа диалога верификации phone", e)
+                    Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         // Делаем специализацию кликабельной для изменения
@@ -109,15 +123,29 @@ class ProfileFragment : Fragment() {
         setupSpecializationEditor(masterSpec, specCardView)
 
         // Настраиваем кнопку редактирования (карандаш)
-        btnEditMasterInfo.setOnClickListener {
-            openSpecializationDialog(masterSpec)
+        btnEditMasterInfo?.setOnClickListener {
+            if (isAdded && context != null) {
+                try {
+                    openSpecializationDialog(masterSpec)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка открытия диалога специализации", e)
+                    Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         // Делаем аватар кликабельным для загрузки фото
         setupAvatarEditor(masterAvatar)
         
-        btnVerification.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_verification)
+        btnVerification?.setOnClickListener {
+            if (isAdded) {
+                try {
+                    findNavController().navigate(R.id.action_profile_to_verification)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка навигации к верификации", e)
+                    Toast.makeText(requireContext(), "Ошибка перехода: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         // Настройка кнопки MLM
@@ -126,11 +154,13 @@ class ProfileFragment : Fragment() {
             btnMLM.visibility = View.VISIBLE
             btnMLM.setOnClickListener {
                 Log.d("ProfileFragment", "MLM button clicked, navigating to MLM fragment")
-                try {
-                    findNavController().navigate(R.id.action_profile_to_mlm)
-                } catch (e: Exception) {
-                    Log.e("ProfileFragment", "Error navigating to MLM", e)
-                    Toast.makeText(context, "Ошибка перехода к MLM: ${e.message}", Toast.LENGTH_SHORT).show()
+                if (isAdded) {
+                    try {
+                        findNavController().navigate(R.id.action_profile_to_mlm)
+                    } catch (e: Exception) {
+                        Log.e("ProfileFragment", "Error navigating to MLM", e)
+                        Toast.makeText(requireContext(), "Ошибка перехода к MLM: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             Log.d("ProfileFragment", "MLM button setup completed")
@@ -139,23 +169,58 @@ class ProfileFragment : Fragment() {
         }
         
         btnWallet?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_wallet)
+            if (isAdded) {
+                try {
+                    findNavController().navigate(R.id.action_profile_to_wallet)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка навигации к кошельку", e)
+                    Toast.makeText(requireContext(), "Ошибка перехода: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         btnStatistics?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_statistics)
+            if (isAdded) {
+                try {
+                    findNavController().navigate(R.id.action_profile_to_statistics)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка навигации к статистике", e)
+                    Toast.makeText(requireContext(), "Ошибка перехода: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         btnAdminChat?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_admin_chat)
+            if (isAdded) {
+                try {
+                    findNavController().navigate(R.id.action_profile_to_admin_chat)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка навигации к чату админа", e)
+                    Toast.makeText(requireContext(), "Ошибка перехода: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         btnFeedback?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_feedback)
+            if (isAdded) {
+                try {
+                    findNavController().navigate(R.id.action_profile_to_feedback)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка навигации к отзывам", e)
+                    Toast.makeText(requireContext(), "Ошибка перехода: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         btnFeedbackList?.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_feedback_list)
+            if (isAdded) {
+                try {
+                    findNavController().navigate(R.id.action_profile_to_feedback_list)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка навигации к списку отзывов", e)
+                    Toast.makeText(requireContext(), "Ошибка перехода: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
     
@@ -469,7 +534,13 @@ class ProfileFragment : Fragment() {
      * Открывает диалог выбора специализаций
      */
     private fun openSpecializationDialog(specView: TextView) {
-        val allSpecs = listOf(
+        if (!isAdded || context == null) {
+            Log.w("ProfileFragment", "Fragment not attached, skipping openSpecializationDialog")
+            return
+        }
+        
+        try {
+            val allSpecs = listOf(
             "Холодильник",
             "Стиральная машина",
             "Посудомоечная машина",
@@ -561,6 +632,10 @@ class ProfileFragment : Fragment() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Ошибка открытия диалога специализации", e)
+            Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     /**
@@ -584,8 +659,15 @@ class ProfileFragment : Fragment() {
         }
         
         val clickListener = View.OnClickListener {
-            Log.d("ProfileFragment", "Opening specialization dialog")
-            openSpecializationDialog(specView)
+            if (isAdded && context != null) {
+                try {
+                    Log.d("ProfileFragment", "Opening specialization dialog")
+                    openSpecializationDialog(specView)
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка открытия диалога специализации из клика", e)
+                    Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         
         // Если есть CardView, делаем его кликабельным и устанавливаем обработчик на него
@@ -614,7 +696,14 @@ class ProfileFragment : Fragment() {
         avatarView.isClickable = true
         avatarView.isFocusable = true
         avatarView.setOnClickListener {
-            checkPermissionAndOpenPicker()
+            if (isAdded && context != null) {
+                try {
+                    checkPermissionAndOpenPicker()
+                } catch (e: Exception) {
+                    Log.e("ProfileFragment", "Ошибка выбора изображения", e)
+                    Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
     
@@ -622,6 +711,11 @@ class ProfileFragment : Fragment() {
      * Проверяет разрешение и открывает выбор изображения
      */
     private fun checkPermissionAndOpenPicker() {
+        if (!isAdded || context == null) {
+            Log.w("ProfileFragment", "Fragment not attached, skipping checkPermissionAndOpenPicker")
+            return
+        }
+        
         val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             // Android 13+ (API 33+)
             Manifest.permission.READ_MEDIA_IMAGES
@@ -647,8 +741,18 @@ class ProfileFragment : Fragment() {
      * Открывает галерею для выбора изображения
      */
     private fun openImagePicker() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        imagePickerLauncher.launch(intent)
+        if (!isAdded || context == null) {
+            Log.w("ProfileFragment", "Fragment not attached, skipping openImagePicker")
+            return
+        }
+        
+        try {
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            imagePickerLauncher.launch(intent)
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Ошибка открытия выбора изображения", e)
+            Toast.makeText(requireContext(), "Ошибка выбора изображения: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
     
     /**
@@ -775,8 +879,14 @@ class ProfileFragment : Fragment() {
      * Показывает диалог для ввода кода подтверждения
      */
     private fun showVerificationCodeDialog(type: String) {
-        val dialogView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_verification_code, null)
+        if (!isAdded || context == null) {
+            Log.w("ProfileFragment", "Fragment not attached, skipping showVerificationCodeDialog")
+            return
+        }
+        
+        try {
+            val dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_verification_code, null)
         
         val inputCode = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.input_verification_code)
         val hintText = dialogView.findViewById<TextView>(R.id.verification_hint)
@@ -915,7 +1025,11 @@ class ProfileFragment : Fragment() {
             dialog.dismiss()
         }
         
-        dialog.show()
-        updateTimer()
+            dialog.show()
+            updateTimer()
+        } catch (e: Exception) {
+            Log.e("ProfileFragment", "Ошибка показа диалога верификации", e)
+            Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 }
