@@ -12,6 +12,8 @@ import Verification from './pages/Verification';
 import Complaints from './pages/Complaints';
 import Backups from './pages/Backups';
 import News from './pages/News';
+import AdminChat from './pages/AdminChat';
+import Feedback from './pages/Feedback';
 
 const theme = createTheme({
   palette: {
@@ -56,6 +58,8 @@ function AppContent() {
                     <Route path="/users" element={<Users />} />
                     <Route path="/verification" element={<Verification />} />
                     <Route path="/complaints" element={<Complaints />} />
+                    <Route path="/admin-chat" element={<AdminChat />} />
+                    <Route path="/feedback" element={<Feedback />} />
                     <Route path="/backups" element={<Backups />} />
                     <Route path="/news" element={<News />} />
                   </Routes>

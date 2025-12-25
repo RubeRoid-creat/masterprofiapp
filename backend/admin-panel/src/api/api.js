@@ -125,5 +125,20 @@ export const newsAPI = {
   delete: (id) => api.delete(`/news/${id}`),
 };
 
+// Чат с администрацией
+export const adminChatAPI = {
+  getUsers: () => api.get('/admin/admin-chat/users'),
+  getMessages: (userId) => api.get(`/admin/admin-chat/messages/${userId}`),
+  sendMessage: (userId, message) => api.post(`/admin/admin-chat/messages/${userId}`, { message }),
+};
+
+// Обратная связь
+export const feedbackAPI = {
+  getAll: (params) => api.get('/admin/feedback', { params }),
+  getById: (id) => api.get(`/admin/feedback/${id}`),
+  respond: (id, adminResponse, status) => api.put(`/admin/feedback/${id}/respond`, { admin_response: adminResponse, status }),
+  updateStatus: (id, status) => api.put(`/admin/feedback/${id}/status`, { status }),
+};
+
 export default api;
 

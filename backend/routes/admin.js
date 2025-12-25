@@ -598,5 +598,295 @@ router.post('/rate-limit/reset', (req, res) => {
   }
 });
 
+// ============= Чат с администрацией =============
+
+/**
+ * GET /api/admin/admin-chat/messages/:userId
+ * Получить сообщения чата с конкретным пользователем
+ */
+router.get('/admin-chat/messages/:userId', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    const messages = query.all(`
+      SELECT 
+        acm.id,
+        acm.user_id,
+        acm.sender_id,
+        acm.sender_role,
+        acm.message_type,
+        acm.message_text,
+        acm.image_url,
+        acm.image_thumbnail_url,
+        acm.file_url,
+        acm.file_name,
+        acm.read_at,
+        acm.created_at,
+        u.name as sender_name,
+        u.role as sender_user_role
+      FROM admin_chat_messages acm
+      JOIN users u ON acm.sender_id = u.id
+      WHERE acm.user_id = ?
+      ORDER BY acm.created_at ASC
+    `, [userId]);
+    
+    res.json(messages);
+  } catch (error) {
+    console.error('Ошибка получения сообщений:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/admin/admin-chat/messages/:userId
+ * Отправить сообщение пользователю от администрации
+ */
+router.post('/admin-chat/messages/:userId', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const adminId = req.user.id;
+    const { message } = req.body;
+    
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ error: 'Сообщение не может быть пустым' });
+    }
+    
+    const result = query.run(`
+      INSERT INTO admin_chat_messages (user_id, sender_id, sender_role, message_type, message_text)
+      VALUES (?, ?, 'admin', 'text', ?)
+    `, [userId, adminId, message.trim()]);
+    
+    const createdMessage = query.get(`
+      SELECT 
+        acm.id,
+        acm.user_id,
+        acm.sender_id,
+        acm.sender_role,
+        acm.message_type,
+        acm.message_text,
+        acm.image_url,
+        acm.image_thumbnail_url,
+        acm.file_url,
+        acm.file_name,
+        acm.read_at,
+        acm.created_at,
+        u.name as sender_name,
+        u.role as sender_user_role
+      FROM admin_chat_messages acm
+      JOIN users u ON acm.sender_id = u.id
+      WHERE acm.id = ?
+    `, [result.lastInsertRowid]);
+    
+    res.status(201).json(createdMessage);
+  } catch (error) {
+    console.error('Ошибка отправки сообщения:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/admin-chat/users
+ * Получить список пользователей с активными чатами
+ */
+router.get('/admin-chat/users', (req, res) => {
+  try {
+    const users = query.all(`
+      SELECT DISTINCT
+        u.id,
+        u.name,
+        u.email,
+        u.phone,
+        u.role,
+        (SELECT COUNT(*) FROM admin_chat_messages 
+         WHERE user_id = u.id AND sender_role = 'user' AND read_at IS NULL) as unread_count,
+        (SELECT MAX(created_at) FROM admin_chat_messages 
+         WHERE user_id = u.id) as last_message_at
+      FROM users u
+      INNER JOIN admin_chat_messages acm ON u.id = acm.user_id
+      WHERE u.role IN ('master', 'client')
+      ORDER BY last_message_at DESC
+    `);
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Ошибка получения списка пользователей:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// ============= Обратная связь =============
+
+/**
+ * GET /api/admin/feedback
+ * Получить список обратной связи
+ */
+router.get('/feedback', (req, res) => {
+  try {
+    const { status, feedback_type } = req.query;
+    
+    let sql = `
+      SELECT 
+        f.id,
+        f.user_id,
+        f.feedback_type,
+        f.subject,
+        f.message,
+        f.attachments,
+        f.status,
+        f.admin_response,
+        f.responded_by,
+        f.responded_at,
+        f.created_at,
+        f.updated_at,
+        u.name as user_name,
+        u.email as user_email,
+        u.phone as user_phone
+      FROM feedback f
+      JOIN users u ON f.user_id = u.id
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (status) {
+      sql += ' AND f.status = ?';
+      params.push(status);
+    }
+    
+    if (feedback_type) {
+      sql += ' AND f.feedback_type = ?';
+      params.push(feedback_type);
+    }
+    
+    sql += ' ORDER BY f.created_at DESC';
+    
+    const feedbackList = query.all(sql, params);
+    res.json(feedbackList);
+  } catch (error) {
+    console.error('Ошибка получения обратной связи:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/feedback/:id
+ * Получить детали обратной связи
+ */
+router.get('/feedback/:id', (req, res) => {
+  try {
+    const feedbackId = parseInt(req.params.id);
+    
+    const feedback = query.get(`
+      SELECT 
+        f.id,
+        f.user_id,
+        f.feedback_type,
+        f.subject,
+        f.message,
+        f.attachments,
+        f.status,
+        f.admin_response,
+        f.responded_by,
+        f.responded_at,
+        f.created_at,
+        f.updated_at,
+        u.name as user_name,
+        u.email as user_email,
+        u.phone as user_phone
+      FROM feedback f
+      JOIN users u ON f.user_id = u.id
+      WHERE f.id = ?
+    `, [feedbackId]);
+    
+    if (!feedback) {
+      return res.status(404).json({ error: 'Обратная связь не найдена' });
+    }
+    
+    res.json(feedback);
+  } catch (error) {
+    console.error('Ошибка получения обратной связи:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/admin/feedback/:id/respond
+ * Ответить на обратную связь
+ */
+router.put('/feedback/:id/respond', (req, res) => {
+  try {
+    const feedbackId = parseInt(req.params.id);
+    const adminId = req.user.id;
+    const { admin_response, status } = req.body;
+    
+    if (!admin_response || admin_response.trim().length === 0) {
+      return res.status(400).json({ error: 'Ответ не может быть пустым' });
+    }
+    
+    query.run(`
+      UPDATE feedback
+      SET admin_response = ?,
+          status = ?,
+          responded_by = ?,
+          responded_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [admin_response.trim(), status || 'resolved', adminId, feedbackId]);
+    
+    const updatedFeedback = query.get(`
+      SELECT 
+        f.id,
+        f.user_id,
+        f.feedback_type,
+        f.subject,
+        f.message,
+        f.attachments,
+        f.status,
+        f.admin_response,
+        f.responded_by,
+        f.responded_at,
+        f.created_at,
+        f.updated_at,
+        u.name as user_name,
+        u.email as user_email,
+        u.phone as user_phone
+      FROM feedback f
+      JOIN users u ON f.user_id = u.id
+      WHERE f.id = ?
+    `, [feedbackId]);
+    
+    res.json(updatedFeedback);
+  } catch (error) {
+    console.error('Ошибка ответа на обратную связь:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/admin/feedback/:id/status
+ * Изменить статус обратной связи
+ */
+router.put('/feedback/:id/status', (req, res) => {
+  try {
+    const feedbackId = parseInt(req.params.id);
+    const { status } = req.body;
+    
+    if (!status || !['new', 'in_progress', 'resolved', 'closed'].includes(status)) {
+      return res.status(400).json({ error: 'Неверный статус' });
+    }
+    
+    query.run(`
+      UPDATE feedback
+      SET status = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [status, feedbackId]);
+    
+    res.json({ message: 'Статус обновлен', status });
+  } catch (error) {
+    console.error('Ошибка обновления статуса:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 export default router;
 

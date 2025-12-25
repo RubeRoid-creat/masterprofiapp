@@ -22,6 +22,8 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import BackupIcon from '@mui/icons-material/Backup';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
+import ChatIcon from '@mui/icons-material/Chat';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 const drawerWidth = 240;
@@ -32,6 +34,8 @@ const menuItems = [
   { text: 'Пользователи', icon: <PeopleIcon />, path: '/users' },
   { text: 'Верификация', icon: <VerifiedUserIcon />, path: '/verification' },
   { text: 'Жалобы', icon: <ReportProblemIcon />, path: '/complaints' },
+  { text: 'Чат с пользователями', icon: <ChatIcon />, path: '/admin-chat' },
+  { text: 'Обратная связь', icon: <FeedbackIcon />, path: '/feedback' },
   { text: 'Новости', icon: <NewspaperIcon />, path: '/news' },
   { text: 'Бэкапы', icon: <BackupIcon />, path: '/backups' },
 ];
