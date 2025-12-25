@@ -73,25 +73,15 @@ class OrdersAdapter(
     ) : RecyclerView.ViewHolder(itemView) {
         
         private val orderId: TextView = itemView.findViewById(R.id.order_id)
-        private val requestStatusChip: Chip = itemView.findViewById(R.id.request_status_chip)
-        private val orderTypeChip: Chip = itemView.findViewById(R.id.order_type_chip)
-        private val orderPriorityBadge: Chip = itemView.findViewById(R.id.order_priority_badge)
+        private val orderArrivalTime: TextView = itemView.findViewById(R.id.order_arrival_time)
         private val orderDevice: TextView = itemView.findViewById(R.id.order_device)
-        private val orderClient: TextView = itemView.findViewById(R.id.order_client)
-        private val orderPhone: TextView = itemView.findViewById(R.id.order_phone)
-        private val orderAddress: TextView = itemView.findViewById(R.id.order_address)
         private val orderProblem: TextView = itemView.findViewById(R.id.order_problem)
-        private val orderTimer: TextView = itemView.findViewById(R.id.order_timer)
-        private val orderDate: TextView = itemView.findViewById(R.id.order_date)
-        private val orderDistance: TextView = itemView.findViewById(R.id.order_distance)
-        private val distanceContainer: View = itemView.findViewById(R.id.distance_container)
         private val orderCheckbox: androidx.appcompat.widget.AppCompatCheckBox = itemView.findViewById(R.id.order_checkbox)
         private val actionButtonsContainer: View = itemView.findViewById(R.id.action_buttons_container)
         private val btnAcceptOrder: com.google.android.material.button.MaterialButton = itemView.findViewById(R.id.btn_accept_order)
         private val btnRejectOrder: com.google.android.material.button.MaterialButton = itemView.findViewById(R.id.btn_reject_order)
         private val statusIndicator: View = itemView.findViewById(R.id.status_indicator)
         
-        private var currentTimer: com.example.bestapp.ui.common.CountdownTimerView? = null
         private var currentOrder: Order? = null
 
         fun bind(order: Order, selectionMode: Boolean, isSelected: Boolean) {
@@ -99,96 +89,35 @@ class OrdersAdapter(
             val context = itemView.context
             
             // Номер заявки
-            orderId.text = "Заявка №${order.id}"
-            
-            // Статус заявки
-            requestStatusChip.text = order.requestStatus.displayName
-            val (statusBg, statusText, indicatorColor) = when (order.requestStatus) {
-                OrderRequestStatus.WARRANTY -> Triple(R.color.order_warranty_bg, R.color.order_warranty_text, R.color.order_warranty_text)
-                OrderRequestStatus.REPEAT -> Triple(R.color.order_repeat_bg, R.color.order_repeat_text, R.color.order_repeat_text)
-                OrderRequestStatus.NEW -> Triple(R.color.md_theme_light_surfaceVariant, R.color.md_theme_light_onSurfaceVariant, R.color.md_theme_light_primary)
-            }
-            requestStatusChip.chipBackgroundColor = ColorStateList.valueOf(
-                ContextCompat.getColor(context, statusBg)
-            )
-            requestStatusChip.setTextColor(ContextCompat.getColor(context, statusText))
+            orderId.text = "#${order.id}"
             
             // Цвет индикатора статуса
+            val indicatorColor = when (order.requestStatus) {
+                OrderRequestStatus.WARRANTY -> R.color.order_warranty_text
+                OrderRequestStatus.REPEAT -> R.color.order_repeat_text
+                OrderRequestStatus.NEW -> R.color.md_theme_light_primary
+            }
             statusIndicator?.setBackgroundColor(ContextCompat.getColor(context, indicatorColor))
             
-            // Тип заказа
-            orderTypeChip.text = order.orderType.displayName
-            val (typeBg, typeText) = if (order.orderType == OrderType.URGENT) {
-                Pair(R.color.order_urgent_bg, R.color.order_urgent_text)
+            // Время приезда
+            val arrivalTimeText = order.arrivalTime ?: order.desiredRepairDate
+            if (arrivalTimeText != null) {
+                // Если время в формате даты и времени, извлекаем только время
+                val timeOnly = if (arrivalTimeText.contains(" ")) {
+                    arrivalTimeText.split(" ").lastOrNull() ?: arrivalTimeText
+                } else {
+                    arrivalTimeText
+                }
+                orderArrivalTime.text = timeOnly
             } else {
-                Pair(R.color.md_theme_light_surfaceVariant, R.color.md_theme_light_onSurfaceVariant)
-            }
-            orderTypeChip.chipBackgroundColor = ColorStateList.valueOf(
-                ContextCompat.getColor(context, typeBg)
-            )
-            orderTypeChip.setTextColor(ContextCompat.getColor(context, typeText))
-            
-            // Приоритет (показываем для срочных заказов)
-            if (order.orderType == OrderType.URGENT || order.urgency == "emergency" || order.urgency == "urgent") {
-                orderPriorityBadge.visibility = View.VISIBLE
-            } else {
-                orderPriorityBadge.visibility = View.GONE
+                orderArrivalTime.text = "—"
             }
             
-            orderDevice.text = order.getDeviceFullName()
-            orderClient.text = order.clientName
-            orderPhone.text = order.clientPhone
-            orderAddress.text = order.clientAddress
+            // Тип техники и бренд (без модели)
+            orderDevice.text = "${order.deviceType} ${order.deviceBrand}"
+            
+            // Проблема
             orderProblem.text = order.problemDescription
-            
-            // Останавливаем предыдущий таймер
-            currentTimer?.stop()
-            currentTimer = null
-            
-            // Таймер обратного отсчета (для срочных заказов с назначением)
-            if (order.expiresAt != null && order.status == com.example.bestapp.data.RepairStatus.NEW) {
-                val expiresDate = order.expiresAt
-                val now = java.util.Date()
-                
-                if (expiresDate.after(now)) {
-                    // Таймер еще не истек
-                    orderTimer.visibility = View.VISIBLE
-                    currentTimer = com.example.bestapp.ui.common.CountdownTimerView(
-                        orderTimer,
-                        expiresDate,
-                        onExpired = {
-                            // Когда время истекает, обновляем список
-                            orderTimer.text = "⏱️ Время истекло"
-                            orderTimer.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark))
-                        }
-                    )
-                } else {
-                    // Время уже истекло
-                    orderTimer.text = "⏱️ Время истекло"
-                    orderTimer.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark))
-                    orderTimer.visibility = View.VISIBLE
-                }
-            } else {
-                orderTimer.visibility = View.GONE
-            }
-            
-            orderDate.text = order.getFormattedCreatedDate()
-            
-            // Отображение расстояния до заказа
-            if (order.distance != null && order.distance!! > 0) {
-                distanceContainer.visibility = View.VISIBLE
-                val distanceM = order.distance!!.toDouble()
-                val distanceKm = distanceM / 1000.0
-                if (distanceKm < 1.0) {
-                    // Если меньше километра, показываем в метрах
-                    orderDistance.text = "${distanceM.toInt()} м"
-                } else {
-                    // Иначе показываем в километрах с одним знаком после запятой
-                    orderDistance.text = String.format(Locale.getDefault(), "%.1f км", distanceKm)
-                }
-            } else {
-                distanceContainer.visibility = View.GONE
-            }
             
             // Показываем кнопки Принять/Отклонить только для pending заявок
             val isPendingAssignment = order.assignmentStatus == "pending" && order.assignmentId != null
