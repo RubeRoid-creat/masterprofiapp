@@ -115,8 +115,8 @@ class OrderDetailsFragment : Fragment() {
     private var actionButtons: View? = null
     private var btnAccept: MaterialButton? = null
     private var btnReject: MaterialButton? = null
-    private var btnBuildRoute: MaterialButton? = null
-    private var btnChat: MaterialButton? = null
+    private var btnBuildRoute: com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton? = null
+    private var btnChat: com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton? = null
     private var btnCreateReport: MaterialButton? = null
     private var btnCompleteOrder: MaterialButton? = null
     private var btnCallClient: MaterialButton? = null
