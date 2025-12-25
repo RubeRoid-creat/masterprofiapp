@@ -51,11 +51,11 @@ export function getUplineChain(userId, maxLevel = 3) {
       level++;
       upline.push({
         userId: sponsor.id,
-        sponsorId: user.sponsor_id,
+        sponsorId: sponsor.id, // ID спонсора (тот, кому начисляется комиссия)
         level: level
       });
 
-      currentUserId = user.sponsor_id;
+      currentUserId = sponsor.id; // Переходим к следующему уровню
     }
 
     return upline;
@@ -78,12 +78,13 @@ export function checkMasterActivity(masterId, minOrders = 0) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    // Проверяем завершенные заказы (используем request_status='completed' или repair_status='completed')
     const result = query.get(`
       SELECT COUNT(*) as count
       FROM orders o
       JOIN masters m ON m.id = o.assigned_master_id
       WHERE m.id = ? 
-        AND o.repair_status = 'completed'
+        AND (o.request_status = 'completed' OR o.repair_status = 'completed')
         AND o.updated_at >= datetime(?)
     `, [masterId, thirtyDaysAgo.toISOString()]);
 
@@ -164,7 +165,18 @@ export function calculateMLMCommissions(orderId, masterId, orderAmount) {
         commissionRate = COMMISSION_RATES.LEVEL_3;
       }
 
-      const commissionAmount = orderAmount * commissionRate;
+      const commissionAmount = Math.round(orderAmount * commissionRate * 100) / 100; // Округляем до 2 знаков
+
+      // Проверяем, не была ли уже начислена комиссия для этого заказа и уровня
+      const existingCommission = query.get(`
+        SELECT id FROM mlm_commissions 
+        WHERE order_id = ? AND to_user_id = ? AND level = ?
+      `, [orderId, sponsorUserId, level]);
+
+      if (existingCommission) {
+        console.log(`⚠️ Комиссия для заказа #${orderId}, уровня ${level}, спонсора ${sponsorUserId} уже существует, пропускаем`);
+        continue;
+      }
 
       // Сохраняем комиссию в базу данных
       query.run(`
@@ -236,11 +248,12 @@ export function getDownlineStructure(masterUserId, maxLevel = 3) {
 
     // Получаем прямых рефералов (уровень 1)
     const level1 = query.all(`
-      SELECT u.id as user_id, u.name, u.email, m.id as master_id, m.rating, m.completed_orders,
-             u.created_at, m.verification_status
+      SELECT u.id as user_id, u.name, u.email, u.phone, m.id as master_id, m.rating, m.completed_orders,
+             u.created_at, m.verification_status, u.rank
       FROM users u
       JOIN masters m ON m.user_id = u.id
       WHERE u.sponsor_id = ?
+      ORDER BY u.created_at DESC
     `, [masterUserId]);
 
     structure.level_1 = level1.map(member => ({
@@ -254,11 +267,12 @@ export function getDownlineStructure(masterUserId, maxLevel = 3) {
       const placeholders = level1UserIds.map(() => '?').join(',');
       
       const level2 = query.all(`
-        SELECT u.id as user_id, u.name, u.email, m.id as master_id, m.rating, m.completed_orders,
-               u.created_at, u.sponsor_id, m.verification_status
+        SELECT u.id as user_id, u.name, u.email, u.phone, m.id as master_id, m.rating, m.completed_orders,
+               u.created_at, u.sponsor_id, m.verification_status, u.rank
         FROM users u
         JOIN masters m ON m.user_id = u.id
         WHERE u.sponsor_id IN (${placeholders})
+        ORDER BY u.created_at DESC
       `, level1UserIds);
 
       structure.level_2 = level2.map(member => ({
@@ -273,11 +287,12 @@ export function getDownlineStructure(masterUserId, maxLevel = 3) {
       const placeholders = level2UserIds.map(() => '?').join(',');
       
       const level3 = query.all(`
-        SELECT u.id as user_id, u.name, u.email, m.id as master_id, m.rating, m.completed_orders,
-               u.created_at, u.sponsor_id, m.verification_status
+        SELECT u.id as user_id, u.name, u.email, u.phone, m.id as master_id, m.rating, m.completed_orders,
+               u.created_at, u.sponsor_id, m.verification_status, u.rank
         FROM users u
         JOIN masters m ON m.user_id = u.id
         WHERE u.sponsor_id IN (${placeholders})
+        ORDER BY u.created_at DESC
       `, level2UserIds);
 
       structure.level_3 = level3.map(member => ({
@@ -432,25 +447,81 @@ export function inviteMaster(newUserId, sponsorUserId) {
       throw new Error('Нельзя пригласить самого себя');
     }
 
+    // Проверяем на циклические ссылки (нельзя создать цикл)
+    const potentialCycle = getUplineChain(sponsorUserId, 10); // Проверяем до 10 уровней
+    if (potentialCycle.some(link => link.userId === newUserId)) {
+      throw new Error('Невозможно создать циклическую ссылку в структуре');
+    }
+
     // Устанавливаем спонсора
     query.run('UPDATE users SET sponsor_id = ? WHERE id = ?', [sponsorUserId, newUserId]);
 
     // Строим структуру сети для сохранения в network_structure
+    // Сначала добавляем прямую связь (уровень 1)
+    query.run(`
+      INSERT OR IGNORE INTO network_structure (user_id, sponsor_id, level)
+      VALUES (?, ?, 1)
+    `, [newUserId, sponsorUserId]);
+
+    // Получаем upline цепочку для нового пользователя (уровни 2 и 3)
     const upline = getUplineChain(newUserId, 3);
     
-    // Сохраняем связи в network_structure
+    // Сохраняем связи в network_structure для уровней 2 и 3
     for (const link of upline) {
-      query.run(`
-        INSERT OR IGNORE INTO network_structure (user_id, sponsor_id, level)
-        VALUES (?, ?, ?)
-      `, [newUserId, link.sponsorId, link.level]);
+      if (link.level > 1) { // Уровень 1 уже добавлен
+        query.run(`
+          INSERT OR IGNORE INTO network_structure (user_id, sponsor_id, level)
+          VALUES (?, ?, ?)
+        `, [newUserId, link.userId, link.level]);
+      }
     }
+
+    // Обновляем структуру для всех downline пользователей нового мастера
+    // (если у нового мастера уже есть рефералы, их уровни нужно пересчитать)
+    updateDownlineStructure(newUserId);
 
     console.log(`✅ Мастер user_id=${newUserId} приглашен спонсором user_id=${sponsorUserId}`);
     return true;
   } catch (error) {
     console.error('Ошибка приглашения мастера:', error);
     throw error;
+  }
+}
+
+/**
+ * Обновить структуру сети для всех downline пользователей
+ * Вызывается при изменении sponsor_id для пересчета уровней
+ * @param {number} userId - user_id пользователя, у которого изменился sponsor_id
+ */
+function updateDownlineStructure(userId) {
+  try {
+    // Получаем всех прямых рефералов
+    const directReferrals = query.all(`
+      SELECT id FROM users WHERE sponsor_id = ?
+    `, [userId]);
+
+    // Для каждого реферала пересчитываем структуру
+    for (const referral of directReferrals) {
+      // Удаляем старые записи для этого пользователя
+      query.run('DELETE FROM network_structure WHERE user_id = ?', [referral.id]);
+
+      // Получаем новую upline цепочку
+      const upline = getUplineChain(referral.id, 3);
+
+      // Сохраняем новые связи
+      for (const link of upline) {
+        query.run(`
+          INSERT OR IGNORE INTO network_structure (user_id, sponsor_id, level)
+          VALUES (?, ?, ?)
+        `, [referral.id, link.userId, link.level]);
+      }
+
+      // Рекурсивно обновляем структуру для рефералов рефералов
+      updateDownlineStructure(referral.id);
+    }
+  } catch (error) {
+    console.error('Ошибка обновления структуры downline:', error);
+    // Не прерываем выполнение, просто логируем
   }
 }
 
