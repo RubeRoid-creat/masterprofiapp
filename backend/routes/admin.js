@@ -5,6 +5,7 @@ import { createBackup, listBackups, restoreBackup } from '../services/backup-ser
 import { notifyMasters } from '../services/assignment-service.js';
 import { verifySMSService, checkSMSRuBalance } from '../services/sms-service.js';
 import { verifyEmailService } from '../services/email-service.js';
+import { getRateLimitStats, unblockIP, resetIPCounter } from '../middleware/rate-limiter.js';
 
 const router = express.Router();
 
@@ -532,6 +533,67 @@ router.get('/websocket/stats', async (req, res) => {
     });
   } catch (error) {
     console.error('Ошибка получения статистики WebSocket:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// ============= Rate Limiting управление =============
+
+// Получить статистику rate limiting
+router.get('/rate-limit/stats', (req, res) => {
+  try {
+    const stats = getRateLimitStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Ошибка получения статистики rate limiting:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Разблокировать IP адрес
+router.post('/rate-limit/unblock', (req, res) => {
+  try {
+    const { ip } = req.body;
+    
+    if (!ip) {
+      return res.status(400).json({ error: 'Необходимо указать IP адрес' });
+    }
+    
+    const unblocked = unblockIP(ip);
+    
+    if (unblocked) {
+      res.json({ 
+        message: `IP ${ip} успешно разблокирован`,
+        ip: ip
+      });
+    } else {
+      res.status(404).json({ 
+        error: `IP ${ip} не найден в списке заблокированных` 
+      });
+    }
+  } catch (error) {
+    console.error('Ошибка разблокировки IP:', error);
+    res.status(500).json({ error: 'Ошибка сервера', details: error.message });
+  }
+});
+
+// Сбросить счетчик запросов для IP
+router.post('/rate-limit/reset', (req, res) => {
+  try {
+    const { ip } = req.body;
+    
+    if (!ip) {
+      return res.status(400).json({ error: 'Необходимо указать IP адрес' });
+    }
+    
+    resetIPCounter(ip);
+    
+    res.json({ 
+      message: `Счетчик запросов для IP ${ip} сброшен`,
+      ip: ip
+    });
+  } catch (error) {
+    console.error('Ошибка сброса счетчика IP:', error);
     res.status(500).json({ error: 'Ошибка сервера', details: error.message });
   }
 });

@@ -67,6 +67,11 @@ class ApiRepository {
                         404 -> "Данные не найдены"
                         401 -> "Требуется авторизация. Войдите заново."
                         403 -> "Доступ запрещен"
+                        429 -> {
+                            val message = errorJson?.get("message")?.toString() 
+                                ?: "Слишком много запросов. Попробуйте позже."
+                            message
+                        }
                         500 -> "Ошибка сервера. Попробуйте позже."
                         503 -> "Сервер временно недоступен. Попробуйте позже."
                         else -> "$errorContext: ${response.code()}"
@@ -115,9 +120,19 @@ class ApiRepository {
                         val errorJson = errorBody?.let { 
                             com.google.gson.Gson().fromJson(it, Map::class.java) 
                         }
-                        errorJson?.get("error")?.toString() ?: "Ошибка входа: ${response.code()}"
+                        when (response.code()) {
+                            429 -> {
+                                val message = errorJson?.get("message")?.toString() 
+                                    ?: "Слишком много попыток входа. Ваш IP временно заблокирован. Попробуйте через некоторое время."
+                                message
+                            }
+                            else -> errorJson?.get("error")?.toString() ?: "Ошибка входа: ${response.code()}"
+                        }
                     } catch (e: Exception) {
-                        "Ошибка входа: ${response.code()}"
+                        when (response.code()) {
+                            429 -> "Слишком много попыток входа. Попробуйте позже."
+                            else -> "Ошибка входа: ${response.code()}"
+                        }
                     }
                     Result.failure(Exception(errorMessage))
                 }

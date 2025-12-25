@@ -388,7 +388,7 @@ app.get('/api-docs.json', (req, res) => {
 });
 
 // Маршруты API (с rate limiting для критичных эндпоинтов)
-app.use('/api/auth', strictRateLimiter(10, 15 * 60 * 1000), authRoutes); // 10 попыток за 15 минут
+app.use('/api/auth', strictRateLimiter(30, 15 * 60 * 1000), authRoutes); // 30 попыток за 15 минут
 app.use('/api/verification-codes', verificationRateLimiter(), verificationCodesRoutes); // 3 попытки за 10 минут
 app.use('/api/orders', ordersRoutes);
 app.use('/api/masters', mastersRoutes);

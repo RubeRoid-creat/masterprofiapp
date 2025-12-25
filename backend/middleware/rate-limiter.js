@@ -134,7 +134,7 @@ export function strictRateLimiter(maxRequests = 5, windowMs = 15 * 60 * 1000) {
   return rateLimiter({
     maxRequests,
     windowMs,
-    blockDuration: 60 * 60 * 1000 // 1 час
+    blockDuration: 30 * 60 * 1000 // 30 минут блокировки (уменьшено с 1 часа)
   });
 }
 
@@ -167,6 +167,27 @@ export function getRateLimitStats() {
       unblockAt: new Date(blockTime + defaultConfig.blockDuration).toISOString()
     }))
   };
+}
+
+/**
+ * Разблокировка IP адреса
+ */
+export function unblockIP(ip) {
+  if (blockedIPs.has(ip)) {
+    blockedIPs.delete(ip);
+    requestCounts.delete(ip);
+    console.log(`🔓 IP ${ip} разблокирован вручную`);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Очистка счетчика запросов для IP
+ */
+export function resetIPCounter(ip) {
+  requestCounts.delete(ip);
+  console.log(`🔄 Счетчик запросов для IP ${ip} сброшен`);
 }
 
 export default rateLimiter;
