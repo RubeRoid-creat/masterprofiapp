@@ -4,6 +4,7 @@
  */
 
 const requestCounts = new Map();
+// Блокировки IP отключены - оставлено для совместимости, но не используется
 const blockedIPs = new Map();
 
 // Настройки по умолчанию
@@ -39,14 +40,6 @@ function cleanupOldRecords() {
     }
   }
   
-  // Очистка заблокированных IP
-  for (const [ip, blockTime] of blockedIPs.entries()) {
-    if (now - blockTime > defaultConfig.blockDuration) {
-      blockedIPs.delete(ip);
-      console.log(`🔓 IP ${ip} разблокирован`);
-    }
-  }
-  
   // Очистка счетчиков статистики
   for (const [ip, data] of statsRequestCounts.entries()) {
     if (now - data.resetTime > 15 * 60 * 1000) {
@@ -54,26 +47,10 @@ function cleanupOldRecords() {
     }
   }
   
-  // Очистка заблокированных IP для статистики
-  for (const [ip, blockTime] of statsBlockedIPs.entries()) {
-    if (now - blockTime > 5 * 60 * 1000) {
-      statsBlockedIPs.delete(ip);
-      console.log(`🔓 [STATS] IP ${ip} разблокирован для статистики`);
-    }
-  }
-  
   // Очистка счетчиков верификации
   for (const [ip, data] of verificationRequestCounts.entries()) {
     if (now - data.resetTime > 15 * 60 * 1000) {
       verificationRequestCounts.delete(ip);
-    }
-  }
-  
-  // Очистка заблокированных IP для верификации
-  for (const [ip, blockTime] of verificationBlockedIPs.entries()) {
-    if (now - blockTime > 10 * 60 * 1000) {
-      verificationBlockedIPs.delete(ip);
-      console.log(`🔓 [VERIFICATION] IP ${ip} разблокирован для верификации`);
     }
   }
 }
@@ -106,19 +83,7 @@ export function rateLimiter(options = {}) {
     const ip = getClientIP(req);
     const now = Date.now();
     
-    // Проверка блокировки IP
-    if (blockedIPs.has(ip)) {
-      const blockTime = blockedIPs.get(ip);
-      const remainingTime = Math.ceil((config.blockDuration - (now - blockTime)) / 1000 / 60);
-      
-      console.warn(`🚫 Заблокированный IP пытается подключиться: ${ip}`);
-      
-      return res.status(429).json({
-        error: 'Too Many Requests',
-        message: `Ваш IP временно заблокирован. Попробуйте через ${remainingTime} минут.`,
-        retryAfter: remainingTime * 60
-      });
-    }
+    // Блокировки IP отключены - только мониторинг
     
     // Получение или создание записи для IP
     let record = requestCounts.get(ip);
@@ -135,19 +100,10 @@ export function rateLimiter(options = {}) {
     // Увеличение счетчика
     record.count++;
     
-    // Проверка лимита
+    // Проверка лимита (только логирование, без блокировки)
     if (record.count > config.maxRequests) {
-      // Блокировка IP
-      blockedIPs.set(ip, now);
-      requestCounts.delete(ip);
-      
-      console.error(`⛔ IP заблокирован за превышение лимита: ${ip} (${record.count} запросов)`);
-      
-      return res.status(429).json({
-        error: 'Too Many Requests',
-        message: 'Превышен лимит запросов. Ваш IP временно заблокирован.',
-        retryAfter: config.blockDuration / 1000
-      });
+      console.warn(`⚠️ IP ${ip} превысил лимит запросов: ${record.count} запросов (лимит: ${config.maxRequests})`);
+      // Блокировки отключены - продолжаем обработку запроса
     }
     
     // Установка заголовков
@@ -191,10 +147,12 @@ export function verificationRateLimiter() {
 
 // Отдельные счетчики для статистики (чтобы не конфликтовать с общим rate limiter)
 const statsRequestCounts = new Map();
+// Блокировки IP отключены - оставлено для совместимости, но не используется
 const statsBlockedIPs = new Map();
 
 // Отдельные счетчики для верификации мастера
 const verificationRequestCounts = new Map();
+// Блокировки IP отключены - оставлено для совместимости, но не используется
 const verificationBlockedIPs = new Map();
 
 /**
@@ -217,19 +175,7 @@ export function verificationMasterRateLimiter() {
     const ip = getClientIP(req);
     const now = Date.now();
     
-    // Проверка блокировки IP в верификации
-    if (verificationBlockedIPs.has(ip)) {
-      const blockTime = verificationBlockedIPs.get(ip);
-      const remainingTime = Math.ceil((config.blockDuration - (now - blockTime)) / 1000 / 60);
-      
-      console.warn(`🚫 [VERIFICATION] Заблокированный IP пытается верифицироваться: ${ip}`);
-      
-      return res.status(429).json({
-        error: 'Too Many Requests',
-        message: `Слишком много запросов верификации. Попробуйте через ${remainingTime} минут.`,
-        retryAfter: remainingTime * 60
-      });
-    }
+    // Блокировки IP отключены - только мониторинг
     
     // Получение или создание записи для IP
     let record = verificationRequestCounts.get(ip);
@@ -245,18 +191,10 @@ export function verificationMasterRateLimiter() {
     // Увеличение счетчика
     record.count++;
     
-    // Проверка лимита
+    // Проверка лимита (только логирование, без блокировки)
     if (record.count > config.maxRequests) {
-      verificationBlockedIPs.set(ip, now);
-      verificationRequestCounts.delete(ip);
-      
-      console.error(`⛔ [VERIFICATION] IP заблокирован за превышение лимита верификации: ${ip} (${record.count} запросов)`);
-      
-      return res.status(429).json({
-        error: 'Too Many Requests',
-        message: 'Превышен лимит запросов верификации. Ваш IP временно заблокирован.',
-        retryAfter: config.blockDuration / 1000
-      });
+      console.warn(`⚠️ [VERIFICATION] IP ${ip} превысил лимит верификации: ${record.count} запросов (лимит: ${config.maxRequests})`);
+      // Блокировки отключены - продолжаем обработку запроса
     }
     
     // Установка заголовков
@@ -296,19 +234,7 @@ export function statsRateLimiter() {
     const ip = getClientIP(req);
     const now = Date.now();
     
-    // Проверка блокировки IP в статистике
-    if (statsBlockedIPs.has(ip)) {
-      const blockTime = statsBlockedIPs.get(ip);
-      const remainingTime = Math.ceil((config.blockDuration - (now - blockTime)) / 1000 / 60);
-      
-      console.warn(`🚫 [STATS] Заблокированный IP пытается получить статистику: ${ip}`);
-      
-      return res.status(429).json({
-        error: 'Too Many Requests',
-        message: `Слишком много запросов статистики. Попробуйте через ${remainingTime} минут.`,
-        retryAfter: remainingTime * 60
-      });
-    }
+    // Блокировки IP отключены - только мониторинг
     
     // Получение или создание записи для IP
     let record = statsRequestCounts.get(ip);
@@ -324,18 +250,10 @@ export function statsRateLimiter() {
     // Увеличение счетчика
     record.count++;
     
-    // Проверка лимита
+    // Проверка лимита (только логирование, без блокировки)
     if (record.count > config.maxRequests) {
-      statsBlockedIPs.set(ip, now);
-      statsRequestCounts.delete(ip);
-      
-      console.error(`⛔ [STATS] IP заблокирован за превышение лимита статистики: ${ip} (${record.count} запросов)`);
-      
-      return res.status(429).json({
-        error: 'Too Many Requests',
-        message: 'Превышен лимит запросов статистики. Ваш IP временно заблокирован.',
-        retryAfter: config.blockDuration / 1000
-      });
+      console.warn(`⚠️ [STATS] IP ${ip} превысил лимит статистики: ${record.count} запросов (лимит: ${config.maxRequests})`);
+      // Блокировки отключены - продолжаем обработку запроса
     }
     
     // Установка заголовков
@@ -361,17 +279,14 @@ export function statsRateLimiter() {
 export function getRateLimitStats() {
   return {
     activeIPs: requestCounts.size,
-    blockedIPs: blockedIPs.size,
+    blockedIPs: 0, // Блокировки отключены
     records: Array.from(requestCounts.entries()).map(([ip, data]) => ({
       ip,
       requests: data.count,
-      resetTime: new Date(data.resetTime + defaultConfig.windowMs).toISOString()
+      resetTime: new Date(data.resetTime + defaultConfig.windowMs).toISOString(),
+      overLimit: data.count > defaultConfig.maxRequests
     })),
-    blocked: Array.from(blockedIPs.entries()).map(([ip, blockTime]) => ({
-      ip,
-      blockedAt: new Date(blockTime).toISOString(),
-      unblockAt: new Date(blockTime + defaultConfig.blockDuration).toISOString()
-    }))
+    blocked: [] // Блокировки отключены
   };
 }
 
@@ -379,26 +294,24 @@ export function getRateLimitStats() {
  * Разблокировка IP адреса
  */
 export function unblockIP(ip) {
-  let unblocked = false;
-  if (blockedIPs.has(ip)) {
-    blockedIPs.delete(ip);
+  // Блокировки отключены - просто очищаем счетчики
+  let cleared = false;
+  if (requestCounts.has(ip)) {
     requestCounts.delete(ip);
-    console.log(`🔓 IP ${ip} разблокирован вручную`);
-    unblocked = true;
+    console.log(`🔄 Счетчик запросов для IP ${ip} очищен`);
+    cleared = true;
   }
-  if (statsBlockedIPs.has(ip)) {
-    statsBlockedIPs.delete(ip);
+  if (statsRequestCounts.has(ip)) {
     statsRequestCounts.delete(ip);
-    console.log(`🔓 [STATS] IP ${ip} разблокирован для статистики вручную`);
-    unblocked = true;
+    console.log(`🔄 [STATS] Счетчик статистики для IP ${ip} очищен`);
+    cleared = true;
   }
-  if (verificationBlockedIPs.has(ip)) {
-    verificationBlockedIPs.delete(ip);
+  if (verificationRequestCounts.has(ip)) {
     verificationRequestCounts.delete(ip);
-    console.log(`🔓 [VERIFICATION] IP ${ip} разблокирован для верификации вручную`);
-    unblocked = true;
+    console.log(`🔄 [VERIFICATION] Счетчик верификации для IP ${ip} очищен`);
+    cleared = true;
   }
-  return unblocked;
+  return cleared;
 }
 
 /**
