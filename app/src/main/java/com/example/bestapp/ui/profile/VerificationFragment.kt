@@ -100,31 +100,30 @@ class VerificationFragment : Fragment() {
                     activity?.onBackPressed()
                 }
             }
-        
-        val recyclerDocs = view.findViewById<RecyclerView>(R.id.recycler_documents)
-        val recyclerCerts = view.findViewById<RecyclerView>(R.id.recycler_certificates)
-        val recyclerPortfolio = view.findViewById<RecyclerView>(R.id.recycler_portfolio)
-        val recyclerUploaded = view.findViewById<RecyclerView>(R.id.recycler_uploaded_documents)
-        
-        try {
-            val ctx = requireContext()
-            recyclerDocs?.layoutManager = LinearLayoutManager(ctx)
-            recyclerCerts?.layoutManager = LinearLayoutManager(ctx)
-            recyclerPortfolio?.layoutManager = GridLayoutManager(ctx, 3)
             
-            // Для загруженных документов используем GridLayoutManager
-            recyclerUploaded?.layoutManager = GridLayoutManager(ctx, 2)
-        } catch (e: Exception) {
-            Log.e("VerificationFragment", "Ошибка инициализации layout managers", e)
-        }
-        
-        inputInn = view.findViewById(R.id.input_inn)
-        val btnAddDoc = view.findViewById<MaterialButton>(R.id.btn_add_document)
-        val btnAddCert = view.findViewById<MaterialButton>(R.id.btn_add_certificate)
-        val btnAddPortfolio = view.findViewById<MaterialButton>(R.id.btn_add_portfolio)
-        val btnSubmit = view.findViewById<MaterialButton>(R.id.btn_submit)
-        
-        try {
+            val recyclerDocs = view.findViewById<RecyclerView>(R.id.recycler_documents)
+            val recyclerCerts = view.findViewById<RecyclerView>(R.id.recycler_certificates)
+            val recyclerPortfolio = view.findViewById<RecyclerView>(R.id.recycler_portfolio)
+            val recyclerUploaded = view.findViewById<RecyclerView>(R.id.recycler_uploaded_documents)
+            
+            try {
+                val ctx = requireContext()
+                recyclerDocs?.layoutManager = LinearLayoutManager(ctx)
+                recyclerCerts?.layoutManager = LinearLayoutManager(ctx)
+                recyclerPortfolio?.layoutManager = GridLayoutManager(ctx, 3)
+                
+                // Для загруженных документов используем GridLayoutManager
+                recyclerUploaded?.layoutManager = GridLayoutManager(ctx, 2)
+            } catch (e: Exception) {
+                Log.e("VerificationFragment", "Ошибка инициализации layout managers", e)
+            }
+            
+            inputInn = view.findViewById(R.id.input_inn)
+            val btnAddDoc = view.findViewById<MaterialButton>(R.id.btn_add_document)
+            val btnAddCert = view.findViewById<MaterialButton>(R.id.btn_add_certificate)
+            val btnAddPortfolio = view.findViewById<MaterialButton>(R.id.btn_add_portfolio)
+            val btnSubmit = view.findViewById<MaterialButton>(R.id.btn_submit)
+            
             btnAddDoc?.setOnClickListener {
                 currentDocumentType = DocumentType.PASSPORT
                 checkPermissionAndOpenPicker()
@@ -147,7 +146,7 @@ class VerificationFragment : Fragment() {
             // Загружаем уже загруженные документы и статус верификации
             loadVerificationData()
         } catch (e: Exception) {
-            Log.e("VerificationFragment", "Ошибка инициализации кнопок", e)
+            Log.e("VerificationFragment", "Ошибка инициализации экрана верификации", e)
             if (isAdded && context != null) {
                 Toast.makeText(requireContext(), "Ошибка инициализации экрана верификации", Toast.LENGTH_SHORT).show()
             }
