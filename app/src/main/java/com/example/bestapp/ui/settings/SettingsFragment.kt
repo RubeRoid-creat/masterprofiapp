@@ -29,8 +29,6 @@ class SettingsFragment : Fragment() {
     private var inputEmail: TextInputEditText? = null
     private var switchPushNotifications: SwitchMaterial? = null
     private var switchEmailNotifications: SwitchMaterial? = null
-    private var btnMLM: MaterialButton? = null
-    private var btnProfileSettings: MaterialButton? = null
     private var btnLogout: MaterialButton? = null
     private var btnPrivacyPolicy: MaterialButton? = null
     private var btnTerms: MaterialButton? = null
@@ -56,7 +54,6 @@ class SettingsFragment : Fragment() {
         inputEmail = view.findViewById(R.id.input_email)
         switchPushNotifications = view.findViewById(R.id.switch_push_notifications)
         switchEmailNotifications = view.findViewById(R.id.switch_email_notifications)
-        btnMLM = view.findViewById(R.id.btn_mlm)
         btnLogout = view.findViewById(R.id.btn_logout)
         btnPrivacyPolicy = view.findViewById(R.id.btn_privacy_policy)
         btnTerms = view.findViewById(R.id.btn_terms)
@@ -124,11 +121,6 @@ class SettingsFragment : Fragment() {
             if (!hasFocus) {
                 savePersonalData()
             }
-        }
-        
-        // Навигация к MLM
-        btnMLM?.setOnClickListener {
-            findNavController().navigate(R.id.action_settings_to_mlm)
         }
         
         // Выход из аккаунта
