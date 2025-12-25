@@ -587,6 +587,15 @@
                         android:layout_marginTop="8dp"
                         app:icon="@android:drawable/ic_menu_edit" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_feedback_list"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Моя обратная связь"
+                        android:layout_marginTop="4dp"
+                        app:icon="@android:drawable/ic_menu_view" />
+
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>

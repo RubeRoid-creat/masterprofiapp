@@ -812,7 +812,7 @@ router.get('/feedback/:id', (req, res) => {
  * PUT /api/admin/feedback/:id/respond
  * Ответить на обратную связь
  */
-router.put('/feedback/:id/respond', (req, res) => {
+router.put('/feedback/:id/respond', async (req, res) => {
   try {
     const feedbackId = parseInt(req.params.id);
     const adminId = req.user.id;
@@ -820,6 +820,15 @@ router.put('/feedback/:id/respond', (req, res) => {
     
     if (!admin_response || admin_response.trim().length === 0) {
       return res.status(400).json({ error: 'Ответ не может быть пустым' });
+    }
+    
+    // Получаем информацию о пользователе перед обновлением
+    const feedbackBefore = query.get(`
+      SELECT user_id, subject FROM feedback WHERE id = ?
+    `, [feedbackId]);
+    
+    if (!feedbackBefore) {
+      return res.status(404).json({ error: 'Обратная связь не найдена' });
     }
     
     query.run(`
@@ -853,6 +862,24 @@ router.put('/feedback/:id/respond', (req, res) => {
       JOIN users u ON f.user_id = u.id
       WHERE f.id = ?
     `, [feedbackId]);
+    
+    // Отправляем push-уведомление пользователю
+    try {
+      const { sendPushNotification } = await import('../services/push-notification-service.js');
+      await sendPushNotification(feedbackBefore.user_id, {
+        title: 'Ответ на вашу обратную связь',
+        body: `По обращению "${feedbackBefore.subject}" получен ответ от администрации`,
+        data: {
+          type: 'feedback_response',
+          feedbackId: feedbackId.toString(),
+          subject: feedbackBefore.subject
+        }
+      });
+      console.log(`📱 Push-уведомление отправлено пользователю #${feedbackBefore.user_id} о ответе на обратную связь`);
+    } catch (notifError) {
+      console.error('Ошибка отправки push-уведомления:', notifError);
+      // Не прерываем выполнение, если уведомление не отправилось
+    }
     
     res.json(updatedFeedback);
   } catch (error) {
