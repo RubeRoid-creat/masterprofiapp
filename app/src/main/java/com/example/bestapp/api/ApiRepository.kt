@@ -706,12 +706,28 @@ class ApiRepository {
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "Get master stats failed: code=${response.code()}, message=${response.message()}, body=$errorBody")
                     
-                    val errorMessage = when (response.code()) {
-                        401 -> "Требуется авторизация. Войдите в систему заново."
-                        403 -> "Доступ запрещен. У вас нет прав для просмотра статистики."
-                        404 -> "Профиль мастера не найден."
-                        500 -> "Ошибка сервера. Попробуйте позже."
-                        else -> "Ошибка получения статистики: ${response.code()} - ${errorBody ?: response.message()}"
+                    val errorMessage = try {
+                        val errorJson = errorBody?.let { 
+                            com.google.gson.Gson().fromJson(it, Map::class.java) 
+                        }
+                        when (response.code()) {
+                            401 -> "Требуется авторизация. Войдите в систему заново."
+                            403 -> "Доступ запрещен. У вас нет прав для просмотра статистики."
+                            404 -> "Профиль мастера не найден."
+                            429 -> {
+                                val message = errorJson?.get("message")?.toString() 
+                                    ?: "Слишком много запросов статистики. Попробуйте позже."
+                                message
+                            }
+                            500 -> "Ошибка сервера. Попробуйте позже."
+                            else -> errorJson?.get("error")?.toString() 
+                                ?: "Ошибка получения статистики: ${response.code()}"
+                        }
+                    } catch (e: Exception) {
+                        when (response.code()) {
+                            429 -> "Слишком много запросов статистики. Попробуйте позже."
+                            else -> "Ошибка получения статистики: ${response.code()}"
+                        }
                     }
                     Result.failure(Exception(errorMessage))
                 }

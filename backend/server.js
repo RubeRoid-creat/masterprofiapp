@@ -35,7 +35,7 @@ import './services/push-notification-service.js';
 import { initRedis } from './services/cache-service.js';
 
 // Импорт security middleware
-import { rateLimiter, strictRateLimiter, verificationRateLimiter } from './middleware/rate-limiter.js';
+import { rateLimiter, strictRateLimiter, verificationRateLimiter, statsRateLimiter } from './middleware/rate-limiter.js';
 import { httpsRedirect, securityHeaders, sanitizeRequest, securityAuditLogger } from './middleware/security.js';
 
 // Инициализация Express
@@ -391,7 +391,7 @@ app.get('/api-docs.json', (req, res) => {
 app.use('/api/auth', strictRateLimiter(30, 15 * 60 * 1000), authRoutes); // 30 попыток за 15 минут
 app.use('/api/verification-codes', verificationRateLimiter(), verificationCodesRoutes); // 3 попытки за 10 минут
 app.use('/api/orders', ordersRoutes);
-app.use('/api/masters', mastersRoutes);
+app.use('/api/masters', statsRateLimiter(), mastersRoutes); // 200 запросов за 15 минут для статистики и других запросов мастеров
 app.use('/api/assignments', assignmentsRoutes);
 app.use('/api/services', servicesRoutes);
 app.use('/api/reviews', reviewsRoutes);
@@ -406,7 +406,7 @@ app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/promotions', promotionsRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/route-optimization', routeOptimizationRoutes);
-app.use('/api/mlm', mlmRoutes);
+app.use('/api/mlm', statsRateLimiter(), mlmRoutes); // 200 запросов за 15 минут для MLM статистики
 app.use('/api/version', versionRoutes);
 app.use('/api/news', newsRoutes);
 

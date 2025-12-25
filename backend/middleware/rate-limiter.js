@@ -150,6 +150,17 @@ export function verificationRateLimiter() {
 }
 
 /**
+ * Rate Limiter для статистики (более мягкий, так как запрашивается часто)
+ */
+export function statsRateLimiter() {
+  return rateLimiter({
+    maxRequests: 200, // 200 запросов
+    windowMs: 15 * 60 * 1000, // За 15 минут
+    blockDuration: 10 * 60 * 1000 // Блокировка на 10 минут (меньше, чем для других)
+  });
+}
+
+/**
  * Получение статистики rate limiting
  */
 export function getRateLimitStats() {
