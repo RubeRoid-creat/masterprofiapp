@@ -100,17 +100,14 @@ class OrderDetailsFragment : Fragment() {
     private var clientBudget: TextView? = null
     private var paymentType: TextView? = null
     private var finalCost: TextView? = null
-    private var financeCard: com.google.android.material.card.MaterialCardView? = null
-    private var financeSectionTitle: TextView? = null
-    private var serviceCard: com.google.android.material.card.MaterialCardView? = null
-    private var serviceSectionTitle: TextView? = null
+    private var financeCard: LinearLayout? = null
+    private var serviceCard: LinearLayout? = null
     private var preliminaryDiagnosis: TextView? = null
     private var repairComplexity: TextView? = null
     private var estimatedRepairTime: TextView? = null
     private var requiredParts: TextView? = null
     private var specialEquipment: TextView? = null
-    private var mediaCard: com.google.android.material.card.MaterialCardView? = null
-    private var mediaSectionTitle: TextView? = null
+    private var mediaCard: LinearLayout? = null
     private var mediaList: LinearLayout? = null
     private var actionButtons: View? = null
     private var btnAccept: MaterialButton? = null
@@ -194,16 +191,13 @@ class OrderDetailsFragment : Fragment() {
         paymentType = view.findViewById(R.id.payment_type)
         finalCost = view.findViewById(R.id.final_cost)
         financeCard = view.findViewById(R.id.finance_card)
-        financeSectionTitle = view.findViewById(R.id.finance_section_title)
         serviceCard = view.findViewById(R.id.service_card)
-        serviceSectionTitle = view.findViewById(R.id.service_section_title)
         preliminaryDiagnosis = view.findViewById(R.id.preliminary_diagnosis)
         repairComplexity = view.findViewById(R.id.repair_complexity)
         estimatedRepairTime = view.findViewById(R.id.estimated_repair_time)
         requiredParts = view.findViewById(R.id.required_parts)
         specialEquipment = view.findViewById(R.id.special_equipment)
         mediaCard = view.findViewById(R.id.media_card)
-        mediaSectionTitle = view.findViewById(R.id.media_section_title)
         mediaList = view.findViewById(R.id.media_list)
         actionButtons = view.findViewById(R.id.action_buttons)
         btnAccept = view.findViewById(R.id.btn_accept)
@@ -413,11 +407,8 @@ class OrderDetailsFragment : Fragment() {
         mediaList?.removeAllViews()
         actionButtons?.visibility = View.GONE
         financeCard?.visibility = View.GONE
-        financeSectionTitle?.visibility = View.GONE
         serviceCard?.visibility = View.GONE
-        serviceSectionTitle?.visibility = View.GONE
         mediaCard?.visibility = View.GONE
-        mediaSectionTitle?.visibility = View.GONE
         clientEmail?.visibility = View.GONE
         addressDetails?.visibility = View.GONE
         addressLandmark?.visibility = View.GONE
@@ -641,7 +632,6 @@ class OrderDetailsFragment : Fragment() {
             
             if (hasFinanceInfo) {
                 financeCard?.visibility = View.VISIBLE
-                financeSectionTitle?.visibility = View.VISIBLE
             }
             
             // Служебная информация (для мастера)
@@ -683,7 +673,6 @@ class OrderDetailsFragment : Fragment() {
             
             if (hasServiceInfo) {
                 serviceCard?.visibility = View.VISIBLE
-                serviceSectionTitle?.visibility = View.VISIBLE
             }
             
             // Медиафайлы
@@ -705,12 +694,9 @@ class OrderDetailsFragment : Fragment() {
                         mediaList?.addView(mediaView)
                     }
                     mediaCard?.visibility = View.VISIBLE
-                    mediaSectionTitle?.text = "📎 Медиафайлы (${media.size})"
-                    mediaSectionTitle?.visibility = View.VISIBLE
                 }
             } ?: run {
                 mediaCard?.visibility = View.GONE
-                mediaSectionTitle?.visibility = View.GONE
             }
 
             // Показать кнопки только если есть назначение со статусом "pending" или "new"
@@ -1281,16 +1267,13 @@ class OrderDetailsFragment : Fragment() {
         paymentType = null
         finalCost = null
         financeCard = null
-        financeSectionTitle = null
         serviceCard = null
-        serviceSectionTitle = null
         preliminaryDiagnosis = null
         repairComplexity = null
         estimatedRepairTime = null
         requiredParts = null
         specialEquipment = null
         mediaCard = null
-        mediaSectionTitle = null
         mediaList = null
         actionButtons = null
         btnAccept = null

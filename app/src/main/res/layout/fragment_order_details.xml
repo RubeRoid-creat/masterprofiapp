@@ -30,14 +30,13 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-
-            <!-- Основная информация -->
+            <!-- Единая карточка со всей информацией -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="16dp"
                 app:cardElevation="4dp"
-                app:cardCornerRadius="24dp"
+                app:cardCornerRadius="16dp"
                 app:strokeWidth="0dp"
                 app:cardBackgroundColor="?attr/colorSurface">
 
@@ -50,21 +49,22 @@
                     <View
                         android:id="@+id/status_indicator_detail"
                         android:layout_width="match_parent"
-                        android:layout_height="5dp"
+                        android:layout_height="4dp"
                         android:background="?attr/colorPrimary" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="20dp">
+                        android:padding="16dp">
 
+                        <!-- Заголовок с номером и статусами -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="16dp">
+                            android:layout_marginBottom="12dp">
 
                             <LinearLayout
                                 android:layout_width="0dp"
@@ -77,10 +77,9 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     tools:text="Заказ #1"
-                                    android:textSize="24sp"
+                                    android:textSize="20sp"
                                     android:textColor="?attr/colorOnSurface"
                                     android:textStyle="bold"
-                                    android:letterSpacing="0.02"
                                     android:fontFamily="sans-serif-medium" />
 
                                 <LinearLayout
@@ -88,15 +87,16 @@
                                     android:layout_height="wrap_content"
                                     android:orientation="horizontal"
                                     android:gravity="center_vertical"
-                                    android:layout_marginTop="8dp">
+                                    android:layout_marginTop="6dp">
 
                                     <com.google.android.material.chip.Chip
                                         android:id="@+id/request_status_chip"
                                         style="@style/Widget.Material3.Chip.Assist"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:textSize="13sp"
+                                        android:textSize="11sp"
                                         android:textStyle="bold"
+                                        android:minHeight="24dp"
                                         tools:text="Новый" />
 
                                     <com.google.android.material.chip.Chip
@@ -104,9 +104,10 @@
                                         style="@style/Widget.Material3.Chip.Assist.Elevated"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginStart="8dp"
-                                        android:textSize="13sp"
+                                        android:layout_marginStart="6dp"
+                                        android:textSize="11sp"
                                         android:textStyle="bold"
+                                        android:minHeight="24dp"
                                         tools:text="Срочный" />
                                 </LinearLayout>
                             </LinearLayout>
@@ -116,7 +117,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 tools:text="19.11.2025 11:20"
-                                android:textSize="14sp"
+                                android:textSize="13sp"
                                 android:textColor="?android:attr/textColorSecondary" />
                         </LinearLayout>
 
@@ -125,621 +126,456 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginTop="4dp">
+                            android:layout_marginBottom="12dp">
 
                             <TextView
                                 android:id="@+id/priority_text"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:textSize="14sp"
+                                android:textSize="13sp"
                                 android:textColor="?android:attr/textColorSecondary"
                                 android:visibility="gone"
-                                tools:text="Приоритет: Срочный"
-                                tools:visibility="visible" />
+                                tools:text="Приоритет: Срочный" />
 
                             <TextView
                                 android:id="@+id/order_timer"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textSize="15sp"
+                                android:textSize="13sp"
                                 android:textStyle="bold"
                                 android:textColor="#D32F2F"
                                 android:visibility="gone"
-                                tools:text="⏱️ Осталось: 5м 30с" />
+                                tools:text="⏱ Осталось: 5м 30с" />
                         </LinearLayout>
 
-                    </LinearLayout>
+                        <!-- Разделитель -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutline"
+                            android:alpha="0.2"
+                            android:layout_marginBottom="12dp" />
 
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Информация о технике -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📱 Информация о технике"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="12dp"
-                android:fontFamily="sans-serif-medium" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                app:cardElevation="2dp"
-                app:cardCornerRadius="20dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutline"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-
-                    <TextView
-                        android:id="@+id/device_info"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        tools:text="Стиральная машина Samsung"
-                        android:textSize="18sp"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
-                        android:layout_marginBottom="12dp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOutline"
-                        android:alpha="0.2"
-                        android:layout_marginBottom="12dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        <!-- Техника -->
+                        <TextView
+                            android:id="@+id/device_info"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="Стиральная машина Samsung"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"
+                            android:layout_marginBottom="8dp" />
 
                         <TextView
                             android:id="@+id/device_category"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:textSize="15sp"
+                            android:layout_marginBottom="4dp"
+                            android:textSize="14sp"
                             android:textColor="?attr/colorOnSurface"
-                            tools:text="Категория: Крупная" />
+                            tools:text="Категория: Крупная"
+                            android:visibility="gone" />
 
                         <TextView
                             android:id="@+id/device_model"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:textSize="15sp"
-                            android:textColor="?attr/colorOnSurface"
-                            tools:text="Модель: WF8590NLW" />
+                            android:layout_marginBottom="4dp"
+                            android:textSize="14sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            tools:text="Модель: WF8590NLW"
+                            android:visibility="gone" />
 
                         <TextView
                             android:id="@+id/device_serial_number"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:textSize="15sp"
+                            android:layout_marginBottom="4dp"
+                            android:textSize="14sp"
                             android:textColor="?android:attr/textColorSecondary"
-                            tools:text="Серийный номер: ABC123456" />
+                            tools:text="Серийный номер: ABC123456"
+                            android:visibility="gone" />
 
                         <TextView
                             android:id="@+id/device_year"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
-                            android:textSize="15sp"
+                            android:textSize="14sp"
                             android:textColor="?android:attr/textColorSecondary"
-                            tools:text="Год выпуска: 2022" />
+                            tools:text="Год выпуска: 2022"
+                            android:visibility="gone" />
 
                         <TextView
                             android:id="@+id/warranty_status"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textSize="15sp"
+                            android:layout_marginBottom="12dp"
+                            android:textSize="14sp"
                             android:textColor="?android:attr/textColorSecondary"
-                            tools:text="Гарантия: Постгарантийный" />
+                            tools:text="Гарантия: Постгарантийный"
+                            android:visibility="gone" />
 
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Описание проблемы -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🚨 Описание проблемы"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="12dp"
-                android:fontFamily="sans-serif-medium" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                app:cardElevation="2dp"
-                app:cardCornerRadius="20dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutline"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-
-                    <TextView
-                        android:id="@+id/problem_short_description"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface"
-                        android:fontFamily="sans-serif-medium"
-                        android:layout_marginBottom="12dp"
-                        tools:text="Не включается" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOutline"
-                        android:alpha="0.2"
-                        android:layout_marginBottom="12dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Подробное описание:"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:id="@+id/problem_description"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        tools:text="Не включается экран после падения. Звук есть, изображения нет."
-                        android:textSize="16sp"
-                        android:textColor="?attr/colorOnSurface"
-                        android:lineSpacingExtra="4dp" />
-
-                    <TextView
-                        android:id="@+id/problem_when_started"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Когда началась: Вчера вечером" />
-
-                    <TextView
-                        android:id="@+id/problem_conditions"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Условия проявления: При включении" />
-
-                    <TextView
-                        android:id="@+id/problem_error_codes"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?attr/colorError"
-                        android:textStyle="bold"
-                        tools:text="Коды ошибок: E2, F5" />
-
-                    <TextView
-                        android:id="@+id/problem_attempted_fixes"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Что уже пробовали: Перезагрузка" />
-
-                    <TextView
-                        android:id="@+id/problem_category"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Категория проблемы: Электрика" />
-
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:scrollbars="none">
-
-                        <com.google.android.material.chip.ChipGroup
-                            android:id="@+id/problem_tags_group"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:singleSelection="false"
-                            app:selectionRequired="false" />
-
-                    </HorizontalScrollView>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Информация о клиенте и адресе -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="👤 Клиент и Адрес"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="12dp"
-                android:fontFamily="sans-serif-medium" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                app:cardElevation="2dp"
-                app:cardCornerRadius="20dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutline"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
-
+                        <!-- Разделитель -->
                         <View
-                            android:layout_width="4dp"
-                            android:layout_height="32dp"
-                            android:background="?attr/colorPrimary"
-                            android:layout_marginEnd="12dp" />
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutline"
+                            android:alpha="0.2"
+                            android:layout_marginBottom="12dp" />
 
+                        <!-- Проблема -->
                         <TextView
-                            android:id="@+id/client_name"
-                            android:layout_width="0dp"
+                            android:id="@+id/problem_short_description"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            tools:text="Иванов Иван"
-                            android:textSize="20sp"
-                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp"
                             android:textStyle="bold"
-                            android:fontFamily="sans-serif-medium" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOutline"
-                        android:alpha="0.2"
-                        android:layout_marginBottom="16dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
+                            android:textColor="?attr/colorOnSurface"
+                            android:fontFamily="sans-serif-medium"
+                            android:layout_marginBottom="8dp"
+                            tools:text="Не включается" />
 
                         <TextView
+                            android:id="@+id/problem_description"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            tools:text="Не включается экран после падения. Звук есть, изображения нет."
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:lineSpacingExtra="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:id="@+id/problem_when_started"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="📞"
-                            android:textSize="18sp"
-                            android:layout_marginEnd="12dp" />
+                            android:layout_marginBottom="4dp"
+                            android:textSize="13sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            tools:text="Когда началась: Вчера вечером"
+                            android:visibility="gone" />
 
                         <TextView
-                            android:id="@+id/client_phone"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            tools:text="+7 (999) 123-45-67"
-                            android:textSize="17sp"
-                            android:textColor="?attr/colorOnSurface" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/client_email"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="✉️ ivanov@example.com"
-                        android:visibility="gone" />
-
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOutline"
-                        android:alpha="0.2"
-                        android:layout_marginVertical="16dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
+                            android:id="@+id/problem_conditions"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="📍"
-                            android:textSize="18sp"
-                            android:layout_marginEnd="12dp" />
+                            android:layout_marginBottom="4dp"
+                            android:textSize="13sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            tools:text="Условия проявления: При включении"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/problem_error_codes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:textSize="13sp"
+                            android:textColor="?attr/colorError"
+                            android:textStyle="bold"
+                            tools:text="Коды ошибок: E2, F5"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/problem_attempted_fixes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:textSize="13sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            tools:text="Что уже пробовали: Перезагрузка"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/problem_category"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:textSize="13sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            tools:text="Категория проблемы: Электрика"
+                            android:visibility="gone" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:scrollbars="none"
+                            android:visibility="gone">
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/problem_tags_group"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:singleSelection="false"
+                                app:selectionRequired="false" />
+
+                        </HorizontalScrollView>
+
+                        <!-- Разделитель -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutline"
+                            android:alpha="0.2"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- Клиент -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+
+                            <View
+                                android:layout_width="3dp"
+                                android:layout_height="20dp"
+                                android:background="?attr/colorPrimary"
+                                android:layout_marginEnd="10dp" />
+
+                            <TextView
+                                android:id="@+id/client_name"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                tools:text="Иванов Иван"
+                                android:textSize="16sp"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@android:drawable/ic_menu_call"
+                                android:tint="?attr/colorPrimary"
+                                android:layout_marginEnd="8dp" />
 
                             <TextView
-                                android:id="@+id/client_address"
-                                android:layout_width="wrap_content"
+                                android:id="@+id/client_phone"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                tools:text="ул. Ленина, д. 10, кв. 5"
-                                android:textSize="17sp"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textStyle="bold" />
+                                android:layout_weight="1"
+                                tools:text="+7 (999) 123-45-67"
+                                android:textSize="14sp"
+                                android:textColor="?attr/colorOnSurface" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/client_email"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:textSize="14sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            tools:text="ivanov@example.com"
+                            android:visibility="gone" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_location"
+                                android:tint="?attr/colorPrimary"
+                                android:layout_marginEnd="8dp" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/client_address"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    tools:text="ул. Ленина, д. 10, кв. 5"
+                                    android:textSize="14sp"
+                                    android:textColor="?attr/colorOnSurface"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/address_details"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:textSize="13sp"
+                                    android:textColor="?android:attr/textColorSecondary"
+                                    android:visibility="gone"
+                                    tools:text="Этаж: 3, Код домофона: 1234" />
+
+                                <TextView
+                                    android:id="@+id/address_landmark"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textSize="13sp"
+                                    android:textColor="?android:attr/textColorSecondary"
+                                    android:visibility="gone"
+                                    tools:text="Ориентир: Рядом с магазином" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/desired_repair_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:textSize="13sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            tools:text="Желаемая дата ремонта: 20.11.2025"
+                            android:visibility="gone" />
+
+                        <!-- Финансовые параметры -->
+                        <LinearLayout
+                            android:id="@+id/finance_card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            android:layout_marginBottom="12dp">
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="?attr/colorOutline"
+                                android:alpha="0.2"
+                                android:layout_marginBottom="8dp" />
 
                             <TextView
-                                android:id="@+id/address_details"
+                                android:id="@+id/client_budget"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:textSize="15sp"
+                                android:textSize="14sp"
                                 android:textColor="?android:attr/textColorSecondary"
-                                android:visibility="gone"
-                                tools:text="Этаж: 3, Код домофона: 1234"
-                                tools:visibility="visible" />
+                                tools:text="Бюджет клиента: 5000 ₽" />
 
                             <TextView
-                                android:id="@+id/address_landmark"
+                                android:id="@+id/payment_type"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:textSize="15sp"
+                                android:textSize="14sp"
                                 android:textColor="?android:attr/textColorSecondary"
-                                android:visibility="gone"
-                                tools:text="Ориентир: Рядом с магазином" />
+                                tools:text="Тип оплаты: Наличные" />
+
+                            <TextView
+                                android:id="@+id/final_cost"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorPrimary"
+                                tools:text="Итоговая стоимость: 4500 ₽"
+                                android:visibility="gone" />
                         </LinearLayout>
+
+                        <!-- Служебная информация -->
+                        <LinearLayout
+                            android:id="@+id/service_card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            android:layout_marginBottom="12dp">
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="?attr/colorOutline"
+                                android:alpha="0.2"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:id="@+id/preliminary_diagnosis"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                tools:text="Предварительный диагноз: Замена экрана" />
+
+                            <TextView
+                                android:id="@+id/repair_complexity"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                tools:text="Сложность ремонта: Средний" />
+
+                            <TextView
+                                android:id="@+id/estimated_repair_time"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                tools:text="Расчетное время работы: 120 мин." />
+
+                            <TextView
+                                android:id="@+id/required_parts"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                tools:text="Необходимые запчасти: Экран, клей" />
+
+                            <TextView
+                                android:id="@+id/special_equipment"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                tools:text="Специальное оборудование: Пневматический пресс" />
+                        </LinearLayout>
+
+                        <!-- Медиафайлы -->
+                        <LinearLayout
+                            android:id="@+id/media_card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="?attr/colorOutline"
+                                android:alpha="0.2"
+                                android:layout_marginBottom="8dp" />
+
+                            <LinearLayout
+                                android:id="@+id/media_list"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical" />
+                        </LinearLayout>
+
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/address_details"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Этаж: 3, Код домофона: 1234"
-                        android:visibility="gone" />
-
-                    <TextView
-                        android:id="@+id/address_landmark"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Ориентир: Рядом с магазином"
-                        android:visibility="gone" />
-                        
-
-                    <TextView
-                        android:id="@+id/desired_repair_date"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Желаемая дата ремонта: 20.11.2025"
-                        android:visibility="gone" />
-
-
-
-
                 </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Финансовые параметры -->
-            <TextView
-                android:id="@+id/finance_section_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="💰 Финансовые параметры"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/finance_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                app:cardElevation="3dp"
-                app:cardCornerRadius="20dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/client_budget"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Бюджет клиента: 5000 ₽" />
-
-                    <TextView
-                        android:id="@+id/payment_type"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Тип оплаты: Наличные" />
-
-                    <TextView
-                        android:id="@+id/final_cost"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorPrimary"
-                        tools:text="Итоговая стоимость: 4500 ₽"
-                        android:visibility="gone" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Служебная информация (для мастера) -->
-            <TextView
-                android:id="@+id/service_section_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🔧 Служебная информация"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/service_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                app:cardElevation="3dp"
-                app:cardCornerRadius="20dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/preliminary_diagnosis"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Предварительный диагноз: Замена экрана" />
-
-                    <TextView
-                        android:id="@+id/repair_complexity"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Сложность ремонта: Средний" />
-
-                    <TextView
-                        android:id="@+id/estimated_repair_time"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Расчетное время работы: 120 мин." />
-
-                    <TextView
-                        android:id="@+id/required_parts"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Необходимые запчасти: Экран, клей" />
-
-                    <TextView
-                        android:id="@+id/special_equipment"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        tools:text="Специальное оборудование: Пневматический пресс" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Медиафайлы -->
-            <TextView
-                android:id="@+id/media_section_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📎 Медиафайлы"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/media_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                app:cardElevation="3dp"
-                app:cardCornerRadius="20dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="?attr/colorSurface">
-
-                <LinearLayout
-                    android:id="@+id/media_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp" />
 
             </com.google.android.material.card.MaterialCardView>
 
@@ -748,7 +584,7 @@
                 android:id="@+id/action_buttons"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="16dp"
                 app:cardElevation="8dp"
                 app:cardCornerRadius="20dp"
@@ -826,7 +662,7 @@
                 android:id="@+id/btn_complete_order"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:text="Завершить заказ"
                 android:visibility="gone"
                 app:icon="@android:drawable/ic_menu_revert"
@@ -837,7 +673,7 @@
                 android:id="@+id/btn_create_report"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:text="Создать отчет о работе"
                 android:visibility="gone"
                 app:icon="@android:drawable/ic_menu_edit" />
