@@ -852,9 +852,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:orientation="vertical"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="112dp"
-        android:gravity="bottom"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="56dp"
+        android:gravity="bottom|end"
         android:padding="0dp">
 
         <com.google.android.material.button.MaterialButton
