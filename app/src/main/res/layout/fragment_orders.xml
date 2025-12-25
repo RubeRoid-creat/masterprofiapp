@@ -18,18 +18,6 @@
             app:titleTextColor="?attr/colorOnSurface">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_filters"
-                style="@style/Widget.Material3.Button.TextButton.Icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginEnd="4dp"
-                android:text="Фильтры"
-                app:icon="@android:drawable/ic_menu_sort_by_size"
-                app:iconGravity="textStart"
-                app:iconTint="?attr/colorPrimary" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_show_map"
                 style="@style/Widget.Material3.Button.TextButton.Icon"
                 android:layout_width="wrap_content"
@@ -126,53 +114,6 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Быстрые фильтры - только сортировка (компактно) -->
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:scrollbars="none"
-                    android:paddingBottom="8dp"
-                    android:paddingTop="4dp">
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chip_group_sort"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingHorizontal="16dp"
-                        app:singleSelection="true"
-                        app:selectionRequired="false">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_sort_distance"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ближайшие" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_sort_price"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Дорогие" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_sort_urgency"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Срочные" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_sort_date"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Новые" />
-
-                    </com.google.android.material.chip.ChipGroup>
-
-                </HorizontalScrollView>
 
     </com.google.android.material.appbar.AppBarLayout>
 

@@ -65,15 +65,14 @@ class OrdersFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recycler_orders)
         searchBar = view.findViewById(R.id.search_bar)
         emptyTextView = view.findViewById(R.id.text_empty)
-        chipGroupDeviceType = view.findViewById(R.id.chip_group_device_type)
-        chipGroupUrgency = view.findViewById(R.id.chip_group_urgency)
-        chipGroupSort = view.findViewById(R.id.chip_group_sort)
-        filterMinPrice = view.findViewById(R.id.filter_min_price)
-        filterMinPrice = null // Теперь в BottomSheet
-        filterMaxPrice = null // Теперь в BottomSheet
-        filterMaxDistance = null // Теперь в BottomSheet
+        chipGroupDeviceType = null
+        chipGroupUrgency = null
+        chipGroupSort = null
+        filterMinPrice = null
+        filterMaxPrice = null
+        filterMaxDistance = null
         btnShowMap = view.findViewById(R.id.btn_show_map)
-        btnFilters = view.findViewById(R.id.btn_filters)
+        btnFilters = null
         shiftCard = view.findViewById(R.id.shift_card)
         shiftStatusText = view.findViewById(R.id.shift_status_text)
         shiftStatusHint = view.findViewById(R.id.shift_status_hint)
@@ -82,9 +81,7 @@ class OrdersFragment : Fragment() {
         
         setupRecyclerView()
         setupCompletedOrdersRecyclerView()
-        setupFilters()
         setupMapButton()
-        setupFiltersButton()
         setupShiftCard()
         setupBatchActions()
         setupTabs()
@@ -123,9 +120,7 @@ class OrdersFragment : Fragment() {
     }
     
     private fun setupFiltersButton() {
-        btnFilters?.setOnClickListener {
-            showFiltersBottomSheet()
-        }
+        // Фильтры убраны
     }
     
     private fun showFiltersBottomSheet() {
@@ -646,71 +641,9 @@ class OrdersFragment : Fragment() {
     }
     
     private fun setupFilters() {
-        // Фильтры теперь в BottomSheet, здесь только сортировка
         // Поиск
         searchBar?.doAfterTextChanged { text ->
             viewModel.setSearchQuery(text?.toString() ?: "")
-        }
-        
-        // Фильтр по типу устройства
-        chipGroupDeviceType?.setOnCheckedStateChangeListener { _, checkedIds ->
-            val selectedTypes = mutableSetOf<String>()
-            checkedIds.forEach { chipId ->
-                when (chipId) {
-                    R.id.chip_washing_machines -> selectedTypes.add("Стиральная машина")
-                    R.id.chip_dishwashers -> selectedTypes.add("Посудомоечная машина")
-                    R.id.chip_ovens -> selectedTypes.add("Духовой шкаф")
-                    R.id.chip_refrigerators -> selectedTypes.add("Холодильник")
-                    R.id.chip_microwaves -> selectedTypes.add("Микроволновая печь")
-                    R.id.chip_freezers -> selectedTypes.add("Морозильный ларь")
-                    R.id.chip_cooktops -> selectedTypes.add("Варочная панель")
-                    R.id.chip_laptops -> selectedTypes.add("Ноутбук")
-                    R.id.chip_desktops -> selectedTypes.add("Десктоп")
-                    R.id.chip_coffee_machines -> selectedTypes.add("Кофемашина")
-                    R.id.chip_air_conditioners -> selectedTypes.add("Кондиционер")
-                    R.id.chip_water_heaters -> selectedTypes.add("Водонагреватель")
-                }
-            }
-            viewModel.setDeviceTypeFilter(selectedTypes)
-        }
-        
-        // Фильтр по цене
-        filterMinPrice?.doAfterTextChanged { text ->
-            updatePriceFilter()
-        }
-        
-        filterMaxPrice?.doAfterTextChanged { text ->
-            updatePriceFilter()
-        }
-        
-        // Фильтр по максимальному расстоянию
-        filterMaxDistance?.doAfterTextChanged { text ->
-            val maxDistanceKm = text?.toString()?.toDoubleOrNull()
-            val maxDistanceM = maxDistanceKm?.times(1000) // Конвертируем км в метры
-            viewModel.setMaxDistanceFilter(maxDistanceM)
-        }
-        
-        // Фильтр по срочности
-        chipGroupUrgency?.setOnCheckedStateChangeListener { _, checkedIds ->
-            val urgency = when {
-                checkedIds.contains(R.id.chip_urgency_emergency) -> "emergency"
-                checkedIds.contains(R.id.chip_urgency_urgent) -> "urgent"
-                checkedIds.contains(R.id.chip_urgency_planned) -> "planned"
-                else -> null
-            }
-            viewModel.setUrgencyFilter(urgency)
-        }
-        
-        // Сортировка
-        chipGroupSort?.setOnCheckedStateChangeListener { _, checkedIds ->
-            val sortBy = when {
-                checkedIds.contains(R.id.chip_sort_distance) -> "distance"
-                checkedIds.contains(R.id.chip_sort_price) -> "price"
-                checkedIds.contains(R.id.chip_sort_urgency) -> "urgency"
-                checkedIds.contains(R.id.chip_sort_date) -> "created_at"
-                else -> null
-            }
-            viewModel.setSortBy(sortBy)
         }
     }
     
