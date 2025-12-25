@@ -1,37 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".ui.orders.OrdersFragment">
 
-    <!-- Верхняя панель: Вкладки и кнопка "Карта" -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <!-- Верхняя панель: Вкладки -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:baselineAligned="false"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
         
         <!-- Вкладки: Новые заказы / Завершенные заказы -->
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tab_layout"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:layout_marginEnd="4dp"
             app:tabMode="fixed"
             app:tabGravity="fill"
-            app:tabIndicatorHeight="0dp"
-            app:tabPaddingStart="4dp"
-            app:tabPaddingEnd="4dp">
+            app:tabIndicatorHeight="0dp">
             
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
@@ -43,26 +41,6 @@
                 android:layout_height="wrap_content"
                 android:text="Мои заказы" />
         </com.google.android.material.tabs.TabLayout>
-        
-        <!-- Кнопка "Карта" -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_show_map"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_gravity="center_vertical"
-            android:minHeight="48dp"
-            android:minWidth="56dp"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:text="Карта"
-            android:textSize="13sp"
-            android:textAllCaps="false"
-            android:ellipsize="none"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:gravity="center"
-            android:includeFontPadding="false" />
     </LinearLayout>
     
     <!-- Кнопки для батчинга заказов -->
@@ -238,4 +216,20 @@
 
     </androidx.core.widget.NestedScrollView>
 
-</LinearLayout>
+    </LinearLayout>
+
+    <!-- Плавающая кнопка "Карта" в правом нижнем углу -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/btn_show_map"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="80dp"
+        android:text="Карта"
+        app:icon="@drawable/ic_map"
+        app:iconTint="@android:color/white"
+        app:backgroundTint="?attr/colorPrimary"
+        app:elevation="6dp" />
+
+</FrameLayout>
