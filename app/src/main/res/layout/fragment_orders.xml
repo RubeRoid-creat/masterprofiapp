@@ -26,6 +26,7 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
             app:tabMode="fixed"
             app:tabGravity="fill"
             app:tabIndicatorHeight="0dp">
@@ -44,16 +45,19 @@
         <!-- Кнопка "Карта" -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_show_map"
-            style="@style/Widget.Material3.Button.TextButton.Icon"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
             android:layout_gravity="center_vertical"
-            android:layout_marginStart="8dp"
             android:minHeight="48dp"
+            android:minWidth="0dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:text="Карта"
-            app:icon="@drawable/ic_map"
-            app:iconGravity="textStart"
-            app:iconTint="?attr/colorPrimary" />
+            android:textAllCaps="false"
+            android:ellipsize="none"
+            android:maxLines="1"
+            android:singleLine="true" />
     </LinearLayout>
     
     <!-- Кнопки для батчинга заказов -->
