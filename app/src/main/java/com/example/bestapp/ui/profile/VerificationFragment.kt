@@ -144,7 +144,12 @@ class VerificationFragment : Fragment() {
             }
             
             // Загружаем уже загруженные документы и статус верификации
-            loadVerificationData()
+            // Откладываем вызов на следующий кадр, чтобы убедиться что view полностью инициализирован
+            view.post {
+                if (isAdded && view != null) {
+                    loadVerificationData()
+                }
+            }
         } catch (e: Exception) {
             Log.e("VerificationFragment", "Ошибка инициализации экрана верификации", e)
             if (isAdded && context != null) {
@@ -215,15 +220,23 @@ class VerificationFragment : Fragment() {
                     updateUIForStatus()
                 }.onFailure { error ->
                     Log.e("VerificationFragment", "Ошибка загрузки документов", error)
-                    if (isAdded) {
+                    if (isAdded && view != null) {
                         // Если документов нет, показываем форму загрузки
-                        updateUIForStatus()
+                        try {
+                            updateUIForStatus()
+                        } catch (e: Exception) {
+                            Log.e("VerificationFragment", "Ошибка обновления UI после ошибки загрузки", e)
+                        }
                     }
                 }
             } catch (e: Exception) {
                 Log.e("VerificationFragment", "Ошибка загрузки данных верификации", e)
-                if (isAdded) {
-                    updateUIForStatus()
+                if (isAdded && view != null) {
+                    try {
+                        updateUIForStatus()
+                    } catch (uiError: Exception) {
+                        Log.e("VerificationFragment", "Ошибка обновления UI после исключения", uiError)
+                    }
                 }
             }
         }
@@ -245,56 +258,74 @@ class VerificationFragment : Fragment() {
     }
     
     private fun updateUIForStatus() {
-        view?.let { v ->
-            val statusView = v.findViewById<TextView>(R.id.verification_status_text)
-            val statusCard = v.findViewById<MaterialCardView>(R.id.verification_status_card)
-            val formContainer = v.findViewById<ViewGroup>(R.id.verification_form_container)
-            val btnSubmit = v.findViewById<MaterialButton>(R.id.btn_submit)
-            
-            when (verificationStatus) {
-                "verified" -> {
-                    // Показываем успешную верификацию
-                    statusView?.text = "✅ Вы успешно верифицированы!"
-                    statusCard?.visibility = View.VISIBLE
-                    formContainer?.visibility = View.GONE
-                    btnSubmit?.visibility = View.GONE
-                }
-                "pending" -> {
-                    // Показываем статус "на проверке"
-                    statusView?.text = "⏳ Ваши документы на проверке. Пожалуйста, подождите."
-                    statusCard?.visibility = View.VISIBLE
-                    formContainer?.visibility = View.GONE
-                    btnSubmit?.visibility = View.GONE
-                }
-                "rejected" -> {
-                    // Показываем отклонение с возможностью повторной загрузки
-                    statusView?.text = "❌ Верификация отклонена. Пожалуйста, загрузите документы заново."
-                    statusCard?.visibility = View.VISIBLE
-                    formContainer?.visibility = View.VISIBLE
-                    btnSubmit?.visibility = View.VISIBLE
-                }
-                else -> {
-                    // Показываем форму загрузки
-                    statusCard?.visibility = View.GONE
-                    formContainer?.visibility = View.VISIBLE
-                    btnSubmit?.visibility = View.VISIBLE
+        if (!isAdded || view == null) {
+            Log.w("VerificationFragment", "Fragment not attached, skipping updateUIForStatus")
+            return
+        }
+        
+        try {
+            view?.let { v ->
+                val statusView = v.findViewById<TextView>(R.id.verification_status_text)
+                val statusCard = v.findViewById<MaterialCardView>(R.id.verification_status_card)
+                val formContainer = v.findViewById<ViewGroup>(R.id.verification_form_container)
+                val btnSubmit = v.findViewById<MaterialButton>(R.id.btn_submit)
+                
+                when (verificationStatus) {
+                    "verified" -> {
+                        // Показываем успешную верификацию
+                        statusView?.text = "✅ Вы успешно верифицированы!"
+                        statusCard?.visibility = View.VISIBLE
+                        formContainer?.visibility = View.GONE
+                        btnSubmit?.visibility = View.GONE
+                    }
+                    "pending" -> {
+                        // Показываем статус "на проверке"
+                        statusView?.text = "⏳ Ваши документы на проверке. Пожалуйста, подождите."
+                        statusCard?.visibility = View.VISIBLE
+                        formContainer?.visibility = View.GONE
+                        btnSubmit?.visibility = View.GONE
+                    }
+                    "rejected" -> {
+                        // Показываем отклонение с возможностью повторной загрузки
+                        statusView?.text = "❌ Верификация отклонена. Пожалуйста, загрузите документы заново."
+                        statusCard?.visibility = View.VISIBLE
+                        formContainer?.visibility = View.VISIBLE
+                        btnSubmit?.visibility = View.VISIBLE
+                    }
+                    else -> {
+                        // Показываем форму загрузки
+                        statusCard?.visibility = View.GONE
+                        formContainer?.visibility = View.VISIBLE
+                        btnSubmit?.visibility = View.VISIBLE
+                    }
                 }
             }
+        } catch (e: Exception) {
+            Log.e("VerificationFragment", "Ошибка обновления UI статуса", e)
         }
     }
     
     private fun updateUploadedDocumentsView() {
-        view?.let { v ->
-            val recyclerUploaded = v.findViewById<RecyclerView>(R.id.recycler_uploaded_documents)
-            if (recyclerUploaded != null && uploadedDocuments.isNotEmpty()) {
-                recyclerUploaded.visibility = View.VISIBLE
-                recyclerUploaded.adapter = UploadedDocumentsAdapter(uploadedDocuments) { document ->
-                    // Показываем детали документа или удаляем его
-                    showDocumentDetails(document)
+        if (!isAdded || view == null) {
+            Log.w("VerificationFragment", "Fragment not attached, skipping updateUploadedDocumentsView")
+            return
+        }
+        
+        try {
+            view?.let { v ->
+                val recyclerUploaded = v.findViewById<RecyclerView>(R.id.recycler_uploaded_documents)
+                if (recyclerUploaded != null && uploadedDocuments.isNotEmpty()) {
+                    recyclerUploaded.visibility = View.VISIBLE
+                    recyclerUploaded.adapter = UploadedDocumentsAdapter(uploadedDocuments) { document ->
+                        // Показываем детали документа или удаляем его
+                        showDocumentDetails(document)
+                    }
+                } else {
+                    recyclerUploaded?.visibility = View.GONE
                 }
-            } else {
-                recyclerUploaded?.visibility = View.GONE
             }
+        } catch (e: Exception) {
+            Log.e("VerificationFragment", "Ошибка обновления списка загруженных документов", e)
         }
     }
     
