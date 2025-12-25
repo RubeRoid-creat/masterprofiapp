@@ -115,7 +115,6 @@ class OrderDetailsFragment : Fragment() {
     private var actionButtons: View? = null
     private var btnAccept: MaterialButton? = null
     private var btnReject: MaterialButton? = null
-    private var btnShowOnMap: MaterialButton? = null
     private var btnBuildRoute: MaterialButton? = null
     private var btnChat: MaterialButton? = null
     private var btnCreateReport: MaterialButton? = null
@@ -209,7 +208,6 @@ class OrderDetailsFragment : Fragment() {
         actionButtons = view.findViewById(R.id.action_buttons)
         btnAccept = view.findViewById(R.id.btn_accept)
         btnReject = view.findViewById(R.id.btn_reject)
-        btnShowOnMap = view.findViewById(R.id.btn_show_on_map)
         btnBuildRoute = view.findViewById(R.id.btn_build_route)
         btnChat = view.findViewById(R.id.btn_chat)
         btnCreateReport = view.findViewById(R.id.btn_create_report)
@@ -758,10 +756,6 @@ class OrderDetailsFragment : Fragment() {
             rejectOrder()
         }
 
-        btnShowOnMap?.setOnClickListener {
-            showOrderOnMap()
-        }
-
         btnBuildRoute?.setOnClickListener {
             requestLocationAndBuildRoute()
         }
@@ -855,28 +849,6 @@ class OrderDetailsFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e(TAG, "Error completing order", e)
                 Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun showOrderOnMap() {
-        currentOrder?.let { order ->
-            val latitude = order.latitude
-            val longitude = order.longitude
-
-            if (latitude != null && longitude != null) {
-                val bundle = Bundle().apply {
-                    putDouble("latitude", latitude)
-                    putDouble("longitude", longitude)
-                    putLong("orderId", order.id)
-                }
-                findNavController().navigate(R.id.action_order_details_to_orders_map, bundle)
-            } else {
-                Toast.makeText(
-                    context,
-                    "Координаты заказа отсутствуют",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
         }
     }
@@ -1323,7 +1295,6 @@ class OrderDetailsFragment : Fragment() {
         actionButtons = null
         btnAccept = null
         btnReject = null
-        btnShowOnMap = null
         btnBuildRoute = null
         btnChat = null
     }
