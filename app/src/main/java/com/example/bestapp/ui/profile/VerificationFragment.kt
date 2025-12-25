@@ -148,7 +148,9 @@ class VerificationFragment : Fragment() {
             loadVerificationData()
         } catch (e: Exception) {
             Log.e("VerificationFragment", "Ошибка инициализации кнопок", e)
-            Toast.makeText(context, "Ошибка инициализации экрана верификации", Toast.LENGTH_SHORT).show()
+            if (isAdded && context != null) {
+                Toast.makeText(requireContext(), "Ошибка инициализации экрана верификации", Toast.LENGTH_SHORT).show()
+            }
         }
     }
     
