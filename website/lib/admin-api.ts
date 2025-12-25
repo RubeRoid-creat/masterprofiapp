@@ -150,11 +150,131 @@ export async function syncNewsWithAdmin() {
 }
 
 /**
+ * Интерфейс позиции прайса
+ */
+export interface PriceItem {
+  id?: number;
+  category: string;
+  name: string;
+  price: number;
+  type: 'service' | 'part';
+  description?: string;
+  unit?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Получение прайса из админ-панели
+ */
+export async function getPricesFromAdmin(params?: { category?: string; type?: 'service' | 'part' }) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.type) queryParams.append('type', params.type);
+
+    const response = await fetch(`${ADMIN_API_URL}/prices?${queryParams.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ADMIN_API_KEY && { 'X-API-Key': ADMIN_API_KEY }),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching prices from admin panel:', error);
+    throw error;
+  }
+}
+
+/**
+ * Создание позиции прайса (требует авторизацию админа)
+ */
+export async function createPriceItem(token: string, priceItem: Omit<PriceItem, 'id' | 'created_at' | 'updated_at'>) {
+  try {
+    const response = await fetch(`${ADMIN_API_URL}/prices`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...(ADMIN_API_KEY && { 'X-API-Key': ADMIN_API_KEY }),
+      },
+      body: JSON.stringify(priceItem),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating price item:', error);
+    throw error;
+  }
+}
+
+/**
+ * Обновление позиции прайса (требует авторизацию админа)
+ */
+export async function updatePriceItem(token: string, id: number, priceItem: Partial<Omit<PriceItem, 'id' | 'created_at' | 'updated_at'>>) {
+  try {
+    const response = await fetch(`${ADMIN_API_URL}/prices/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...(ADMIN_API_KEY && { 'X-API-Key': ADMIN_API_KEY }),
+      },
+      body: JSON.stringify(priceItem),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating price item:', error);
+    throw error;
+  }
+}
+
+/**
+ * Удаление позиции прайса (требует авторизацию админа)
+ */
+export async function deletePriceItem(token: string, id: number) {
+  try {
+    const response = await fetch(`${ADMIN_API_URL}/prices/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...(ADMIN_API_KEY && { 'X-API-Key': ADMIN_API_KEY }),
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error deleting price item:', error);
+    throw error;
+  }
+}
+
+/**
  * Синхронизация прайса с админ-панелью
  */
 export async function syncPricesWithAdmin() {
-  // TODO: Реализовать синхронизацию прайса
-  // Это будет зависеть от API админ-панели для управления прайсом
-  return [];
+  return await getPricesFromAdmin();
 }
 
