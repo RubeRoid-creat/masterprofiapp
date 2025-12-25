@@ -191,25 +191,47 @@ router.get('/masters/list', (req, res) => {
     
     let masters = query.all(sql, params);
     
+    console.log(`[GET /api/admin/masters/list] Найдено мастеров до фильтрации: ${masters.length}, device_type: ${device_type || 'не указан'}`);
+    
     // Фильтруем по специализации, если указан device_type
     if (device_type) {
+      const beforeCount = masters.length;
       masters = masters.filter(master => {
         try {
-          const specializations = JSON.parse(master.specialization || '[]');
-          if (Array.isArray(specializations) && specializations.length > 0) {
-            return specializations.includes(device_type);
+          const specializationStr = master.specialization || '[]';
+          const specializations = JSON.parse(specializationStr);
+          
+          if (!Array.isArray(specializations)) {
+            console.log(`[GET /api/admin/masters/list] Мастер #${master.id}: специализация не массив`);
+            return false;
           }
-          return false; // Если специализация пустая, не показываем
+          
+          if (specializations.length === 0) {
+            console.log(`[GET /api/admin/masters/list] Мастер #${master.id}: пустая специализация`);
+            return false;
+          }
+          
+          const hasSpecialization = specializations.includes(device_type);
+          if (!hasSpecialization) {
+            console.log(`[GET /api/admin/masters/list] Мастер #${master.id} (${master.name}): специализации [${specializations.join(', ')}] не содержат "${device_type}"`);
+          }
+          
+          return hasSpecialization;
         } catch (e) {
-          console.error('Ошибка парсинга специализации мастера:', e);
+          console.error(`[GET /api/admin/masters/list] Ошибка парсинга специализации мастера #${master.id}:`, e, 'Значение:', master.specialization);
           return false;
         }
       });
+      
+      console.log(`[GET /api/admin/masters/list] После фильтрации по специализации "${device_type}": ${beforeCount} -> ${masters.length} мастеров`);
+    } else {
+      console.log(`[GET /api/admin/masters/list] device_type не указан, показываем всех верифицированных мастеров`);
     }
     
     // Удаляем поле specialization из ответа (не нужно на фронтенде)
     masters = masters.map(({ specialization, ...rest }) => rest);
     
+    console.log(`[GET /api/admin/masters/list] Возвращаем ${masters.length} мастеров`);
     res.json(masters);
   } catch (error) {
     console.error('Ошибка получения списка мастеров:', error);

@@ -63,20 +63,35 @@ export default function Orders() {
         params.device_type = deviceType;
       }
       
+      console.log('Запрос списка мастеров с параметрами:', params);
       const response = await mastersAPI.getList(params);
-      setMasters(response.data);
+      console.log('Получено мастеров:', response.data?.length || 0, response.data);
+      setMasters(response.data || []);
+      
+      if (!response.data || response.data.length === 0) {
+        if (deviceType) {
+          setError(`Не найдено верифицированных мастеров со специализацией "${deviceType}"`);
+        } else {
+          setError('Не найдено верифицированных мастеров');
+        }
+      } else {
+        setError(''); // Очищаем ошибку, если мастера найдены
+      }
     } catch (err) {
       console.error('Ошибка загрузки мастеров:', err);
       setError(err.response?.data?.error || 'Ошибка загрузки мастеров');
+      setMasters([]);
     } finally {
       setLoadingMasters(false);
     }
   };
   
   useEffect(() => {
-    if (assignDialog.open && assignDialog.deviceType) {
+    if (assignDialog.open) {
       // Загружаем мастеров при открытии диалога с учетом специализации
-      loadMasters('', assignDialog.deviceType);
+      // Если deviceType не указан, загружаем всех верифицированных мастеров
+      console.log('Загрузка мастеров для заказа:', assignDialog.orderId, 'deviceType:', assignDialog.deviceType);
+      loadMasters('', assignDialog.deviceType || null);
     }
   }, [assignDialog.open, assignDialog.deviceType]);
   
@@ -112,6 +127,8 @@ export default function Orders() {
     // Находим заказ для получения device_type
     const order = orders.find(o => o.id === orderId);
     const deviceType = order?.device_type || null;
+    
+    console.log('Открытие диалога назначения для заказа:', orderId, 'device_type:', deviceType, 'order:', order);
     
     setAssignDialog({ open: true, orderId, deviceType });
     setSelectedMaster(null);
@@ -285,7 +302,7 @@ export default function Orders() {
                 </Box>
               </Box>
             )}
-            noOptionsText={loadingMasters ? "Загрузка..." : "Мастера не найдены"}
+            noOptionsText={loadingMasters ? "Загрузка..." : masters.length === 0 ? (assignDialog.deviceType ? `Не найдено мастеров со специализацией "${assignDialog.deviceType}"` : "Мастера не найдены") : "Введите имя для поиска"}
           />
         </DialogContent>
         <DialogActions>
