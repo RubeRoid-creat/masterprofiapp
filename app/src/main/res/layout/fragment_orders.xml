@@ -13,6 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:baselineAligned="false"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:paddingStart="16dp"
@@ -22,10 +23,12 @@
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tab_layout"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_weight="1"
+            android:layout_gravity="center_vertical"
             app:tabMode="fixed"
-            app:tabGravity="fill">
+            app:tabGravity="fill"
+            app:tabIndicatorHeight="0dp">
             
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
@@ -43,8 +46,10 @@
             android:id="@+id/btn_show_map"
             style="@style/Widget.Material3.Button.TextButton.Icon"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
             android:layout_marginStart="8dp"
+            android:minHeight="48dp"
             android:text="Карта"
             app:icon="@drawable/ic_map"
             app:iconGravity="textStart"
