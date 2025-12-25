@@ -330,18 +330,27 @@ class VerificationFragment : Fragment() {
     }
     
     private fun showDocumentDetails(document: ApiVerificationDocument) {
-        val statusText = when (document.status) {
-            "pending" -> "На проверке"
-            "approved" -> "Одобрен"
-            "rejected" -> "Отклонен: ${document.rejectionReason ?: "Причина не указана"}"
-            else -> "Неизвестный статус"
+        if (!isAdded || context == null) {
+            Log.w("VerificationFragment", "Fragment not attached, skipping showDocumentDetails")
+            return
         }
         
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(document.documentName)
-            .setMessage("Тип: ${document.documentType}\nСтатус: $statusText\nЗагружен: ${document.createdAt}")
-            .setPositiveButton("OK", null)
-            .show()
+        try {
+            val statusText = when (document.status) {
+                "pending" -> "На проверке"
+                "approved" -> "Одобрен"
+                "rejected" -> "Отклонен: ${document.rejectionReason ?: "Причина не указана"}"
+                else -> "Неизвестный статус"
+            }
+            
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(document.documentName)
+                .setMessage("Тип: ${document.documentType}\nСтатус: $statusText\nЗагружен: ${document.createdAt}")
+                .setPositiveButton("OK", null)
+                .show()
+        } catch (e: Exception) {
+            Log.e("VerificationFragment", "Ошибка показа деталей документа", e)
+        }
     }
     
     private fun addDocument(uri: Uri) {
@@ -363,26 +372,35 @@ class VerificationFragment : Fragment() {
     }
     
     private fun updateRecyclerViews() {
-        val recyclerDocs = view?.findViewById<RecyclerView>(R.id.recycler_documents)
-        val recyclerCerts = view?.findViewById<RecyclerView>(R.id.recycler_certificates)
-        val recyclerPortfolio = view?.findViewById<RecyclerView>(R.id.recycler_portfolio)
-        
-        recyclerDocs?.visibility = if (documents.isNotEmpty()) View.VISIBLE else View.GONE
-        recyclerCerts?.visibility = if (certificates.isNotEmpty()) View.VISIBLE else View.GONE
-        recyclerPortfolio?.visibility = if (portfolio.isNotEmpty()) View.VISIBLE else View.GONE
-        
-        // Обновляем адаптеры
-        recyclerDocs?.adapter = DocumentsAdapter(documents) { doc ->
-            documents.remove(doc)
-            updateRecyclerViews()
+        if (!isAdded || view == null) {
+            Log.w("VerificationFragment", "Fragment not attached, skipping updateRecyclerViews")
+            return
         }
-        recyclerCerts?.adapter = DocumentsAdapter(certificates) { doc ->
-            certificates.remove(doc)
-            updateRecyclerViews()
-        }
-        recyclerPortfolio?.adapter = PortfolioAdapter(portfolio) { uri ->
-            portfolio.remove(uri)
-            updateRecyclerViews()
+        
+        try {
+            val recyclerDocs = view?.findViewById<RecyclerView>(R.id.recycler_documents)
+            val recyclerCerts = view?.findViewById<RecyclerView>(R.id.recycler_certificates)
+            val recyclerPortfolio = view?.findViewById<RecyclerView>(R.id.recycler_portfolio)
+            
+            recyclerDocs?.visibility = if (documents.isNotEmpty()) View.VISIBLE else View.GONE
+            recyclerCerts?.visibility = if (certificates.isNotEmpty()) View.VISIBLE else View.GONE
+            recyclerPortfolio?.visibility = if (portfolio.isNotEmpty()) View.VISIBLE else View.GONE
+            
+            // Обновляем адаптеры
+            recyclerDocs?.adapter = DocumentsAdapter(documents) { doc ->
+                documents.remove(doc)
+                updateRecyclerViews()
+            }
+            recyclerCerts?.adapter = DocumentsAdapter(certificates) { doc ->
+                certificates.remove(doc)
+                updateRecyclerViews()
+            }
+            recyclerPortfolio?.adapter = PortfolioAdapter(portfolio) { uri ->
+                portfolio.remove(uri)
+                updateRecyclerViews()
+            }
+        } catch (e: Exception) {
+            Log.e("VerificationFragment", "Ошибка обновления RecyclerView", e)
         }
     }
     
@@ -481,24 +499,26 @@ class VerificationFragment : Fragment() {
             }
             
             // Показываем результат
-            if (errorCount == 0 && successCount > 0) {
-                Toast.makeText(context, "Документы успешно загружены ($successCount)", Toast.LENGTH_SHORT).show()
-                // Перезагружаем данные и обновляем UI
-                loadVerificationData()
-            } else if (errorCount > 0) {
-                val errorText = if (errorMessages.isNotEmpty()) {
-                    "Ошибки: ${errorMessages.take(2).joinToString(", ")}${if (errorMessages.size > 2) "..." else ""}"
+            if (isAdded && context != null) {
+                if (errorCount == 0 && successCount > 0) {
+                    Toast.makeText(requireContext(), "Документы успешно загружены ($successCount)", Toast.LENGTH_SHORT).show()
+                    // Перезагружаем данные и обновляем UI
+                    loadVerificationData()
+                } else if (errorCount > 0) {
+                    val errorText = if (errorMessages.isNotEmpty()) {
+                        "Ошибки: ${errorMessages.take(2).joinToString(", ")}${if (errorMessages.size > 2) "..." else ""}"
+                    } else {
+                        "Загружено: $successCount, ошибок: $errorCount"
+                    }
+                    Toast.makeText(
+                        requireContext(),
+                        errorText,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    Log.e("VerificationFragment", "Upload summary: success=$successCount, errors=$errorCount, messages=$errorMessages")
                 } else {
-                    "Загружено: $successCount, ошибок: $errorCount"
+                    Toast.makeText(requireContext(), "Не удалось загрузить документы", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(
-                    context,
-                    errorText,
-                    Toast.LENGTH_LONG
-                ).show()
-                Log.e("VerificationFragment", "Upload summary: success=$successCount, errors=$errorCount, messages=$errorMessages")
-            } else {
-                Toast.makeText(context, "Не удалось загрузить документы", Toast.LENGTH_SHORT).show()
             }
         }
     }
