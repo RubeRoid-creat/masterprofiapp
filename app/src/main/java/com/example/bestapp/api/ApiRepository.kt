@@ -154,19 +154,51 @@ class ApiRepository {
     ): Result<LoginResponse> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = api.register(RegisterRequest(email, password, name, phone, role))
+                Log.d(TAG, "🔄 Attempting registration: email=$email, name=$name, phone=$phone, role=$role")
+                val request = RegisterRequest(email.trim(), password, name.trim(), phone.trim(), role)
+                val response = api.register(request)
+                
+                Log.d(TAG, "📥 Registration response: code=${response.code()}, isSuccessful=${response.isSuccessful}")
+                
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
-                    Log.d(TAG, "Saving token after registration: ${body.token.take(30)}...")
+                    Log.d(TAG, "✅ Saving token after registration: ${body.token.take(30)}...")
                     RetrofitClient.setAuthToken(body.token)
-                    Log.d(TAG, "Registration successful: ${body.user.name}, token saved")
+                    Log.d(TAG, "✅ Registration successful: ${body.user.name}, token saved")
                     Result.success(body)
                 } else {
-                    Log.e(TAG, "Registration failed: ${response.code()}")
-                    Result.failure(Exception("Ошибка регистрации: ${response.code()}"))
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "❌ Registration failed: code=${response.code()}, body=$errorBody")
+                    
+                    val errorMessage = try {
+                        val errorJson = errorBody?.let { 
+                            com.google.gson.Gson().fromJson(it, Map::class.java) 
+                        }
+                        when (response.code()) {
+                            400 -> {
+                                val message = errorJson?.get("error")?.toString() 
+                                    ?: "Ошибка валидации данных. Проверьте правильность заполнения полей."
+                                message
+                            }
+                            429 -> {
+                                val message = errorJson?.get("message")?.toString() 
+                                    ?: "Слишком много попыток регистрации. Попробуйте позже."
+                                message
+                            }
+                            else -> errorJson?.get("error")?.toString() ?: "Ошибка регистрации: ${response.code()}"
+                        }
+                    } catch (e: Exception) {
+                        when (response.code()) {
+                            400 -> "Ошибка валидации данных. Проверьте правильность заполнения полей."
+                            429 -> "Слишком много попыток регистрации. Попробуйте позже."
+                            else -> "Ошибка регистрации: ${response.code()}"
+                        }
+                    }
+                    Result.failure(Exception(errorMessage))
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Registration error", e)
+                Log.e(TAG, "❌ Registration exception: ${e.javaClass.simpleName} - ${e.message}", e)
+                e.printStackTrace()
                 Result.failure(e)
             }
         }

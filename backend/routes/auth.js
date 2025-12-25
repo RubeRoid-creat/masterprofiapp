@@ -8,18 +8,43 @@ const router = express.Router();
 // Регистрация
 router.post('/register', async (req, res) => {
   try {
+    console.log('[POST /api/auth/register] Request received');
+    console.log('[POST /api/auth/register] Body:', JSON.stringify(req.body));
+    
     const { email, password, name, phone, role = 'client' } = req.body;
     
     // Валидация
     if (!email || !password || !name || !phone) {
+      console.log('[POST /api/auth/register] Missing required fields:', { 
+        email: !!email, 
+        password: !!password, 
+        name: !!name, 
+        phone: !!phone 
+      });
       return res.status(400).json({ error: 'Все поля обязательны' });
+    }
+    
+    // Проверка формата email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log('[POST /api/auth/register] Invalid email format:', email);
+      return res.status(400).json({ error: 'Неверный формат email' });
+    }
+    
+    // Проверка длины пароля
+    if (password.length < 6) {
+      console.log('[POST /api/auth/register] Password too short');
+      return res.status(400).json({ error: 'Пароль должен содержать минимум 6 символов' });
     }
     
     // Проверка, существует ли пользователь
     const existingUser = query.get('SELECT id FROM users WHERE email = ?', [email]);
     if (existingUser) {
+      console.log(`[POST /api/auth/register] User already exists: ${email}`);
       return res.status(400).json({ error: 'Пользователь с таким email уже существует' });
     }
+    
+    console.log(`[POST /api/auth/register] Registering user: email=${email}, role=${role}, name=${name}, phone=${phone}`);
     
     // Хешируем пароль
     const passwordHash = await bcrypt.hash(password, 10);
@@ -27,27 +52,45 @@ router.post('/register', async (req, res) => {
     // Создаем пользователя
     const result = query.run(
       'INSERT INTO users (email, password_hash, name, phone, role) VALUES (?, ?, ?, ?, ?)',
-      [email, passwordHash, name, phone, role]
+      [email.trim(), passwordHash, name.trim(), phone.trim(), role]
     );
     
     const userId = result.lastInsertRowid;
+    console.log(`[POST /api/auth/register] User created: id=${userId}`);
     
     // Если роль мастер, создаем запись в таблице мастеров
     if (role === 'master') {
-      query.run(
-        'INSERT INTO masters (user_id, specialization, status) VALUES (?, ?, ?)',
-        [userId, JSON.stringify([]), 'offline']
-      );
+      try {
+        query.run(
+          'INSERT INTO masters (user_id, specialization, status) VALUES (?, ?, ?)',
+          [userId, JSON.stringify([]), 'offline']
+        );
+        console.log(`[POST /api/auth/register] Master record created for user ${userId}`);
+      } catch (masterError) {
+        console.error(`[POST /api/auth/register] Error creating master record:`, masterError);
+        // Удаляем пользователя, если не удалось создать мастера
+        query.run('DELETE FROM users WHERE id = ?', [userId]);
+        return res.status(500).json({ error: 'Ошибка создания профиля мастера: ' + masterError.message });
+      }
     } else if (role === 'client') {
       // Если роль клиент, создаем запись в таблице клиентов
-      query.run(
-        'INSERT INTO clients (user_id) VALUES (?)',
-        [userId]
-      );
+      try {
+        query.run(
+          'INSERT INTO clients (user_id) VALUES (?)',
+          [userId]
+        );
+        console.log(`[POST /api/auth/register] Client record created for user ${userId}`);
+      } catch (clientError) {
+        console.error(`[POST /api/auth/register] Error creating client record:`, clientError);
+        // Удаляем пользователя, если не удалось создать клиента
+        query.run('DELETE FROM users WHERE id = ?', [userId]);
+        return res.status(500).json({ error: 'Ошибка создания профиля клиента: ' + clientError.message });
+      }
     }
     
     // Генерируем токен
     const token = generateToken(userId, role);
+    console.log(`[POST /api/auth/register] Token generated for user ${userId}`);
     
     res.status(201).json({
       message: 'Пользователь успешно зарегистрирован',
@@ -55,8 +98,10 @@ router.post('/register', async (req, res) => {
       user: { id: userId, email, name, phone, role }
     });
   } catch (error) {
-    console.error('Ошибка регистрации:', error);
-    res.status(500).json({ error: 'Ошибка сервера при регистрации' });
+    console.error('[POST /api/auth/register] Registration error:', error);
+    console.error('[POST /api/auth/register] Error stack:', error.stack);
+    console.error('[POST /api/auth/register] Request body:', req.body);
+    res.status(500).json({ error: 'Ошибка сервера при регистрации: ' + error.message });
   }
 });
 
