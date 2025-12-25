@@ -151,7 +151,7 @@ router.get('/stats/orders', (req, res) => {
 // Получить список мастеров для назначения
 router.get('/masters/list', (req, res) => {
   try {
-    const { search, status, verified } = req.query;
+    const { search, status, verified, device_type } = req.query;
     
     let sql = `
       SELECT 
@@ -162,6 +162,7 @@ router.get('/masters/list', (req, res) => {
         m.status,
         m.verification_status,
         m.is_on_shift,
+        m.specialization,
         u.name,
         u.email,
         u.phone
@@ -171,14 +172,13 @@ router.get('/masters/list', (req, res) => {
     `;
     const params = [];
     
+    // Всегда показываем только верифицированных мастеров
+    sql += ' AND m.verification_status = ?';
+    params.push('verified');
+    
     if (status) {
       sql += ' AND m.status = ?';
       params.push(status);
-    }
-    
-    if (verified === 'true') {
-      sql += ' AND m.verification_status = ?';
-      params.push('verified');
     }
     
     if (search) {
@@ -189,7 +189,26 @@ router.get('/masters/list', (req, res) => {
     
     sql += ' ORDER BY u.name ASC';
     
-    const masters = query.all(sql, params);
+    let masters = query.all(sql, params);
+    
+    // Фильтруем по специализации, если указан device_type
+    if (device_type) {
+      masters = masters.filter(master => {
+        try {
+          const specializations = JSON.parse(master.specialization || '[]');
+          if (Array.isArray(specializations) && specializations.length > 0) {
+            return specializations.includes(device_type);
+          }
+          return false; // Если специализация пустая, не показываем
+        } catch (e) {
+          console.error('Ошибка парсинга специализации мастера:', e);
+          return false;
+        }
+      });
+    }
+    
+    // Удаляем поле specialization из ответа (не нужно на фронтенде)
+    masters = masters.map(({ specialization, ...rest }) => rest);
     
     res.json(masters);
   } catch (error) {

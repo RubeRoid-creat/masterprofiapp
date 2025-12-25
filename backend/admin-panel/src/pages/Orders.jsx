@@ -27,7 +27,7 @@ export default function Orders() {
   const [masters, setMasters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [assignDialog, setAssignDialog] = useState({ open: false, orderId: null });
+  const [assignDialog, setAssignDialog] = useState({ open: false, orderId: null, deviceType: null });
   const [selectedMaster, setSelectedMaster] = useState(null);
   const [masterSearch, setMasterSearch] = useState('');
   const [loadingMasters, setLoadingMasters] = useState(false);
@@ -48,13 +48,22 @@ export default function Orders() {
     }
   };
 
-  const loadMasters = async (search = '') => {
+  const loadMasters = async (search = '', deviceType = null) => {
     try {
       setLoadingMasters(true);
-      const response = await mastersAPI.getList({ 
-        search,
+      const params = { 
         verified: 'true' // Показываем только верифицированных мастеров
-      });
+      };
+      
+      if (search) {
+        params.search = search;
+      }
+      
+      if (deviceType) {
+        params.device_type = deviceType;
+      }
+      
+      const response = await mastersAPI.getList(params);
       setMasters(response.data);
     } catch (err) {
       console.error('Ошибка загрузки мастеров:', err);
@@ -65,22 +74,22 @@ export default function Orders() {
   };
   
   useEffect(() => {
-    if (assignDialog.open) {
-      // Загружаем мастеров при открытии диалога
-      loadMasters('');
+    if (assignDialog.open && assignDialog.deviceType) {
+      // Загружаем мастеров при открытии диалога с учетом специализации
+      loadMasters('', assignDialog.deviceType);
     }
-  }, [assignDialog.open]);
+  }, [assignDialog.open, assignDialog.deviceType]);
   
   useEffect(() => {
     if (assignDialog.open && masterSearch) {
       // Debounce для поиска
       const timer = setTimeout(() => {
-        loadMasters(masterSearch);
+        loadMasters(masterSearch, assignDialog.deviceType);
       }, 300);
       
       return () => clearTimeout(timer);
     }
-  }, [masterSearch, assignDialog.open]);
+  }, [masterSearch, assignDialog.open, assignDialog.deviceType]);
 
   const handleAssign = async () => {
     if (!selectedMaster) {
@@ -90,7 +99,7 @@ export default function Orders() {
     
     try {
       await ordersAPI.assign(assignDialog.orderId, selectedMaster.id);
-      setAssignDialog({ open: false, orderId: null });
+      setAssignDialog({ open: false, orderId: null, deviceType: null });
       setSelectedMaster(null);
       setMasterSearch('');
       loadOrders();
@@ -100,10 +109,13 @@ export default function Orders() {
   };
   
   const handleOpenAssignDialog = (orderId) => {
-    setAssignDialog({ open: true, orderId });
+    // Находим заказ для получения device_type
+    const order = orders.find(o => o.id === orderId);
+    const deviceType = order?.device_type || null;
+    
+    setAssignDialog({ open: true, orderId, deviceType });
     setSelectedMaster(null);
     setMasterSearch('');
-    loadMasters();
   };
 
   const handleCancel = async () => {
@@ -208,15 +220,27 @@ export default function Orders() {
       <Dialog 
         open={assignDialog.open} 
         onClose={() => {
-          setAssignDialog({ open: false, orderId: null });
+          setAssignDialog({ open: false, orderId: null, deviceType: null });
           setSelectedMaster(null);
           setMasterSearch('');
         }}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Назначить заказ мастеру</DialogTitle>
+        <DialogTitle>
+          Назначить заказ мастеру
+          {assignDialog.deviceType && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Требуемая специализация: {assignDialog.deviceType}
+            </Typography>
+          )}
+        </DialogTitle>
         <DialogContent>
+          {assignDialog.deviceType && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Показываются только верифицированные мастера со специализацией: <strong>{assignDialog.deviceType}</strong>
+            </Alert>
+          )}
           <Autocomplete
             sx={{ mt: 2 }}
             options={masters}
@@ -267,7 +291,7 @@ export default function Orders() {
         <DialogActions>
           <Button 
             onClick={() => {
-              setAssignDialog({ open: false, orderId: null });
+              setAssignDialog({ open: false, orderId: null, deviceType: null });
               setSelectedMaster(null);
               setMasterSearch('');
             }}
