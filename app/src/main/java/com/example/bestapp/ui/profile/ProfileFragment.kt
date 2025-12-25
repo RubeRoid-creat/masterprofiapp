@@ -81,6 +81,8 @@ class ProfileFragment : Fragment() {
         val btnVerification = view.findViewById<MaterialButton>(R.id.btn_verification)
         val btnWallet = view.findViewById<MaterialButton>(R.id.btn_wallet)
         val btnStatistics = view.findViewById<MaterialButton>(R.id.btn_statistics)
+        val btnAdminChat = view.findViewById<MaterialButton>(R.id.btn_admin_chat)
+        val btnFeedback = view.findViewById<MaterialButton>(R.id.btn_feedback)
         val btnVerifyEmail = view.findViewById<MaterialButton>(R.id.btn_verify_email)
         val btnVerifyPhone = view.findViewById<MaterialButton>(R.id.btn_verify_phone)
         val emailVerifiedStatus = view.findViewById<TextView>(R.id.email_verified_status)
@@ -141,6 +143,14 @@ class ProfileFragment : Fragment() {
         
         btnStatistics?.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_statistics)
+        }
+        
+        btnAdminChat?.setOnClickListener {
+            findNavController().navigate(R.id.action_profile_to_admin_chat)
+        }
+        
+        btnFeedback?.setOnClickListener {
+            findNavController().navigate(R.id.action_profile_to_feedback)
         }
     }
     

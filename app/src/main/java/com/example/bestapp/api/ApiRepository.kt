@@ -994,6 +994,148 @@ class ApiRepository {
         }
     }
     
+    // ============= Чат с администрацией =============
+    
+    suspend fun getAdminChatMessages(): Result<List<ApiAdminChatMessage>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getAdminChatMessages()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: emptyList())
+                } else {
+                    Result.failure(Exception("Ошибка загрузки сообщений: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting admin chat messages", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun sendAdminChatMessage(message: String): Result<ApiAdminChatMessage> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = SendAdminChatMessageRequest(message)
+                val response = api.sendAdminChatMessage(request)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    Result.failure(Exception("Ошибка отправки сообщения: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending admin chat message", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun sendAdminChatImage(imagePart: okhttp3.MultipartBody.Part): Result<ApiAdminChatMessage> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.sendAdminChatImage(imagePart)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    Result.failure(Exception("Ошибка: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending admin chat image", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getAdminChatUnreadCount(): Result<Int> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getAdminChatUnreadCount()
+                if (response.isSuccessful) {
+                    val unreadCount = response.body()?.unreadCount ?: 0
+                    Result.success(unreadCount)
+                } else {
+                    Result.failure(Exception("Ошибка получения количества непрочитанных: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting admin chat unread count", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    // ============= Обратная связь =============
+    
+    suspend fun createFeedback(
+        feedbackType: String,
+        subject: String,
+        message: String,
+        attachments: List<okhttp3.MultipartBody.Part>? = null
+    ): Result<ApiFeedback> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val feedbackTypeBody = okhttp3.RequestBody.create(
+                    okhttp3.MediaType.parse("text/plain"),
+                    feedbackType
+                )
+                val subjectBody = okhttp3.RequestBody.create(
+                    okhttp3.MediaType.parse("text/plain"),
+                    subject
+                )
+                val messageBody = okhttp3.RequestBody.create(
+                    okhttp3.MediaType.parse("text/plain"),
+                    message
+                )
+                
+                val response = api.createFeedback(
+                    feedbackTypeBody,
+                    subjectBody,
+                    messageBody,
+                    attachments
+                )
+                
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    Result.failure(Exception("Ошибка создания обратной связи: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating feedback", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getFeedbackList(): Result<List<ApiFeedback>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getFeedbackList()
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: emptyList())
+                } else {
+                    Result.failure(Exception("Ошибка загрузки обратной связи: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting feedback list", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getFeedback(id: Long): Result<ApiFeedback> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = api.getFeedback(id)
+                if (response.isSuccessful) {
+                    Result.success(response.body() ?: throw Exception("Пустой ответ"))
+                } else {
+                    Result.failure(Exception("Ошибка загрузки обратной связи: ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting feedback", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
     // ============= Верификация =============
     
     suspend fun getVerificationDocuments(): Result<List<ApiVerificationDocument>> {

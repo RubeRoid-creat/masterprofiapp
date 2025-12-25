@@ -214,6 +214,42 @@ interface ApiService {
         @Part image: okhttp3.MultipartBody.Part
     ): Response<ApiChatMessage>
 
+    // ============= Чат с администрацией =============
+    
+    @GET("api/admin-chat/messages")
+    suspend fun getAdminChatMessages(): Response<List<ApiAdminChatMessage>>
+    
+    @POST("api/admin-chat/messages")
+    suspend fun sendAdminChatMessage(
+        @Body request: SendAdminChatMessageRequest
+    ): Response<ApiAdminChatMessage>
+    
+    @Multipart
+    @POST("api/admin-chat/messages/image")
+    suspend fun sendAdminChatImage(
+        @Part image: okhttp3.MultipartBody.Part
+    ): Response<ApiAdminChatMessage>
+    
+    @GET("api/admin-chat/unread-count")
+    suspend fun getAdminChatUnreadCount(): Response<UnreadCountResponse>
+
+    // ============= Обратная связь =============
+    
+    @POST("api/feedback")
+    @Multipart
+    suspend fun createFeedback(
+        @Part("feedback_type") feedbackType: okhttp3.RequestBody,
+        @Part("subject") subject: okhttp3.RequestBody,
+        @Part("message") message: okhttp3.RequestBody,
+        @Part attachments: List<okhttp3.MultipartBody.Part>?
+    ): Response<ApiFeedback>
+    
+    @GET("api/feedback")
+    suspend fun getFeedbackList(): Response<List<ApiFeedback>>
+    
+    @GET("api/feedback/{id}")
+    suspend fun getFeedback(@Path("id") id: Long): Response<ApiFeedback>
+
     // ============= Версионирование приложения =============
 
     @POST("api/version/check")

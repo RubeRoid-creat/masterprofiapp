@@ -380,6 +380,52 @@ data class SendChatMessageRequest(
     val message: String
 )
 
+// ============= Admin Chat Models =============
+
+data class ApiAdminChatMessage(
+    val id: Long,
+    @SerializedName("user_id") val userId: Long,
+    @SerializedName("sender_id") val senderId: Long,
+    @SerializedName("sender_role") val senderRole: String, // 'user' or 'admin'
+    @SerializedName("message_type") val messageType: String, // 'text', 'image', 'file'
+    @SerializedName("message_text") val messageText: String?,
+    @SerializedName("image_url") val imageUrl: String?,
+    @SerializedName("image_thumbnail_url") val imageThumbnailUrl: String?,
+    @SerializedName("file_url") val fileUrl: String?,
+    @SerializedName("file_name") val fileName: String?,
+    @SerializedName("read_at") val readAt: String?,
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("sender_name") val senderName: String,
+    @SerializedName("sender_user_role") val senderUserRole: String?
+)
+
+data class SendAdminChatMessageRequest(
+    val message: String
+)
+
+data class UnreadCountResponse(
+    @SerializedName("unread_count") val unreadCount: Int
+)
+
+// ============= Feedback Models =============
+
+data class ApiFeedback(
+    val id: Long,
+    @SerializedName("user_id") val userId: Long,
+    @SerializedName("feedback_type") val feedbackType: String, // 'suggestion', 'bug_report', 'complaint', 'praise', 'other'
+    val subject: String,
+    val message: String,
+    val attachments: String?, // JSON массив
+    val status: String, // 'new', 'in_progress', 'resolved', 'closed'
+    @SerializedName("admin_response") val adminResponse: String?,
+    @SerializedName("responded_by") val respondedBy: Long?,
+    @SerializedName("responded_at") val respondedAt: String?,
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("updated_at") val updatedAt: String,
+    @SerializedName("user_name") val userName: String?,
+    @SerializedName("user_email") val userEmail: String?
+)
+
 // ============= Wallet Models =============
 
 data class ApiWallet(

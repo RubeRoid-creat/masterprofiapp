@@ -28,6 +28,8 @@ import mlmRoutes from './routes/mlm.js';
 import verificationCodesRoutes from './routes/verification-codes.js';
 import newsRoutes from './routes/news.js';
 import remoteConfigRoutes from './routes/remote-config.js';
+import adminChatRoutes from './routes/admin-chat.js';
+import feedbackRoutes from './routes/feedback.js';
 // Импортируем push-notification-service для инициализации Firebase Admin SDK
 import './services/push-notification-service.js';
 // Инициализируем Redis для кэширования
@@ -281,6 +283,14 @@ app.use((req, res, next) => {
     // Инициализация Redis (опционально, если доступен)
     await initRedis();
     
+    // Запускаем миграцию для чата с администрацией и обратной связи
+    try {
+      const { migrateAdminChatAndFeedback } = await import('./scripts/migrate-admin-chat-feedback.js');
+      await migrateAdminChatAndFeedback();
+    } catch (error) {
+      console.warn('⚠️ Ошибка миграции admin-chat и feedback:', error.message);
+    }
+    
     // Проверяем наличие тестового мастера
     const testMaster = query.get('SELECT id, email, name, role FROM users WHERE email = ?', ['master@test.com']);
     if (testMaster) {
@@ -367,6 +377,8 @@ app.get('/', (req, res) => {
       loyalty: '/api/loyalty',
       mlm: '/api/mlm',
       version: '/api/version',
+      adminChat: '/api/admin-chat',
+      feedback: '/api/feedback',
       websocket: '/ws'
     }
   });
@@ -405,6 +417,8 @@ app.use('/api/mlm', statsRateLimiter(), mlmRoutes); // 200 запросов за
 app.use('/api/remote-config', remoteConfigRoutes); // Remote Config для обновления контента
 app.use('/api/version', versionRoutes);
 app.use('/api/news', newsRoutes);
+app.use('/api/admin-chat', adminChatRoutes); // Чат с администрацией
+app.use('/api/feedback', feedbackRoutes); // Обратная связь
 
 // Health check
 app.get('/health', (req, res) => {
