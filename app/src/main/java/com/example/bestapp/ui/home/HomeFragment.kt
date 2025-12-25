@@ -66,7 +66,17 @@ class HomeFragment : Fragment() {
         // Настройка RecyclerView для новостей
         recyclerNews = view?.findViewById(R.id.recycler_news)
         newsAdapter = NewsAdapter { news ->
-            Toast.makeText(context, news.title, Toast.LENGTH_SHORT).show()
+            // Переход к детальному экрану новости
+            val bundle = Bundle().apply {
+                putLong("newsId", news.id)
+                putString("newsTitle", news.title)
+                putString("newsSummary", news.summary)
+                putString("newsContent", news.content)
+                putString("newsCategory", news.category.name.lowercase())
+                putString("newsImageUrl", news.imageUrl ?: "")
+                putString("newsPublishedAt", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(news.publishedAt))
+            }
+            findNavController().navigate(R.id.action_home_to_news_detail, bundle)
         }
         
         recyclerNews?.apply {

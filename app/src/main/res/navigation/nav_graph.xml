@@ -86,6 +86,38 @@
         <action
             android:id="@+id/action_home_to_create_order"
             app:destination="@id/createOrderFragment" />
+        <action
+            android:id="@+id/action_home_to_news_detail"
+            app:destination="@id/newsDetailFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/newsDetailFragment"
+        android:name="com.example.bestapp.ui.home.NewsDetailFragment"
+        android:label="Новость"
+        tools:layout="@layout/fragment_news_detail">
+        <argument
+            android:name="newsId"
+            app:argType="long" />
+        <argument
+            android:name="newsTitle"
+            app:argType="string" />
+        <argument
+            android:name="newsSummary"
+            app:argType="string" />
+        <argument
+            android:name="newsContent"
+            app:argType="string" />
+        <argument
+            android:name="newsCategory"
+            app:argType="string" />
+        <argument
+            android:name="newsImageUrl"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="newsPublishedAt"
+            app:argType="string" />
     </fragment>
     
     <fragment
