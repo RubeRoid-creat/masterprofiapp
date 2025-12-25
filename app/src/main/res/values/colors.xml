@@ -1,33 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Modern Blue Theme for Repair Service (Professional & Trustworthy) -->
-    <color name="md_theme_light_primary">#2563EB</color>
+    <!-- Монохромный минималистичный дизайн "Исправлено" - Минимализм и Премиальность -->
+    <!-- Основной цвет: темно-графитовый #424242 -->
+    <color name="md_theme_light_primary">#424242</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
-    <color name="md_theme_light_primaryContainer">#DBEAFE</color>
-    <color name="md_theme_light_onPrimaryContainer">#1E40AF</color>
-    <color name="md_theme_light_secondary">#F59E0B</color>
+    <color name="md_theme_light_primaryContainer">#F5F5F5</color>
+    <color name="md_theme_light_onPrimaryContainer">#212121</color>
+    <!-- Вторичный цвет: черный для акцентов -->
+    <color name="md_theme_light_secondary">#212121</color>
     <color name="md_theme_light_onSecondary">#FFFFFF</color>
-    <color name="md_theme_light_secondaryContainer">#FEF3C7</color>
-    <color name="md_theme_light_onSecondaryContainer">#92400E</color>
-    <color name="md_theme_light_tertiary">#10B981</color>
+    <color name="md_theme_light_secondaryContainer">#EEEEEE</color>
+    <color name="md_theme_light_onSecondaryContainer">#000000</color>
+    <!-- Третичный цвет: графитовый для дополнительных элементов -->
+    <color name="md_theme_light_tertiary">#616161</color>
     <color name="md_theme_light_onTertiary">#FFFFFF</color>
-    <color name="md_theme_light_tertiaryContainer">#D1FAE5</color>
-    <color name="md_theme_light_onTertiaryContainer">#065F46</color>
+    <color name="md_theme_light_tertiaryContainer">#F5F5F5</color>
+    <color name="md_theme_light_onTertiaryContainer">#424242</color>
+    <!-- Ошибки: красный остается для важных сообщений -->
     <color name="md_theme_light_error">#D32F2F</color>
     <color name="md_theme_light_onError">#FFFFFF</color>
     <color name="md_theme_light_errorContainer">#FFCDD2</color>
     <color name="md_theme_light_onErrorContainer">#B71C1C</color>
-    <color name="md_theme_light_surface">#F8FAFC</color>
-    <color name="md_theme_light_onSurface">#0F172A</color>
-    <color name="md_theme_light_surfaceVariant">#F1F5F9</color>
-    <color name="md_theme_light_onSurfaceVariant">#334155</color>
-    <color name="md_theme_light_outline">#CBD5E1</color>
+    <!-- Поверхности: белый и светло-серый -->
+    <color name="md_theme_light_surface">#FFFFFF</color>
+    <color name="md_theme_light_onSurface">#212121</color>
+    <color name="md_theme_light_surfaceVariant">#FAFAFA</color>
+    <color name="md_theme_light_onSurfaceVariant">#424242</color>
+    <color name="md_theme_light_outline">#E0E0E0</color>
     <color name="md_theme_light_background">#FFFFFF</color>
-    <color name="md_theme_light_onBackground">#0F172A</color>
+    <color name="md_theme_light_onBackground">#212121</color>
 
-    <!-- Additional custom colors -->
-    <color name="stat_card_gradient_start">#00897B</color>
-    <color name="stat_card_gradient_end">#26A69A</color>
+    <!-- Additional custom colors - Монохромные градиенты -->
+    <color name="stat_card_gradient_start">#424242</color>
+    <color name="stat_card_gradient_end">#616161</color>
     
     <color name="news_tips_bg">#E1F5FE</color>
     <color name="news_tips_text">#0277BD</color>
@@ -47,20 +52,20 @@
     <color name="order_repeat_bg">#FFF3E0</color>
     <color name="order_repeat_text">#F57C00</color>
     
-    <!-- Modern gradient colors -->
-    <color name="gradient_start">#00897B</color>
-    <color name="gradient_end">#26A69A</color>
+    <!-- Modern gradient colors - Монохромные градиенты -->
+    <color name="gradient_start">#424242</color>
+    <color name="gradient_end">#212121</color>
     <color name="card_shadow">#1A000000</color>
     
-    <!-- Status colors -->
-    <color name="status_new">#2196F3</color>
-    <color name="status_in_progress">#FF9800</color>
-    <color name="status_completed">#4CAF50</color>
-    <color name="status_cancelled">#F44336</color>
+    <!-- Status colors - Монохромная схема с акцентами -->
+    <color name="status_new">#424242</color>
+    <color name="status_in_progress">#616161</color>
+    <color name="status_completed">#212121</color>
+    <color name="status_cancelled">#D32F2F</color>
     
     <!-- Verification status colors -->
-    <color name="verification_verified">#4CAF50</color>
-    <color name="verification_pending">#FF9800</color>
-    <color name="verification_rejected">#F44336</color>
-    <color name="verification_not_verified">#757575</color>
+    <color name="verification_verified">#212121</color>
+    <color name="verification_pending">#616161</color>
+    <color name="verification_rejected">#D32F2F</color>
+    <color name="verification_not_verified">#9E9E9E</color>
 </resources>
