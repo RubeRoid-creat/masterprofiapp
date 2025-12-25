@@ -136,7 +136,7 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="16dp"
                 android:hint="Опишите проблему *"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
@@ -150,6 +150,64 @@
                     android:gravity="top|start" />
 
             </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Выбранные работы -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Предполагаемые работы (необязательно)"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_selected_works"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginBottom="8dp"
+                tools:listitem="@layout/item_work_entry" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_add_work"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="+ Выбрать работу из прайса"
+                android:textSize="14sp"
+                android:layout_marginBottom="16dp"
+                app:icon="@android:drawable/ic_input_add"
+                app:iconGravity="textStart" />
+
+            <!-- Выбранные запчасти -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Предполагаемые запчасти (необязательно)"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_selected_parts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:layout_marginBottom="8dp"
+                tools:listitem="@layout/item_part_entry" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_add_part"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="+ Выбрать запчасть из прайса"
+                android:textSize="14sp"
+                android:layout_marginBottom="24dp"
+                app:icon="@android:drawable/ic_input_add"
+                app:iconGravity="textStart" />
 
             <TextView
                 android:layout_width="wrap_content"

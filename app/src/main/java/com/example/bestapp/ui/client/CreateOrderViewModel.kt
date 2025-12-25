@@ -6,10 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.bestapp.api.ApiRepository
 import com.example.bestapp.api.models.CreateOrderRequest
 import com.example.bestapp.api.models.CreateOrderResponse
+import com.example.bestapp.ui.orders.PartEntry
+import com.example.bestapp.ui.orders.WorkEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class CreateOrderViewModel : ViewModel() {
     private val apiRepository = ApiRepository()
@@ -49,6 +52,12 @@ class CreateOrderViewModel : ViewModel() {
     private val _isUrgent = MutableStateFlow(false)
     val isUrgent: StateFlow<Boolean> = _isUrgent.asStateFlow()
     
+    private val _selectedWorks = MutableStateFlow<List<WorkEntry>>(emptyList())
+    val selectedWorks: StateFlow<List<WorkEntry>> = _selectedWorks.asStateFlow()
+    
+    private val _selectedParts = MutableStateFlow<List<PartEntry>>(emptyList())
+    val selectedParts: StateFlow<List<PartEntry>> = _selectedParts.asStateFlow()
+    
     fun setDeviceType(value: String) {
         _deviceType.value = value
     }
@@ -77,6 +86,14 @@ class CreateOrderViewModel : ViewModel() {
         _isUrgent.value = value
     }
     
+    fun setSelectedWorks(works: List<WorkEntry>) {
+        _selectedWorks.value = works
+    }
+    
+    fun setSelectedParts(parts: List<PartEntry>) {
+        _selectedParts.value = parts
+    }
+    
     fun createOrder(latitude: Double = 56.859611, longitude: Double = 35.911896) {
         viewModelScope.launch {
             // Валидация
@@ -98,11 +115,38 @@ class CreateOrderViewModel : ViewModel() {
             _isLoading.value = true
             _errorMessage.value = null
             
+            // Формируем полное описание с выбранными работами и запчастями
+            val fullDescription = buildString {
+                append(_problemDescription.value)
+                
+                if (_selectedWorks.value.isNotEmpty() || _selectedParts.value.isNotEmpty()) {
+                    if (isNotEmpty()) appendLine().appendLine()
+                    
+                    if (_selectedWorks.value.isNotEmpty()) {
+                        appendLine("Предполагаемые работы:")
+                        _selectedWorks.value.forEachIndexed { index, work ->
+                            val price = if (work.price != null) String.format(Locale.getDefault(), " (%.0f ₽)", work.price) else ""
+                            appendLine("${index + 1}. ${work.description}$price")
+                        }
+                    }
+                    
+                    if (_selectedParts.value.isNotEmpty()) {
+                        if (isNotEmpty()) appendLine()
+                        appendLine("Предполагаемые запчасти:")
+                        _selectedParts.value.forEachIndexed { index, part ->
+                            val totalCost = part.cost * part.quantity
+                            val costStr = if (totalCost > 0) String.format(Locale.getDefault(), " (%.0f ₽)", totalCost) else ""
+                            appendLine("${index + 1}. ${part.name} - ${part.quantity} шт.$costStr")
+                        }
+                    }
+                }
+            }.trim()
+            
             val request = CreateOrderRequest(
                 deviceType = _deviceType.value,
                 deviceBrand = _deviceBrand.value.takeIf { it.isNotBlank() },
                 deviceModel = _deviceModel.value.takeIf { it.isNotBlank() },
-                problemDescription = _problemDescription.value,
+                problemDescription = fullDescription,
                 address = _address.value,
                 latitude = latitude,
                 longitude = longitude,
@@ -136,6 +180,8 @@ class CreateOrderViewModel : ViewModel() {
         _address.value = ""
         _arrivalTime.value = ""
         _isUrgent.value = false
+        _selectedWorks.value = emptyList()
+        _selectedParts.value = emptyList()
     }
     
     // Быстрое создание тестового заказа

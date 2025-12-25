@@ -11,12 +11,19 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bestapp.R
+import com.example.bestapp.api.ApiRepository
 import com.example.bestapp.ui.auth.AuthViewModel
+import com.example.bestapp.ui.orders.PartEntryAdapter
+import com.example.bestapp.ui.orders.PriceItemAdapter
+import com.example.bestapp.ui.orders.WorkEntryAdapter
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
+import android.text.Editable
+import android.text.TextWatcher
 import java.util.Calendar
 import java.util.Locale
 
@@ -24,6 +31,7 @@ class CreateOrderFragment : Fragment() {
     
     private val viewModel: CreateOrderViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
+    private val apiRepository = ApiRepository()
     
     private var deviceTypeDropdown: AutoCompleteTextView? = null
     private var deviceBrandInput: TextInputEditText? = null
@@ -34,6 +42,13 @@ class CreateOrderFragment : Fragment() {
     private var urgentSwitch: SwitchMaterial? = null
     private var createButton: MaterialButton? = null
     private var testOrderButton: MaterialButton? = null
+    private var recyclerSelectedWorks: androidx.recyclerview.widget.RecyclerView? = null
+    private var recyclerSelectedParts: androidx.recyclerview.widget.RecyclerView? = null
+    private var btnAddWork: MaterialButton? = null
+    private var btnAddPart: MaterialButton? = null
+    
+    private lateinit var worksAdapter: WorkEntryAdapter
+    private lateinit var partsAdapter: PartEntryAdapter
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,6 +77,27 @@ class CreateOrderFragment : Fragment() {
         urgentSwitch = view.findViewById(R.id.urgent_switch)
         createButton = view.findViewById(R.id.create_order_button)
         testOrderButton = view.findViewById(R.id.test_order_button)
+        recyclerSelectedWorks = view.findViewById(R.id.recycler_selected_works)
+        recyclerSelectedParts = view.findViewById(R.id.recycler_selected_parts)
+        btnAddWork = view.findViewById(R.id.btn_add_work)
+        btnAddPart = view.findViewById(R.id.btn_add_part)
+        
+        // Настройка адаптеров
+        worksAdapter = WorkEntryAdapter().apply {
+            onRemove = { position ->
+                removeWork(position)
+            }
+        }
+        recyclerSelectedWorks?.layoutManager = LinearLayoutManager(requireContext())
+        recyclerSelectedWorks?.adapter = worksAdapter
+        
+        partsAdapter = PartEntryAdapter().apply {
+            onRemove = { position ->
+                removePart(position)
+            }
+        }
+        recyclerSelectedParts?.layoutManager = LinearLayoutManager(requireContext())
+        recyclerSelectedParts?.adapter = partsAdapter
     }
     
     private fun setupDeviceTypeDropdown() {
@@ -141,6 +177,81 @@ class CreateOrderFragment : Fragment() {
         arrivalTimeInput?.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) showArrivalTimePicker()
         }
+        
+        btnAddWork?.setOnClickListener {
+            val deviceType = deviceTypeDropdown?.text?.toString()?.lowercase() ?: ""
+            showPriceSelectionDialog(type = "service", category = deviceType.takeIf { it.isNotBlank() }) { priceItem ->
+                worksAdapter.addWorkFromPrice(priceItem)
+            }
+        }
+        
+        btnAddPart?.setOnClickListener {
+            val deviceType = deviceTypeDropdown?.text?.toString()?.lowercase() ?: ""
+            showPriceSelectionDialog(type = "part", category = deviceType.takeIf { it.isNotBlank() }) { priceItem ->
+                partsAdapter.addPartFromPrice(priceItem)
+            }
+        }
+    }
+    
+    private fun showPriceSelectionDialog(type: String, category: String?, onSelect: (com.example.bestapp.api.models.ApiPrice) -> Unit) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val pricesResult = if (type == "service") {
+                apiRepository.getServices(category)
+            } else {
+                apiRepository.getParts(category)
+            }
+            
+            pricesResult.onSuccess { prices ->
+                if (prices.isEmpty()) {
+                    android.widget.Toast.makeText(context, "Прайс-лист пуст", android.widget.Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                
+                val dialogView = layoutInflater.inflate(R.layout.dialog_select_price, null)
+                val recyclerPriceItems = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recycler_price_items)
+                val inputSearch = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.input_search)
+                
+                val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(if (type == "service") "Выбрать работу" else "Выбрать запчасть")
+                    .setView(dialogView)
+                    .setNegativeButton("Отмена", null)
+                    .create()
+                
+                var priceList = prices.toList()
+                
+                val adapter = PriceItemAdapter(onItemClick = { priceItem ->
+                    onSelect(priceItem)
+                    dialog.dismiss()
+                })
+                adapter.updatePrices(priceList)
+                
+                recyclerPriceItems.layoutManager = LinearLayoutManager(requireContext())
+                recyclerPriceItems.adapter = adapter
+                
+                // Поиск
+                inputSearch.addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                    override fun afterTextChanged(s: Editable?) {
+                        val query = s?.toString()?.lowercase() ?: ""
+                        val filtered = if (query.isBlank()) {
+                            priceList
+                        } else {
+                            priceList.filter { 
+                                it.name.lowercase().contains(query) || 
+                                it.description?.lowercase()?.contains(query) == true ||
+                                it.category.lowercase().contains(query)
+                            }
+                        }
+                        adapter.updatePrices(filtered)
+                    }
+                })
+                
+                dialog.show()
+            }.onFailure { error ->
+                android.widget.Toast.makeText(context, "Ошибка загрузки прайса: ${error.message}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
     }
     
     private fun collectFormData() {
@@ -150,6 +261,12 @@ class CreateOrderFragment : Fragment() {
         viewModel.setProblemDescription(problemInput?.text?.toString() ?: "")
         viewModel.setAddress(addressInput?.text?.toString() ?: "")
         viewModel.setArrivalTime(arrivalTimeInput?.text?.toString() ?: "")
+        
+        // Передаем выбранные работы и запчасти
+        val selectedWorks = worksAdapter.getWorks()
+        val selectedParts = partsAdapter.getParts()
+        viewModel.setSelectedWorks(selectedWorks)
+        viewModel.setSelectedParts(selectedParts)
     }
     
     private fun clearInputs() {
@@ -160,6 +277,14 @@ class CreateOrderFragment : Fragment() {
         addressInput?.text?.clear()
         arrivalTimeInput?.text?.clear()
         urgentSwitch?.isChecked = false
+        
+        // Очищаем выбранные работы и запчасти
+        while (worksAdapter.itemCount > 0) {
+            worksAdapter.removeWork(0)
+        }
+        while (partsAdapter.itemCount > 0) {
+            partsAdapter.removePart(0)
+        }
     }
 
     /**
@@ -181,6 +306,14 @@ class CreateOrderFragment : Fragment() {
             }, hour, minute, true).show()
 
         }, hour, minute, true).show()
+    }
+    
+    override fun onDestroyView() {
+        super.onDestroyView()
+        recyclerSelectedWorks = null
+        recyclerSelectedParts = null
+        btnAddWork = null
+        btnAddPart = null
     }
 }
 
