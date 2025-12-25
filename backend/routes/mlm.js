@@ -223,6 +223,40 @@ router.get('/my-referral-code', authenticate, authorize('master'), (req, res) =>
 });
 
 /**
+ * GET /api/mlm/referral/:code
+ * Найти пользователя по реферальному коду (публичный эндпоинт для проверки кода)
+ */
+router.get('/referral/:code', (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Реферальный код не указан' });
+    }
+
+    const user = findUserByReferralCode(code);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Реферальный код не найден' 
+      });
+    }
+
+    // Возвращаем только публичную информацию
+    res.json({
+      success: true,
+      referral_code: code,
+      sponsor_name: user.name,
+      sponsor_is_master: !!user.master_id
+    });
+  } catch (error) {
+    console.error('Ошибка поиска по реферальному коду:', error);
+    res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
+  }
+});
+
+/**
  * GET /api/mlm/upline
  * Получить цепочку спонсоров (upline) мастера
  */
