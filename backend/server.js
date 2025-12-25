@@ -35,7 +35,7 @@ import './services/push-notification-service.js';
 import { initRedis } from './services/cache-service.js';
 
 // Импорт security middleware
-import { rateLimiter, strictRateLimiter, verificationRateLimiter, statsRateLimiter } from './middleware/rate-limiter.js';
+import { rateLimiter, strictRateLimiter, verificationRateLimiter, statsRateLimiter, verificationMasterRateLimiter } from './middleware/rate-limiter.js';
 import { httpsRedirect, securityHeaders, sanitizeRequest, securityAuditLogger } from './middleware/security.js';
 
 // Инициализация Express
@@ -398,7 +398,7 @@ app.use('/api/reviews', reviewsRoutes);
 app.use('/api/fcm', fcmRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/reports', reportsRoutes);
-app.use('/api/verification', verificationRoutes);
+app.use('/api/verification', verificationMasterRateLimiter(), verificationRoutes); // 100 запросов за 15 минут для верификации
 app.use('/api/complaints', complaintsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentsRoutes);

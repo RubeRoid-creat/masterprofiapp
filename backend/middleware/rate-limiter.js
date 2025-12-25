@@ -61,6 +61,21 @@ function cleanupOldRecords() {
       console.log(`🔓 [STATS] IP ${ip} разблокирован для статистики`);
     }
   }
+  
+  // Очистка счетчиков верификации
+  for (const [ip, data] of verificationRequestCounts.entries()) {
+    if (now - data.resetTime > 15 * 60 * 1000) {
+      verificationRequestCounts.delete(ip);
+    }
+  }
+  
+  // Очистка заблокированных IP для верификации
+  for (const [ip, blockTime] of verificationBlockedIPs.entries()) {
+    if (now - blockTime > 10 * 60 * 1000) {
+      verificationBlockedIPs.delete(ip);
+      console.log(`🔓 [VERIFICATION] IP ${ip} разблокирован для верификации`);
+    }
+  }
 }
 
 // Периодическая очистка каждые 5 минут
@@ -78,13 +93,14 @@ export function rateLimiter(options = {}) {
       return next();
     }
     
-    // Исключаем эндпоинты статистики из общего rate limiting
-    // Они используют свой statsRateLimiter с более высоким лимитом
+    // Исключаем эндпоинты статистики и верификации из общего rate limiting
+    // Они используют свои rate limiters с более высокими лимитами
     const path = req.path || req.url;
     if (path.includes('/api/masters/stats/me') || 
         path.includes('/api/mlm/statistics') ||
-        path.includes('/api/mlm/structure')) {
-      return next(); // Пропускаем общий rate limiter для статистики
+        path.includes('/api/mlm/structure') ||
+        path.includes('/api/verification')) {
+      return next(); // Пропускаем общий rate limiter для статистики и верификации
     }
     
     const ip = getClientIP(req);
@@ -176,6 +192,89 @@ export function verificationRateLimiter() {
 // Отдельные счетчики для статистики (чтобы не конфликтовать с общим rate limiter)
 const statsRequestCounts = new Map();
 const statsBlockedIPs = new Map();
+
+// Отдельные счетчики для верификации мастера
+const verificationRequestCounts = new Map();
+const verificationBlockedIPs = new Map();
+
+/**
+ * Rate Limiter для верификации мастера (более мягкий, так как процесс включает несколько запросов)
+ * Использует отдельные счетчики, чтобы не конфликтовать с общим rate limiter
+ */
+export function verificationMasterRateLimiter() {
+  return (req, res, next) => {
+    const config = {
+      maxRequests: 100, // 100 запросов за 15 минут (достаточно для загрузки документов)
+      windowMs: 15 * 60 * 1000, // За 15 минут
+      blockDuration: 10 * 60 * 1000, // Блокировка на 10 минут
+      enabled: true
+    };
+    
+    if (!config.enabled) {
+      return next();
+    }
+    
+    const ip = getClientIP(req);
+    const now = Date.now();
+    
+    // Проверка блокировки IP в верификации
+    if (verificationBlockedIPs.has(ip)) {
+      const blockTime = verificationBlockedIPs.get(ip);
+      const remainingTime = Math.ceil((config.blockDuration - (now - blockTime)) / 1000 / 60);
+      
+      console.warn(`🚫 [VERIFICATION] Заблокированный IP пытается верифицироваться: ${ip}`);
+      
+      return res.status(429).json({
+        error: 'Too Many Requests',
+        message: `Слишком много запросов верификации. Попробуйте через ${remainingTime} минут.`,
+        retryAfter: remainingTime * 60
+      });
+    }
+    
+    // Получение или создание записи для IP
+    let record = verificationRequestCounts.get(ip);
+    
+    if (!record || now - record.resetTime > config.windowMs) {
+      record = {
+        count: 0,
+        resetTime: now
+      };
+      verificationRequestCounts.set(ip, record);
+    }
+    
+    // Увеличение счетчика
+    record.count++;
+    
+    // Проверка лимита
+    if (record.count > config.maxRequests) {
+      verificationBlockedIPs.set(ip, now);
+      verificationRequestCounts.delete(ip);
+      
+      console.error(`⛔ [VERIFICATION] IP заблокирован за превышение лимита верификации: ${ip} (${record.count} запросов)`);
+      
+      return res.status(429).json({
+        error: 'Too Many Requests',
+        message: 'Превышен лимит запросов верификации. Ваш IP временно заблокирован.',
+        retryAfter: config.blockDuration / 1000
+      });
+    }
+    
+    // Установка заголовков
+    const remaining = config.maxRequests - record.count;
+    const resetTime = Math.ceil((record.resetTime + config.windowMs) / 1000);
+    
+    res.setHeader('X-RateLimit-Limit', config.maxRequests);
+    res.setHeader('X-RateLimit-Remaining', remaining);
+    res.setHeader('X-RateLimit-Reset', resetTime);
+    
+    // Предупреждение при приближении к лимиту
+    if (remaining <= 20) {
+      console.warn(`⚠️ [VERIFICATION] IP ${ip} приближается к лимиту верификации: осталось ${remaining} запросов`);
+    }
+    
+    next();
+  };
+}
 
 /**
  * Rate Limiter для статистики (более мягкий, так как запрашивается часто)
@@ -293,6 +392,12 @@ export function unblockIP(ip) {
     console.log(`🔓 [STATS] IP ${ip} разблокирован для статистики вручную`);
     unblocked = true;
   }
+  if (verificationBlockedIPs.has(ip)) {
+    verificationBlockedIPs.delete(ip);
+    verificationRequestCounts.delete(ip);
+    console.log(`🔓 [VERIFICATION] IP ${ip} разблокирован для верификации вручную`);
+    unblocked = true;
+  }
   return unblocked;
 }
 
@@ -302,6 +407,7 @@ export function unblockIP(ip) {
 export function resetIPCounter(ip) {
   requestCounts.delete(ip);
   statsRequestCounts.delete(ip);
+  verificationRequestCounts.delete(ip);
   console.log(`🔄 Счетчики запросов для IP ${ip} сброшены`);
 }
 
