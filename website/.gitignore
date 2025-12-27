@@ -27,6 +27,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+# .env.example should be tracked
 
 # vercel
 .vercel
@@ -34,6 +35,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# deploy
+deploy*.tar.gz
+*.tar.gz
 
 # prisma
 /prisma/migrations
