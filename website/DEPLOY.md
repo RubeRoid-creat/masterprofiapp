@@ -4,7 +4,7 @@
 
 ## Сервер
 - **IP:** 212.74.227.208
-- **Порт:** 3002 (3000 - backend API, 3001 - админ-панель)
+- **Порт:** 3003 (3000 - backend API, 3001 - админ-панель, 3002 - может быть занят)
 
 ## Предварительные требования
 
@@ -42,7 +42,7 @@ DATABASE_URL="postgresql://user:password@localhost:5432/ispravleno"
 NEXT_PUBLIC_ADMIN_API_URL="http://212.74.227.208:3000/api"
 
 # Сайт
-NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3002"
+NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3003"
 
 # Яндекс.Карты (опционально)
 NEXT_PUBLIC_YANDEX_MAPS_API_KEY="your_yandex_maps_api_key"
@@ -128,7 +128,7 @@ pm2 startup
 #### Или напрямую
 
 ```bash
-NODE_ENV=production PORT=3002 npm start
+NODE_ENV=production PORT=3003 npm start
 ```
 
 ## Вариант 3: Деплой через Systemd
@@ -147,7 +147,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/var/www/ispravleno-website/website
 Environment=NODE_ENV=production
-Environment=PORT=3002
+Environment=PORT=3003
 EnvironmentFile=/var/www/ispravleno-website/website/.env
 ExecStart=/usr/bin/node .next/standalone/server.js
 Restart=always
@@ -192,7 +192,7 @@ server {
     server_name 212.74.227.208;
 
     location / {
-        proxy_pass http://localhost:3002;
+        proxy_pass http://localhost:3003;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -253,7 +253,7 @@ docker-compose up -d
 
 ## Проверка работоспособности
 
-1. Откройте в браузере: `http://212.74.227.208:3002`
+1. Откройте в браузере: `http://212.74.227.208:3003`
 2. Проверьте логи:
    - PM2: `pm2 logs ispravleno-website`
    - Systemd: `sudo journalctl -u ispravleno-website -f`
@@ -262,9 +262,9 @@ docker-compose up -d
 ## Важные замечания
 
 1. **База данных:** Убедитесь, что PostgreSQL/Prisma настроен правильно
-2. **Порты:** Backend на 3000, Админ-панель на 3001, Website на 3002
+2. **Порты:** Backend на 3000, Админ-панель на 3001, Website на 3003
 3. **Переменные окружения:** Всегда используйте `.env` файл для секретов
-4. **Firewall:** Убедитесь, что порты 3002 (и 80/443 для Nginx) открыты
+4. **Firewall:** Убедитесь, что порты 3003 (и 80/443 для Nginx) открыты
 
 ## Troubleshooting
 

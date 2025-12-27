@@ -48,7 +48,7 @@ pm2 save
 **Вариант 2: Напрямую через PM2**
 
 ```bash
-PORT=3002 pm2 start npm --name "ispravleno-website" -- run start:standalone
+PORT=3003 pm2 start npm --name "ispravleno-website" -- run start:standalone
 pm2 save
 ```
 
@@ -62,13 +62,13 @@ pm2 list
 pm2 logs ispravleno-website
 
 # Должно быть:
-# - Local: http://localhost:3002 (не 3001!)
+# - Local: http://localhost:3003 (не 3001 или 3002!)
 # - Ready in XXXms
 ```
 
 ### Шаг 6: Откройте сайт
 
-Откройте в браузере: `http://212.74.227.208:3002`
+Откройте в браузере: `http://212.74.227.208:3003`
 
 ## Проверка конфигурации
 
@@ -107,9 +107,9 @@ pm2 start ecosystem.config.js
 
 ## Если все еще не работает
 
-1. Проверьте, что порт 3002 свободен:
+1. Проверьте, что порт 3003 свободен:
 ```bash
-sudo lsof -i :3002
+sudo lsof -i :3003
 ```
 
 2. Проверьте логи на ошибки:

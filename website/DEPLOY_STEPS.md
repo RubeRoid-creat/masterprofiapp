@@ -90,7 +90,7 @@ mkdir -p logs
 pm2 start ecosystem.config.js
 
 # ИЛИ запустите напрямую (если ecosystem.config.js не используется)
-PORT=3002 pm2 start npm --name "ispravleno-website" -- run start:standalone
+PORT=3003 pm2 start npm --name "ispravleno-website" -- run start:standalone
 
 # Сохраните конфигурацию PM2
 pm2 save
@@ -107,17 +107,17 @@ pm2 logs ispravleno-website
 ### Шаг 7: Настройка файрвола (если нужно)
 
 ```bash
-# Откройте порт 3002 в файрволе (если используется ufw)
-sudo ufw allow 3002/tcp
+# Откройте порт 3003 в файрволе (если используется ufw)
+sudo ufw allow 3003/tcp
 
 # Или для firewalld
-sudo firewall-cmd --permanent --add-port=3002/tcp
+sudo firewall-cmd --permanent --add-port=3003/tcp
 sudo firewall-cmd --reload
 ```
 
 ## Проверка работоспособности
 
-1. Откройте в браузере: `http://212.74.227.208:3002`
+1. Откройте в браузере: `http://212.74.227.208:3003`
 2. Проверьте логи: `pm2 logs ispravleno-website`
 3. Проверьте статус: `pm2 status`
 
@@ -173,7 +173,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/var/www/ispravleno-website/website
 Environment=NODE_ENV=production
-Environment=PORT=3002
+Environment=PORT=3003
 EnvironmentFile=/var/www/ispravleno-website/website/.env
 ExecStart=/usr/bin/node .next/standalone/server.js
 Restart=always
@@ -219,15 +219,15 @@ sudo systemctl status postgresql
 ### Ошибка порта уже используется
 
 ```bash
-# Проверьте, что занимает порт 3002
-sudo lsof -i :3002
+# Проверьте, что занимает порт 3003
+sudo lsof -i :3003
 
 # Если PM2 процесс, остановите его
 pm2 stop ispravleno-website
 pm2 delete ispravleno-website
 
 # Запустите заново с правильной командой
-PORT=3002 pm2 start npm --name "ispravleno-website" -- run start:standalone
+PORT=3003 pm2 start npm --name "ispravleno-website" -- run start:standalone
 
 # Или используйте ecosystem.config.js
 pm2 start ecosystem.config.js
@@ -296,7 +296,7 @@ server {
     server_name your-domain.com www.your-domain.com;
 
     location / {
-        proxy_pass http://localhost:3002;
+        proxy_pass http://localhost:3003;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

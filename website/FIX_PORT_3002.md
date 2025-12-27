@@ -1,10 +1,10 @@
-# Исправление: Порт 3002 уже занят
+# Исправление: Порт 3003 уже занят
 
 ## Проблема
 
-Ошибка: `EADDRINUSE: address already in use 0.0.0.0:3002`
+Ошибка: `EADDRINUSE: address already in use 0.0.0.0:3003`
 
-Порт 3002 уже используется другим процессом.
+Порт 3003 уже используется другим процессом.
 
 ## Решение
 
@@ -39,7 +39,7 @@ node    12345  user   23u  IPv4 123456      0t0  TCP *:3002 (LISTEN)
 # Посмотрите все PM2 процессы
 pm2 list
 
-# Если видите процесс на порту 3002, остановите его
+# Если видите процесс на порту 3003, остановите его
 pm2 stop <process-name>
 pm2 delete <process-name>
 
@@ -75,7 +75,7 @@ sudo systemctl disable <service-name>
 ### Шаг 3: Проверьте, что порт освобожден
 
 ```bash
-sudo lsof -i :3002
+sudo lsof -i :3003
 # Должно быть пусто (ничего не выведет)
 ```
 
@@ -106,7 +106,7 @@ pm2 logs ispravleno-website
 
 ## Альтернатива: Использовать другой порт
 
-Если порт 3002 нужно оставить для другого сервиса, используйте порт 3003:
+Если порт 3003 нужно оставить для другого сервиса, используйте порт 3004:
 
 ### 1. Обновите .env файл
 
@@ -127,7 +127,7 @@ NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3003"
 nano ecosystem.config.js
 ```
 
-Измените `PORT: 3002` на `PORT: 3003`
+Измените `PORT: 3003` на `PORT: 3004`
 
 ### 3. Запустите на новом порту
 
@@ -139,20 +139,20 @@ pm2 save
 ### 4. Откройте файрвол для нового порта (если нужно)
 
 ```bash
-sudo ufw allow 3003/tcp
+sudo ufw allow 3004/tcp
 ```
 
 ## Быстрая команда для проверки и очистки
 
 ```bash
-# Найти и убить процесс на порту 3002
-sudo lsof -ti:3002 | xargs kill -9
+# Найти и убить процесс на порту 3003
+sudo lsof -ti:3003 | xargs kill -9
 
 # Проверить, что порт свободен
-sudo lsof -i :3002
+sudo lsof -i :3003
 
 # Если пусто, запустить сайт
 cd /var/www/ispravleno-website/website
-PORT=3002 pm2 start npm --name "ispravleno-website" -- run start:standalone
+PORT=3003 pm2 start npm --name "ispravleno-website" -- run start:standalone
 pm2 save
 ```
