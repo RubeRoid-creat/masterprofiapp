@@ -117,8 +117,8 @@ nano .env
 
 Измените:
 ```env
-PORT=3003
-NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3003"
+PORT=3004
+NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3004"
 ```
 
 ### 2. Обновите ecosystem.config.js
