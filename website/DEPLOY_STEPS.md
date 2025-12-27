@@ -243,7 +243,7 @@ pm2 stop ispravleno-website
 pm2 delete ispravleno-website
 
 # Запустите с правильной командой для standalone режима
-PORT=3002 pm2 start npm --name "ispravleno-website" -- run start:standalone
+PORT=3003 pm2 start npm --name "ispravleno-website" -- run start:standalone
 
 # Или используйте ecosystem.config.js (рекомендуется)
 pm2 start ecosystem.config.js
