@@ -12,7 +12,7 @@
     "min_required_version": "1.0.0",
     "force_update": false,
     "release_notes": "Первый релиз клиента.",
-    "download_url": null,
+    "download_url": "http://212.74.227.208:3000/updates/masterprofi-client-1.0.0.apk",
     "supported_os_versions": ["8.0", "9.0", "10", "11", "12", "13"]
   }
 }
