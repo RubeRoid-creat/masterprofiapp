@@ -89,6 +89,36 @@ fun HomeScreen(
                             QuickActionsRow(navController = navController)
                         }
                         
+                        // Активные заказы
+                        if (uiState.activeOrders.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Активные заказы",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                            items(uiState.activeOrders) { order ->
+                                OrderCard(
+                                    order = order,
+                                    onClick = {
+                                        navController.navigate(Screen.OrderDetails.createRoute(order.id))
+                                    }
+                                )
+                            }
+                            if (uiState.activeOrders.size >= 3) {
+                                item {
+                                    TextButton(
+                                        onClick = { navController.navigate(Screen.Orders.route) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Все заказы")
+                                    }
+                                }
+                            }
+                        }
+                        
                         // Карточка программы лояльности
                         item {
                             LoyaltyCard(

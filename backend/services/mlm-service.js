@@ -620,4 +620,3 @@ function updateDownlineStructure(userId) {
     // Не прерываем выполнение, просто логируем
   }
 }
-

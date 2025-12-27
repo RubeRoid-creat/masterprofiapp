@@ -4,12 +4,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,10 +33,15 @@ fun OrdersScreen(
     
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf<OrderFilter>(OrderFilter.ALL) }
+    var selectedSort by remember { mutableStateOf<OrderSort>(OrderSort.DATE_DESC) }
     var showFilters by remember { mutableStateOf(false) }
+    var showSortDialog by remember { mutableStateOf(false) }
     
-    // Фильтрация заказов
-    val filteredOrders = remember(uiState.orders, searchQuery, selectedFilter) {
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    
+    // Фильтрация и сортировка заказов
+    val filteredAndSortedOrders = remember(uiState.orders, searchQuery, selectedFilter, selectedSort) {
         val orders = uiState.orders
         
         // Поиск
@@ -50,7 +57,7 @@ fun OrdersScreen(
         }
         
         // Фильтр по статусу
-        when (selectedFilter) {
+        val statusFiltered = when (selectedFilter) {
             OrderFilter.ALL -> searchFiltered
             OrderFilter.ACTIVE -> searchFiltered.filter { 
                 it.repairStatus in listOf("new", "assigned", "in_progress") 
@@ -58,11 +65,21 @@ fun OrdersScreen(
             OrderFilter.COMPLETED -> searchFiltered.filter { it.repairStatus == "completed" }
             OrderFilter.CANCELLED -> searchFiltered.filter { it.repairStatus == "cancelled" }
         }
+        
+        // Сортировка
+        statusFiltered.sortedWith(
+            when (selectedSort) {
+                OrderSort.DATE_DESC -> compareByDescending<OrderDto> { it.id }
+                OrderSort.DATE_ASC -> compareBy { it.id }
+                OrderSort.STATUS -> compareBy { it.repairStatus }
+                OrderSort.DEVICE_TYPE -> compareBy { it.deviceType }
+            }
+        )
     }
     
     // Группировка по статусу
-    val groupedOrders = remember(filteredOrders) {
-        filteredOrders.groupBy { order ->
+    val groupedOrders = remember(filteredAndSortedOrders) {
+        filteredAndSortedOrders.groupBy { order ->
             when (order.repairStatus) {
                 "new" -> "Новые"
                 "assigned" -> "Назначены"
@@ -96,8 +113,17 @@ fun OrdersScreen(
                             }
                         }
                         
+                        // Сортировка
+                        IconButton(onClick = { showSortDialog = true }) {
+                            Icon(Icons.Default.Sort, contentDescription = "Сортировка")
+                        }
+                        
                         // Обновить
-                        IconButton(onClick = { viewModel.loadOrders() }) {
+                        IconButton(onClick = { 
+                            scope.launch {
+                                viewModel.loadOrders()
+                            }
+                        }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Обновить")
                         }
                     }
@@ -186,7 +212,7 @@ fun OrdersScreen(
                 uiState.orders.isEmpty() -> {
                     EmptyOrdersState(navController)
                 }
-                filteredOrders.isEmpty() -> {
+                filteredAndSortedOrders.isEmpty() -> {
                     NoResultsState(onReset = { 
                         searchQuery = ""
                         selectedFilter = OrderFilter.ALL
@@ -194,6 +220,7 @@ fun OrdersScreen(
                 }
                 else -> {
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -223,6 +250,15 @@ fun OrdersScreen(
                     }
                 }
             }
+        }
+        
+        // Диалог сортировки
+        if (showSortDialog) {
+            SortOrdersDialog(
+                selectedSort = selectedSort,
+                onSortSelected = { selectedSort = it; showSortDialog = false },
+                onDismiss = { showSortDialog = false }
+            )
         }
     }
 }
@@ -397,5 +433,49 @@ enum class OrderFilter(val label: String) {
     ACTIVE("Активные"),
     COMPLETED("Завершенные"),
     CANCELLED("Отмененные")
+}
+
+enum class OrderSort(val label: String) {
+    DATE_DESC("Дата (новые сначала)"),
+    DATE_ASC("Дата (старые сначала)"),
+    STATUS("По статусу"),
+    DEVICE_TYPE("По типу техники")
+}
+
+@Composable
+fun SortOrdersDialog(
+    selectedSort: OrderSort,
+    onSortSelected: (OrderSort) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Сортировка заказов") },
+        text = {
+            Column {
+                OrderSort.values().forEach { sort ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSortSelected(sort) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedSort == sort,
+                            onClick = { onSortSelected(sort) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = sort.label)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Закрыть")
+            }
+        }
+    )
 }
 

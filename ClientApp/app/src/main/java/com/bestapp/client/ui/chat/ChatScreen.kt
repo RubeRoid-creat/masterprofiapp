@@ -219,14 +219,39 @@ fun ChatMessageItem(
                         }
                     }
                     
-                    Text(
-                        text = formatTime(message.createdAt),
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Row(
                         modifier = Modifier
                             .padding(top = 4.dp)
-                            .align(Alignment.End)
-                    )
+                            .align(Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = formatTime(message.createdAt),
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        // Индикатор статуса доставки (только для своих сообщений)
+                        if (isMyMessage) {
+                            val statusIcon = if (message.readAt != null) {
+                                Icons.Default.DoneAll
+                            } else {
+                                Icons.Default.Done
+                            }
+                            val statusColor = if (message.readAt != null) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            }
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = if (message.readAt != null) "Прочитано" else "Отправлено",
+                                modifier = Modifier.size(12.dp),
+                                tint = statusColor
+                            )
+                        }
+                    }
                 }
             }
         }

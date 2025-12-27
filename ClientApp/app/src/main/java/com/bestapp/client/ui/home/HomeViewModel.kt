@@ -15,6 +15,7 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val news: List<NewsItem> = emptyList(),
     val promotions: List<PromotionItem> = emptyList(),
+    val activeOrders: List<com.bestapp.client.data.api.models.OrderDto> = emptyList(),
     val errorMessage: String? = null,
     val userName: String = ""
 )
@@ -29,6 +30,7 @@ class HomeViewModel(
     init {
         loadUserData()
         loadNewsAndPromotions()
+        loadActiveOrders()
     }
 
     private fun loadUserData() {
@@ -88,11 +90,27 @@ class HomeViewModel(
                 )
             )
             
-            _uiState.value = HomeUiState(
+            _uiState.value = _uiState.value.copy(
                 news = mockNews,
                 promotions = mockPromotions,
-                userName = _uiState.value.userName
+                isLoading = false
             )
+        }
+    }
+    
+    fun loadActiveOrders() {
+        viewModelScope.launch {
+            when (val result = repository.getOrders()) {
+                is com.bestapp.client.data.repository.ApiResult.Success -> {
+                    val activeOrders = result.data.filter { 
+                        it.repairStatus in listOf("new", "assigned", "in_progress") 
+                    }.take(3) // Показываем максимум 3 активных заказа
+                    _uiState.value = _uiState.value.copy(activeOrders = activeOrders)
+                }
+                else -> {
+                    // Игнорируем ошибки при загрузке заказов на главном экране
+                }
+            }
         }
     }
 }

@@ -16,6 +16,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.bestapp.client.data.repository.ApiRepository
+import com.bestapp.client.data.api.models.ClientDeviceDto
+import com.bestapp.client.di.AppContainer
 import com.bestapp.client.ui.navigation.Screen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -302,7 +305,7 @@ fun DeviceCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${device.brand} ${device.model.orEmpty()}".trim(),
+                        text = if (device.model.isNullOrBlank()) device.brand else "${device.brand} ${device.model}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -616,10 +619,20 @@ data class ClientDevice(
     val lastServiceDate: Date?,
     val warrantyUntil: Date?,
     val needsMaintenance: Boolean
-)
+) {
+    // Полное название устройства
+    val fullName: String
+        get() = if (model.isNullOrBlank()) {
+            "$name $brand".trim()
+        } else {
+            "$name $brand $model".trim()
+        }
+}
 
 // ViewModel
-class MyDevicesViewModel : ViewModel() {
+class MyDevicesViewModel(
+    private val repository: ApiRepository = AppContainer.apiRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(MyDevicesUiState())
     val uiState: StateFlow<MyDevicesUiState> = _uiState
     
@@ -627,46 +640,71 @@ class MyDevicesViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            // TODO: Загрузка с сервера
-            // Пока моковые данные
-            kotlinx.coroutines.delay(1000L)
-            
-            val mockDevices = listOf(
-                ClientDevice(
-                    id = 1,
-                    name = "Холодильник",
-                    brand = "Samsung",
-                    model = "RB-37J5000SA",
-                    icon = "icons8-fridge",
-                    repairCount = 2,
-                    lastServiceDate = Date(System.currentTimeMillis() - 90L * 24 * 60 * 60 * 1000),
-                    warrantyUntil = null,
-                    needsMaintenance = false
-                ),
-                ClientDevice(
-                    id = 2,
-                    name = "Стиральная машина",
-                    brand = "LG",
-                    model = "F2V5HS0W",
-                    icon = "icons8-washing-machine",
-                    repairCount = 1,
-                    lastServiceDate = Date(System.currentTimeMillis() - 180L * 24 * 60 * 60 * 1000),
-                    warrantyUntil = null,
-                    needsMaintenance = true
-                )
-            )
-            
-            _uiState.value = _uiState.value.copy(
-                devices = mockDevices,
-                isLoading = false
-            )
+            when (val result = repository.getClientDevices()) {
+                is com.bestapp.client.data.repository.ApiResult.Success -> {
+                    val devices = result.data.map { dto ->
+                        ClientDevice(
+                            id = dto.lastOrderId, // Используем ID последнего заказа как идентификатор
+                            name = dto.deviceType,
+                            brand = dto.deviceBrand ?: "",
+                            model = dto.deviceModel,
+                            icon = getDeviceIcon(dto.deviceType),
+                            repairCount = dto.orderCount,
+                            lastServiceDate = try {
+                                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(dto.lastOrderDate)
+                            } catch (e: Exception) {
+                                null
+                            },
+                            warrantyUntil = null, // Не приходит с API
+                            needsMaintenance = isMaintenanceNeeded(dto.lastOrderDate, dto.orderCount)
+                        )
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        devices = devices,
+                        isLoading = false
+                    )
+                }
+                is com.bestapp.client.data.repository.ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+                else -> {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+            }
         }
     }
     
     fun addDevice(deviceType: String, brand: String, model: String?) {
         viewModelScope.launch {
-            // TODO: Отправка на сервер
+            // Устройства автоматически добавляются при создании заказа
+            // Поэтому просто перезагружаем список
             loadDevices()
+        }
+    }
+    
+    private fun getDeviceIcon(deviceType: String): String {
+        return when {
+            deviceType.contains("холодильник", ignoreCase = true) -> "icons8-fridge"
+            deviceType.contains("стирал", ignoreCase = true) -> "icons8-washing-machine"
+            deviceType.contains("посудомо", ignoreCase = true) -> "icons8-dishwasher"
+            deviceType.contains("микроволнов", ignoreCase = true) -> "icons8-microwave"
+            deviceType.contains("духов", ignoreCase = true) -> "icons8-oven"
+            else -> "icons8-devices"
+        }
+    }
+    
+    private fun isMaintenanceNeeded(lastOrderDate: String, orderCount: Int): Boolean {
+        return try {
+            val lastDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(lastOrderDate)
+            val now = Date()
+            val daysSinceLastService = ((now.time - lastDate.time) / (1000 * 60 * 60 * 24)).toInt()
+            // Если последний ремонт был более 6 месяцев назад и было более 1 ремонта
+            daysSinceLastService > 180 && orderCount > 1
+        } catch (e: Exception) {
+            false
         }
     }
 }

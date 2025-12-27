@@ -2,6 +2,8 @@ package com.bestapp.client.ui.notifications
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bestapp.client.data.repository.ApiRepository
+import com.bestapp.client.di.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +15,9 @@ data class NotificationsUiState(
     val errorMessage: String? = null
 )
 
-class NotificationsViewModel : ViewModel() {
+class NotificationsViewModel(
+    private val repository: ApiRepository = AppContainer.apiRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NotificationsUiState())
     val uiState: StateFlow<NotificationsUiState> = _uiState.asStateFlow()
@@ -22,46 +26,85 @@ class NotificationsViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            // TODO: Реализовать загрузку уведомлений из API
-            // Временные тестовые данные
-            val mockNotifications = listOf(
-                NotificationItem(
-                    id = 1,
-                    title = "Статус заказа изменен",
-                    message = "Ваш заказ #123 переведен в статус 'В работе'",
-                    type = NotificationType.ORDER_STATUS,
-                    timestamp = System.currentTimeMillis() - 3600000,
-                    isRead = false
-                ),
-                NotificationItem(
-                    id = 2,
-                    title = "Мастер назначен",
-                    message = "Вашему заказу #123 назначен мастер Иван Петров",
-                    type = NotificationType.MASTER_ASSIGNED,
-                    timestamp = System.currentTimeMillis() - 7200000,
-                    isRead = true
-                )
-            )
-            
-            _uiState.value = NotificationsUiState(notifications = mockNotifications)
+            // Загружаем заказы для создания уведомлений на основе их статусов
+            // В реальном приложении здесь должен быть отдельный API для уведомлений
+            when (val result = repository.getOrders()) {
+                is com.bestapp.client.data.repository.ApiResult.Success -> {
+                    val notifications = buildList<NotificationItem> {
+                        result.data.forEach { order ->
+                            // Создаем уведомление о статусе заказа
+                            if (order.repairStatus == "assigned" && order.masterName != null) {
+                                add(
+                                    NotificationItem(
+                                        id = order.id * 1000 + 1, // Временный ID
+                                        title = "Мастер назначен",
+                                        message = "Вашему заказу #${order.id} назначен мастер ${order.masterName}",
+                                        type = NotificationType.MASTER_ASSIGNED,
+                                        timestamp = System.currentTimeMillis(),
+                                        isRead = false
+                                    )
+                                )
+                            }
+                            if (order.repairStatus == "in_progress") {
+                                add(
+                                    NotificationItem(
+                                        id = order.id * 1000 + 2,
+                                        title = "Заказ в работе",
+                                        message = "Мастер приступил к работе над заказом #${order.id}",
+                                        type = NotificationType.ORDER_STATUS,
+                                        timestamp = System.currentTimeMillis(),
+                                        isRead = false
+                                    )
+                                )
+                            }
+                            if (order.repairStatus == "completed") {
+                                add(
+                                    NotificationItem(
+                                        id = order.id * 1000 + 3,
+                                        title = "Заказ завершен",
+                                        message = "Ваш заказ #${order.id} успешно завершен",
+                                        type = NotificationType.ORDER_STATUS,
+                                        timestamp = System.currentTimeMillis(),
+                                        isRead = false
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        notifications = notifications.sortedByDescending { it.timestamp },
+                        isLoading = false
+                    )
+                }
+                is com.bestapp.client.data.repository.ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+                else -> {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+            }
         }
     }
 
     fun markAsRead(notificationId: Long) {
         viewModelScope.launch {
-            // TODO: Реализовать API для отметки уведомления как прочитанного
+            // Локальная отметка как прочитанное
             val updated = _uiState.value.notifications.map {
                 if (it.id == notificationId) it.copy(isRead = true) else it
             }
             _uiState.value = _uiState.value.copy(notifications = updated)
+            // TODO: Отправить на сервер через API когда будет готов endpoint
         }
     }
 
     fun markAllAsRead() {
         viewModelScope.launch {
-            // TODO: Реализовать API для отметки всех уведомлений как прочитанных
             val updated = _uiState.value.notifications.map { it.copy(isRead = true) }
             _uiState.value = _uiState.value.copy(notifications = updated)
+            // TODO: Отправить на сервер через API когда будет готов endpoint
         }
     }
 }
