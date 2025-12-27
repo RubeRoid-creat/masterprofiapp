@@ -1,11 +1,13 @@
 // PM2 ecosystem config для Next.js website
+// Использование: pm2 start ecosystem.config.js
+// Путь к директории будет автоматически определен при запуске из этой директории
 module.exports = {
   apps: [
     {
       name: 'ispravleno-website',
       script: 'node',
       args: '.next/standalone/server.js',
-      cwd: '/var/www/ispravleno-website/website',
+      // cwd будет автоматически установлен в директорию, где запускается PM2
       instances: 1,
       exec_mode: 'fork',
       env: {
