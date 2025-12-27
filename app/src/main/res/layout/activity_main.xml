@@ -23,6 +23,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:minHeight="56dp"
+        style="@style/CompactBottomNavigation"
         app:itemHorizontalTranslationEnabled="false"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
