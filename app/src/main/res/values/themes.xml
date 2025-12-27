@@ -7,9 +7,9 @@
     
     <!-- Компактный стиль для нижней навигации -->
     <style name="CompactBottomNavigation" parent="Widget.Material3.BottomNavigationView">
-        <item name="android:paddingTop">4dp</item>
-        <item name="android:paddingBottom">4dp</item>
-        <item name="itemIconSize">20dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+        <item name="itemIconSize">22dp</item>
     </style>
     
     <style name="Theme.BestAPP" parent="Theme.Material3.DayNight.NoActionBar">
