@@ -149,7 +149,7 @@ WorkingDirectory=/var/www/ispravleno-website/website
 Environment=NODE_ENV=production
 Environment=PORT=3002
 EnvironmentFile=/var/www/ispravleno-website/website/.env
-ExecStart=/usr/bin/npm start
+ExecStart=/usr/bin/node .next/standalone/server.js
 Restart=always
 RestartSec=10
 
