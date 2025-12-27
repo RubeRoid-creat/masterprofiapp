@@ -9,7 +9,7 @@ ENV=${1:-production}
 SERVER_USER=${SERVER_USER:-root}
 SERVER_HOST=${SERVER_HOST:-212.74.227.208}
 SERVER_PATH=${SERVER_PATH:-/var/www/ispravleno-website/website}
-PORT=${PORT:-3001}
+PORT=${PORT:-3002}
 
 echo "🚀 Начало деплоя на сервер..."
 echo "Сервер: $SERVER_USER@$SERVER_HOST"

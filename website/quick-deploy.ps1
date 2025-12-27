@@ -5,7 +5,7 @@ param(
     [string]$ServerUser = "root",
     [string]$ServerHost = "212.74.227.208",
     [string]$ServerPath = "/var/www/ispravleno-website/website",
-    [int]$Port = 3001
+    [int]$Port = 3002
 )
 
 $ErrorActionPreference = "Stop"

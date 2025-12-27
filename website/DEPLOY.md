@@ -2,7 +2,7 @@
 
 ## Сервер
 - **IP:** 212.74.227.208
-- **Порт:** 3001 (изменен с 3000, чтобы не конфликтовать с backend)
+- **Порт:** 3002 (3000 - backend API, 3001 - админ-панель)
 
 ## Предварительные требования
 
@@ -46,7 +46,7 @@ NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3001"
 NEXT_PUBLIC_YANDEX_MAPS_API_KEY="your_yandex_maps_api_key"
 
 # Порт (для production)
-PORT=3001
+PORT=3002
 ```
 
 ### 3. Запуск через Docker
@@ -58,7 +58,7 @@ docker build -t ispravleno-website .
 # Запустите контейнер
 docker run -d \
   --name ispravleno-website \
-  -p 3001:3000 \
+  -p 3002:3000 \
   --env-file .env \
   --restart unless-stopped \
   ispravleno-website
@@ -126,7 +126,7 @@ pm2 startup
 #### Или напрямую
 
 ```bash
-NODE_ENV=production PORT=3001 npm start
+NODE_ENV=production PORT=3002 npm start
 ```
 
 ## Вариант 3: Деплой через Systemd
@@ -145,7 +145,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/var/www/ispravleno-website/website
 Environment=NODE_ENV=production
-Environment=PORT=3001
+Environment=PORT=3002
 EnvironmentFile=/var/www/ispravleno-website/website/.env
 ExecStart=/usr/bin/npm start
 Restart=always
@@ -190,7 +190,7 @@ server {
     server_name 212.74.227.208;
 
     location / {
-        proxy_pass http://localhost:3001;
+        proxy_pass http://localhost:3002;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -260,9 +260,9 @@ docker-compose up -d
 ## Важные замечания
 
 1. **База данных:** Убедитесь, что PostgreSQL/Prisma настроен правильно
-2. **Порты:** Backend на 3000, Website на 3001
+2. **Порты:** Backend на 3000, Админ-панель на 3001, Website на 3002
 3. **Переменные окружения:** Всегда используйте `.env` файл для секретов
-4. **Firewall:** Убедитесь, что порты 3001 (и 80/443 для Nginx) открыты
+4. **Firewall:** Убедитесь, что порты 3002 (и 80/443 для Nginx) открыты
 
 ## Troubleshooting
 
