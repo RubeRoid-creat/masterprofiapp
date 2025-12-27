@@ -8,25 +8,25 @@
 
 ## Решение
 
-### Шаг 1: Найдите процесс, который занимает порт 3002
+### Шаг 1: Найдите процесс, который занимает порт 3003
 
 ```bash
 # Вариант 1: Используя lsof
-sudo lsof -i :3002
+sudo lsof -i :3003
 
 # Вариант 2: Используя netstat
-sudo netstat -tlnp | grep 3002
+sudo netstat -tlnp | grep 3003
 
 # Вариант 3: Используя ss
-sudo ss -tlnp | grep 3002
+sudo ss -tlnp | grep 3003
 
 # Вариант 4: Используя fuser
-sudo fuser 3002/tcp
+sudo fuser 3003/tcp
 ```
 
 Вы увидите что-то вроде:
 ```
-node    12345  user   23u  IPv4 123456      0t0  TCP *:3002 (LISTEN)
+node    12345  user   23u  IPv4 123456      0t0  TCP *:3003 (LISTEN)
 ```
 
 Где `12345` - это PID процесса.
@@ -88,7 +88,7 @@ cd /var/www/ispravleno-website/website
 pm2 start ecosystem.config.js
 
 # Или напрямую
-PORT=3002 pm2 start npm --name "ispravleno-website" -- run start:standalone
+PORT=3003 pm2 start npm --name "ispravleno-website" -- run start:standalone
 
 pm2 save
 ```
@@ -100,7 +100,7 @@ pm2 logs ispravleno-website
 ```
 
 Должно быть:
-- ✅ `Local: http://localhost:3002`
+- ✅ `Local: http://localhost:3003`
 - ✅ `Ready in XXXms`
 - ❌ Нет ошибки `EADDRINUSE`
 

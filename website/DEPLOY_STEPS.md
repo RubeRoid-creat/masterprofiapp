@@ -45,8 +45,8 @@ DATABASE_URL="postgresql://user:password@localhost:5432/ispravleno"
 # Backend API URL
 NEXT_PUBLIC_ADMIN_API_URL="http://212.74.227.208:3000/api"
 
-# Сайт URL (важно: порт 3002!)
-NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3002"
+# Сайт URL (важно: порт 3003!)
+NEXT_PUBLIC_SITE_URL="http://212.74.227.208:3003"
 
 # Порт для запуска (важно: 3003!)
 PORT=3003
