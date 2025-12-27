@@ -109,6 +109,10 @@ interface ApiService {
     @DELETE("api/fcm/unregister")
     suspend fun unregisterFcmToken(@Body request: FcmTokenRequest): Response<FcmTokenResponse>
     
+    // Version check endpoint
+    @POST("api/version/check")
+    suspend fun checkVersion(@Body request: com.bestapp.client.data.api.models.VersionCheckRequest): Response<com.bestapp.client.data.api.models.VersionCheckResponse>
+    
     @GET("api/masters/{id}/portfolio")
     suspend fun getMasterPortfolio(@Path("id") masterId: Long): Response<List<PortfolioItemDto>>
     

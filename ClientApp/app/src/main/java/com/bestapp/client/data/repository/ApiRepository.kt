@@ -271,6 +271,24 @@ class ApiRepository(
     suspend fun getCurrentUserName(): String? {
         return prefsManager.userName.first()
     }
+    
+    // Version check
+    suspend fun checkVersion(appVersion: String): ApiResult<com.bestapp.client.data.api.models.VersionCheckResponse> {
+        return try {
+            val request = com.bestapp.client.data.api.models.VersionCheckRequest(
+                platform = "android_client",
+                appVersion = appVersion
+            )
+            val response = apiService.checkVersion(request)
+            if (response.isSuccessful && response.body() != null) {
+                ApiResult.Success(response.body()!!)
+            } else {
+                handleErrorResponse(response, "Ошибка проверки версии")
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Неизвестная ошибка")
+        }
+    }
 
     // Get current user phone
     suspend fun getCurrentUserPhone(): String? {

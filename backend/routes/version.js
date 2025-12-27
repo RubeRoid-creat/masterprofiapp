@@ -49,7 +49,8 @@ router.post('/check', (req, res) => {
     }
     
     const config = loadVersionConfig();
-    const versionConfig = config[platform] || config['android_master'];
+    // Поддерживаем android_client и android_master
+    const versionConfig = config[platform] || config['android_client'] || config['android_master'];
     
     if (!versionConfig) {
       // Нет конфига — считаем, что обновление не требуется
