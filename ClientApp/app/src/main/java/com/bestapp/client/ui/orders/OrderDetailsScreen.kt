@@ -41,7 +41,6 @@ fun OrderDetailsScreen(
     val uiState by viewModel.orderDetailsUiState.collectAsState()
     var showCancelDialog by remember { mutableStateOf(false) }
     var showReviewDialog by remember { mutableStateOf(false) }
-    var expandedSection by remember { mutableStateOf<String?>(null) }
     val reviewViewModel: ReviewViewModel = viewModel()
     
     // Проверяем, можно ли оставить отзыв
