@@ -2,31 +2,32 @@
 
 ## Быстрая инструкция
 
-### Шаг 1: Подключитесь к серверу
+### Важно: Запустите скрипт из директории website проекта
 
 ```bash
-ssh user@212.74.227.208
-```
-
-### Шаг 2: Перейдите в директорию проекта
-
-```bash
+# Перейдите в директорию website (где находится package.json)
+cd ~/Ispravleno/ispravleno-website/website
+# или
 cd /var/www/ispravleno-website/website
+# или откуда у вас находится проект
+
+# Убедитесь, что вы в правильной директории
+ls package.json  # Должен показать файл package.json
 ```
 
-### Шаг 3: Обновите код из репозитория
+### Шаг 1: Обновите код из репозитория
 
 ```bash
 git pull origin main
 ```
 
-### Шаг 4: Запустите скрипт настройки
+### Шаг 2: Запустите скрипт настройки
 
 ```bash
 # Сделайте скрипт исполняемым
 chmod +x setup-ispravleno-pro.sh
 
-# Запустите скрипт
+# Запустите скрипт (из директории website!)
 ./setup-ispravleno-pro.sh
 ```
 
@@ -38,9 +39,13 @@ chmod +x setup-ispravleno-pro.sh
 - ✅ Обновит .env файл
 - ✅ Обновит next.config.js
 
-### Шаг 5: Пересоберите и перезапустите
+### Шаг 3: Пересоберите и перезапустите
 
 ```bash
+# Убедитесь, что вы в директории проекта
+cd ~/Ispravleno/ispravleno-website/website
+# или где у вас находится проект
+
 # Пересоберите проект
 npm run build
 
@@ -48,7 +53,7 @@ npm run build
 pm2 restart ispravleno-website
 ```
 
-### Шаг 6: Проверьте сайт
+### Шаг 4: Проверьте сайт
 
 Откройте в браузере:
 - http://ispravleno.pro
@@ -68,6 +73,7 @@ sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d ispravleno.pro -d www.ispravleno.pro
 
 # После установки SSL обновите .env
+cd ~/Ispravleno/ispravleno-website/website  # или ваш путь
 nano .env
 # Измените:
 # NEXT_PUBLIC_SITE_URL="https://ispravleno.pro"
@@ -103,19 +109,34 @@ curl http://localhost:3003
 
 ---
 
-## Если что-то не работает
+## Решение проблем
 
-1. **Сайт не открывается**
-   - Проверьте DNS: `dig ispravleno.pro`
-   - Проверьте статус Nginx: `sudo systemctl status nginx`
-   - Проверьте логи: `sudo tail -f /var/log/nginx/ispravleno-website-error.log`
+### Ошибка: "No such file or directory"
 
-2. **502 Bad Gateway**
-   - Проверьте, что приложение запущено: `pm2 list`
-   - Проверьте, что приложение слушает порт 3003: `netstat -tulpn | grep 3003`
-   - Проверьте логи PM2: `pm2 logs ispravleno-website`
+Если скрипт выдает ошибку о том, что директория не найдена:
 
-3. **SSL не работает**
-   - Убедитесь, что порты 80 и 443 открыты: `sudo ufw status`
-   - Проверьте сертификат: `sudo certbot certificates`
-   - Попробуйте обновить: `sudo certbot renew`
+1. Убедитесь, что вы запускаете скрипт из директории `website` проекта:
+   ```bash
+   pwd  # Проверьте текущую директорию
+   ls package.json  # Должен показать package.json
+   ```
+
+2. Если проект находится в другой директории, обновите скрипт или запустите из правильной директории.
+
+### Сайт не открывается
+
+1. Проверьте DNS: `dig ispravleno.pro`
+2. Проверьте статус Nginx: `sudo systemctl status nginx`
+3. Проверьте логи: `sudo tail -f /var/log/nginx/ispravleno-website-error.log`
+
+### 502 Bad Gateway
+
+1. Проверьте, что приложение запущено: `pm2 list`
+2. Проверьте, что приложение слушает порт 3003: `netstat -tulpn | grep 3003`
+3. Проверьте логи PM2: `pm2 logs ispravleno-website`
+
+### SSL не работает
+
+1. Убедитесь, что порты 80 и 443 открыты: `sudo ufw status`
+2. Проверьте сертификат: `sudo certbot certificates`
+3. Попробуйте обновить: `sudo certbot renew`
